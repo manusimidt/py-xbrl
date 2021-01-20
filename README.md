@@ -1,5 +1,4 @@
-
-
+## XBRL-Parser
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
@@ -9,7 +8,6 @@
 [![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
-## XBRL-Parser
 
 This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document
 module, the Taxonomy-Schema module and the Linkbase module.
