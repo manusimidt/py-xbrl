@@ -9,6 +9,11 @@
 [![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
 
+> #### DISCLAIMER - BETA PHASE
+> This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
+> 
+
+
 This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document
 module, the Taxonomy-Schema module and the Linkbase module.
 
