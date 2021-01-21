@@ -1,7 +1,9 @@
+import sys
 import unittest
 import os
 import time
 from xbrl_parser.cache import HttpCache
+import logging
 
 
 class CacheHelperTest(unittest.TestCase):
@@ -11,6 +13,7 @@ class CacheHelperTest(unittest.TestCase):
         Unit test for CacheHelper.cache_file
         :return:
         """
+        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         cache_dir: str = os.path.abspath('./../cache/') + '/'
         delay: int = 5000
         cache: HttpCache = HttpCache(cache_dir, delay)

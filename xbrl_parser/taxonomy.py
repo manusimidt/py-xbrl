@@ -7,14 +7,13 @@ Taxonomy schemas can import multiple different taxonomy schemas.
 
 """
 import logging
-import sys
 import xml.etree.ElementTree as ET
 from functools import lru_cache
 
+from xbrl_parser.cache import HttpCache
 from xbrl_parser.helper.uri_resolver import resolve_uri
-from xbrl_parser.helper import uri_resolver, CacheHelper
-from src.xbrl.parser import TaxonomyNotFound
-from src.xbrl.parser.classes.Linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase
+from xbrl_parser import TaxonomyNotFound
+from xbrl_parser.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +42,9 @@ class Concept:
 
     def __init__(self, xml_id: str, schema_url: str, name: str) -> None:
         """
-        @param xml_id: Id of the concept in the xml
-        @param schema_url: url of the schema in which the concept is defined
-        @param name: name of the concept
+        :param xml_id: Id of the concept in the xml
+        :param schema_url: url of the schema in which the concept is defined
+        :param name: name of the concept
         """
         self.xml_id: str = xml_id
         self.schema_url: str = schema_url
@@ -72,9 +71,9 @@ class ExtendedLinkRole:
     def __init__(self, role_id: str, uri: str, definition: str) -> None:
         """
 
-        @param role_id:
-        @param uri:
-        @param definition:
+        :param role_id:
+        :param uri:
+        :param definition:
         """
         self.xml_id: str = role_id
         self.uri: str = uri
@@ -131,9 +130,9 @@ class TaxonomySchema:
         """
         Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
         If the taxonomy cannot be found, the function will return None
-        @param namespace:
-        @return either a TaxonomySchema obj or None
-        @return:
+        :param namespace:
+        :return either a TaxonomySchema obj or None
+        :return:
         """
         if self.namespace == namespace:
             return self
@@ -146,15 +145,16 @@ class TaxonomySchema:
 
 
 @lru_cache(maxsize=60)
-def parse_taxonomy(schema_url: str) -> TaxonomySchema:
+def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
-    @param schema_url: url to the schema (on the internet)
-    @return:
+    :param cache: HttpCache instance
+    :param schema_url: url to the schema (on the internet)
+    :return:
     """
     # Get the local absolute path to the schema file (and download it if it is not yet cached)
     try:
-        schema_path: str = CacheHelper.cache_file(schema_url)
+        schema_path: str = cache.cache_file(schema_url)
     except FileNotFoundError:
         raise TaxonomyNotFound(f"Could not find schema document from {schema_url}")
 
@@ -170,7 +170,7 @@ def parse_taxonomy(schema_url: str) -> TaxonomySchema:
         # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"!!
         if not import_url.startswith('http'):
             import_url = resolve_uri(schema_url, import_url)
-        taxonomy.imports.append(parse_taxonomy(import_url))
+        taxonomy.imports.append(parse_taxonomy(cache, import_url))
 
     role_type_elements: [ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's
@@ -212,7 +212,7 @@ def parse_taxonomy(schema_url: str) -> TaxonomySchema:
         if not linkbase_url.startswith('http'):
             linkbase_url = resolve_uri(schema_url, linkbase_url)
 
-        linkbase: Linkbase = parse_linkbase(linkbase_url, linkbase_type)
+        linkbase: Linkbase = parse_linkbase(cache, linkbase_url, linkbase_type)
         # add the linkbase to the taxonomy
         if linkbase_type == LinkbaseType.DEFINITION:
             taxonomy.def_linkbases.append(linkbase)
@@ -242,11 +242,3 @@ def parse_taxonomy(schema_url: str) -> TaxonomySchema:
                     break
 
     return taxonomy
-
-
-if __name__ == '__main__':
-    logging.getLogger("requests").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    tax = parse_taxonomy('https://www.sec.gov/Archives/edgar/data/320193/000032019320000062/aapl-20200627.xsd')
-    print(tax)

@@ -1,3 +1,5 @@
+import logging
+import sys
 import unittest
 import os
 import time
@@ -11,6 +13,7 @@ class LinkbaseTest(unittest.TestCase):
         """
         Unit test for linkbase.parse_linkbase()
         """
+        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         linkbase_url: str = 'https://www.esma.europa.eu/taxonomy/2019-03-27/esef_cor-lab-de.xml'
         cache_dir: str = os.path.abspath('./../cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)

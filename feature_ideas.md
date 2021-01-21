@@ -14,3 +14,12 @@ for locator in linkbase.extended_links[0].root_locators:
 The access to the content of the label is also very cumbersome.
 
 ---
+
+Allow parsing of xbrl documents without supplying a cache.
+Sometimes you just want to parse ONE document without worrying about caching xbrl files. 
+
+---
+
+Parsing of Reference Linkbases
+
+---
