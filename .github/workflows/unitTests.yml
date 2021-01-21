@@ -1,0 +1,27 @@
+name: Python Unit tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Unit Test
+        env:
+          CACHE_PATH: './cache/'
+          DB_HOST: "not-set-for-unit-test"
+          DB_PORT: "not-set-for-unit-test"
+          DB_USER: "not-set-for-unit-test"
+          DB_PASS: "not-set-for-unit-test"
+          IEX_API_TOKEN: "not-set-for-unit-tests"
+        uses: onichandame/python-test-action@master
+        with:
+          deps_list: 'requirements.txt'
