@@ -239,3 +239,5 @@ dmypy.json
 
 # profiling data
 .prof
+
+cache
