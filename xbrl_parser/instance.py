@@ -12,10 +12,11 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from time import strptime
 
-from src.helper import CacheHelper, URIHelper
-from src.xbrl.parser import TaxonomyNotFound, InstanceParseException
-from src.xbrl.parser.classes.TaxonomySchema import Concept, TaxonomySchema, parse_taxonomy
-from src.xbrl.parser.helper import XMLParser
+from xbrl_parser import TaxonomyNotFound, InstanceParseException
+from xbrl_parser.cache import HttpCache
+from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy
+from xbrl_parser.helper.uri_resolver import resolve_uri
+from xbrl_parser.helper.xml_parser import parse_file
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -137,7 +138,7 @@ class SimpleUnit(AbstractUnit):
 
     def __init__(self, unit_id: str, unit: str) -> None:
         super().__init__(unit_id)
-        self.unit:str = unit
+        self.unit: str = unit
 
     def __str__(self):
         return self.unit
@@ -157,8 +158,8 @@ class DivideUnit(AbstractUnit):
 
     def __init__(self, unit_id: str, numerator: str, denominator: str) -> None:
         super().__init__(unit_id)
-        self.numerator:str = numerator
-        self.denominator:str = denominator
+        self.numerator: str = numerator
+        self.denominator: str = denominator
 
     def __str__(self):
         return self.numerator + '/' + self.denominator
@@ -240,9 +241,10 @@ class XbrlInstance(abc.ABC):
         return "{} with {} facts".format(self.instance_url, len(self.facts))
 
 
-def parse_xbrl_instance_file(instance_url: str) -> XbrlInstance:
+def parse_xbrl_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
+    :param cache: HttpCache instance
     :param instance_url: url to the instance file (on the internet)
     This function will check, if the instance file is already in the cache and load it from there based on the
     instance_url.
@@ -250,16 +252,16 @@ def parse_xbrl_instance_file(instance_url: str) -> XbrlInstance:
         i.e. Use CacheHelper.extract_edgar_enclosure()
     :return:
     """
-    instance_path: str = CacheHelper.cache_file(instance_url)
+    instance_path: str = cache.cache_file(instance_url)
 
-    root: ET.Element = XMLParser.parse_file(instance_path).getroot()
+    root: ET.Element = parse_file(instance_path).getroot()
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
     if not schema_uri.startswith('http'):
-        schema_url = URIHelper.resolve_uri(instance_url, schema_uri)
+        schema_url = resolve_uri(instance_url, schema_uri)
     else:
         schema_url = schema_uri
     taxonomy: TaxonomySchema = parse_taxonomy(schema_url)
@@ -306,9 +308,10 @@ def parse_xbrl_instance_file(instance_url: str) -> XbrlInstance:
     return XbrlInstance(instance_url, taxonomy, facts, context_dir, unit_dir)
 
 
-def parse_iXBRL_instance_file(instance_url: str) -> XbrlInstance:
+def parse_iXBRL_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+    :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     This function will check, if the instance file is already in the cache and load it from there based on the
     instance_url.
@@ -316,13 +319,13 @@ def parse_iXBRL_instance_file(instance_url: str) -> XbrlInstance:
         i.e. Use CacheHelper.extract_edgar_enclosure()
     :return:
     """
-    instance_path: str = CacheHelper.cache_file(instance_url)
+    instance_path: str = cache.cache_file(instance_url)
     """
     @warning In contrary to the XBRL-parse method we use here the actual root instead of the root element!!!
     to the .getRoot() is missing. This has the benefit, that we can search the document with absolute xpath expressions
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
-    root: ET = XMLParser.parse_file(instance_path)
+    root: ET = parse_file(instance_path)
     ns_map: dict = root.getroot().attrib['ns_map']
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
@@ -330,7 +333,7 @@ def parse_iXBRL_instance_file(instance_url: str) -> XbrlInstance:
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
     if not schema_uri.startswith('http'):
-        schema_url = URIHelper.resolve_uri(instance_url, schema_uri)
+        schema_url = resolve_uri(instance_url, schema_uri)
     else:
         schema_url = schema_uri
     taxonomy: TaxonomySchema = parse_taxonomy(schema_url)
