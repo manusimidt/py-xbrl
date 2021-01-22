@@ -28,7 +28,14 @@ class TaxonomySchemaTest(unittest.TestCase):
         self.assertTrue(lei_tax)
 
         """ Parse extending taxonomy of Apple Inc. and check if all us-gaap concepts where parsed """
+        extension_schema_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.xsd'
 
+        tax: TaxonomySchema = parse_taxonomy(cache, extension_schema_url)
+        print(tax)
+        lei_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/us-gaap/2020-01-31')
+        self.assertTrue(lei_tax)
+        # us-gaap 2020 has 17281 concepts
+        self.assertEqual(len(lei_tax.concepts), 17281)
 
 
 if __name__ == '__main__':
