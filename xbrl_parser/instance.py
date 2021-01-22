@@ -241,7 +241,7 @@ class XbrlInstance(abc.ABC):
         return "{} with {} facts".format(self.instance_url, len(self.facts))
 
 
-def parse_xbrl_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstance:
+def parse_xbrl_instance(cache: HttpCache, instance_url: str) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
     :param cache: HttpCache instance
@@ -264,7 +264,7 @@ def parse_xbrl_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstanc
         schema_url = resolve_uri(instance_url, schema_uri)
     else:
         schema_url = schema_uri
-    taxonomy: TaxonomySchema = parse_taxonomy(schema_url)
+    taxonomy: TaxonomySchema = parse_taxonomy(cache, schema_url)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy)
@@ -308,7 +308,7 @@ def parse_xbrl_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstanc
     return XbrlInstance(instance_url, taxonomy, facts, context_dir, unit_dir)
 
 
-def parse_iXBRL_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstance:
+def parse_ixbrl_instance(cache: HttpCache, instance_url: str) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
     :param cache: HttpCache instance
@@ -336,7 +336,7 @@ def parse_iXBRL_instance_file(cache: HttpCache, instance_url: str) -> XbrlInstan
         schema_url = resolve_uri(instance_url, schema_uri)
     else:
         schema_url = schema_uri
-    taxonomy: TaxonomySchema = parse_taxonomy(schema_url)
+    taxonomy: TaxonomySchema = parse_taxonomy(cache,schema_url)
 
     # get all contexts and units
     xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
@@ -519,17 +519,3 @@ def _parse_unit_elements(unit_elements: [ET.Element]) -> dict:
                               divide.find('xbrli:unitDenominator/xbrli:measure', NAME_SPACES).text.strip())
         unit_dict[unit_id] = unit
     return unit_dict
-
-
-if __name__ == '__main__':
-    logging.getLogger("requests").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    # Testing xbrl filings
-
-    start = time.time()
-    inst = parse_iXBRL_instance_file(
-        'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm')
-    end = time.time()
-
-    print("Loaded {} in {} seconds".format(inst, end - start))
