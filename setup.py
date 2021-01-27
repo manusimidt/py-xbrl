@@ -16,18 +16,16 @@ def read(filename):
 setup(
     name="xbrl_parser",
     version="0.0.1",
-    url="https://github.com/kragniz/cookiecutter-pypackage-minimal",
+    url="https://github.com/manusimidt/xbrl_parser",
     license='MIT',
-
     author="Manuel Schmidt",
     author_email="hello@schmidt-manuel.de",
 
     description="This parser can parse XBRL documents",
     long_description=read("README.md"),
-
     packages=find_packages(exclude=('tests',)),
 
-    install_requires=[],
+    install_requires=["requests", ],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

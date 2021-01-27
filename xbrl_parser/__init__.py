@@ -68,5 +68,6 @@ __all__ = [
     TaxonomyParseException,
     TaxonomyNotFound,
     InstanceParseException,
-    ContextParseException
+    ContextParseException,
+
 ]
