@@ -28,10 +28,15 @@ Taxonomies and Linkbases used by the Instance Document.
 
 __XBRL Instance Document__
 ```python
-from src.xbrl.parser.classes.XbrlInstance import parse_xbrl_instance_file, XbrlInstance
+from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
+from xbrl_parser.cache import HttpCache
+import logging
+logging.basicConfig(level=logging.INFO)
 
 instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929.xml'
-inst: XbrlInstance = parse_xbrl_instance_file(instance_url)
+cache: HttpCache = HttpCache('./cache/')
+
+inst: XbrlInstance = parse_xbrl_instance_file(cache, instance_url)
 print(inst)
 ```
 ``OUT: Instance Document aapl-20200926.htm with 1329 facts``
@@ -83,6 +88,8 @@ __Inline XBRL Instance Document__
 ```python
 from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
 from xbrl_parser.cache import HttpCache
+import logging
+logging.basicConfig(level=logging.INFO)
 
 instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
 cache: HttpCache = HttpCache('./cache/')

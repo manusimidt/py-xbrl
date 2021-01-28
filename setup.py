@@ -15,7 +15,7 @@ def read(filename):
 
 setup(
     name="xbrl_parser",
-    version="0.0.1",
+    version="0.1.0",
     url="https://github.com/manusimidt/xbrl_parser",
     license='MIT',
     author="Manuel Schmidt",
