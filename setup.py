@@ -25,16 +25,20 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests',)),
 
-    install_requires=["requests", ],
+    install_requires=["requests"],
 
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'License :: OSI Approved :: MIT License',
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Natural Language :: English',
+        'Topic :: Office/Business :: Financial :: Accounting',
+        'Topic :: Text Processing :: Markup',
+        'Topic :: Text Processing :: Markup :: XML'
     ],
 )
