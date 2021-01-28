@@ -2,12 +2,13 @@
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
+<!--
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)](https://www.python.org/doc/versions/)
 [![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/m4nu3l99/xbrl_parser/master/LICENSE)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-
+-->
 
 > #### DISCLAIMER - BETA PHASE
 > This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
@@ -80,10 +81,13 @@ OUT: Instance Document aapl-20200926.htm with 1329 facts
 
 __Inline XBRL Instance Document__
 ```python
-from src.xbrl.parser.classes.XbrlInstance import parse_iXBRL_instance_file, XbrlInstance
+from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
+from xbrl_parser.cache import HttpCache
 
 instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
-inst: XbrlInstance = parse_iXBRL_instance_file(instance_url)
+cache: HttpCache = HttpCache('./cache/')
+
+inst: XbrlInstance = parse_ixbrl_instance(cache, instance_url)
 print(inst)
 ```
 ``OUT: Instance Document aapl-20200926.htm with 1344 facts``
@@ -100,10 +104,13 @@ The logging output beneath displays all other taxonomy-schemas and linkbases tha
 by the taxonomy and thus had also to be downloaded and parsed.
 
 ```python
-from src.xbrl.parser.classes.TaxonomySchema import parse_taxonomy, TaxonomySchema
+from xbrl_parser.taxonomy import parse_taxonomy, TaxonomySchema
+from xbrl_parser.cache import HttpCache
 
 schema_url: str = 'https://www.esma.europa.eu/taxonomy/2019-03-27/esef_cor.xsd'
-tax: TaxonomySchema = parse_taxonomy(schema_url)
+cache: HttpCache = HttpCache('./cache/')
+
+tax: TaxonomySchema = parse_taxonomy(cache, schema_url)
 ```
 
 Output:
@@ -179,17 +186,20 @@ and stored in the parameter "type" of the linkbase class.
 
 
 ```python
-from src.xbrl.parser.classes.Linkbase import parse_linkbase, LinkbaseType, Linkbase
+from xbrl_parser.linkbase import parse_linkbase, Linkbase, LinkbaseType
+from xbrl_parser.cache import HttpCache
+
+cache: HttpCache = HttpCache('./cache/')
 
 label_linkbase: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929_lab.xml'
 definition_linkbase: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929_def.xml'
 calculation_linkbase: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929_cal.xml'
 presentation_linkbase: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929_pre.xml'
 
-lab_link: Linkbase = parse_linkbase(label_linkbase, LinkbaseType.LABEL)
-def_link: Linkbase = parse_linkbase(label_linkbase, LinkbaseType.DEFINITION)
-cal_link: Linkbase = parse_linkbase(label_linkbase, LinkbaseType.CALCULATION)
-pre_link: Linkbase = parse_linkbase(label_linkbase, LinkbaseType.PRESENTATION)
+lab_link: Linkbase = parse_linkbase(cache, label_linkbase, LinkbaseType.LABEL)
+def_link: Linkbase = parse_linkbase(cache, label_linkbase, LinkbaseType.DEFINITION)
+cal_link: Linkbase = parse_linkbase(cache, label_linkbase, LinkbaseType.CALCULATION)
+pre_link: Linkbase = parse_linkbase(cache, label_linkbase, LinkbaseType.PRESENTATION)
 
 ```
 
@@ -198,4 +208,4 @@ pre_link: Linkbase = parse_linkbase(label_linkbase, LinkbaseType.PRESENTATION)
 The parser stores the parsed filing into a structure of object instances. This structure will be
 explained in the following diagram.
 
-![alt text](img/diagrams/parser-class-diagram.png "Class Diagram")
+![alt text](./docs/img/parser_class_diagram.png "Class Diagram")
