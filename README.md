@@ -2,13 +2,13 @@
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 
-<!--
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)](https://www.python.org/doc/versions/)
-[![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/m4nu3l99/xbrl_parser/master/LICENSE)
-[![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
-[![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
--->
+[![PyPI](https://img.shields.io/pypi/v/py-xbrl)](https://pypi.org/project/py-xbrl/#history)
+[![PyPI - Status](https://img.shields.io/pypi/status/py-xbrl)](https://pypi.org/project/py-xbrl/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-xbrl)
+[![GitHub](https://img.shields.io/github/license/manusimidt/xbrl_parser)](https://github.com/manusimidt/xbrl_parser/blob/main/LICENSE)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/py-xbrl)](https://pypi.org/project/py-xbrl/)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/manusimidt/xbrl_parser)](https://github.com/m4nu3l99/xbrl_parser)
+
 
 > #### DISCLAIMER - BETA PHASE
 > This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
@@ -26,9 +26,10 @@ For a quick start just import the parse_XBRL_instance_file or the parse_iXBRL_fi
 link to the instance document. The parser will automatically download the Taxonomy-schema as well as all
 Taxonomies and Linkbases used by the Instance Document.
 
-__XBRL Instance Document__
+##### XBRL Instance Document
+
 ```python
-from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
+from xbrl_parser.instance import parse_xbrl_instance, XbrlInstance
 from xbrl_parser.cache import HttpCache
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -36,9 +37,10 @@ logging.basicConfig(level=logging.INFO)
 instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929.xml'
 cache: HttpCache = HttpCache('./cache/')
 
-inst: XbrlInstance = parse_xbrl_instance_file(cache, instance_url)
+inst: XbrlInstance = parse_xbrl_instance(cache, instance_url)
 print(inst)
 ```
+
 ``OUT: Instance Document aapl-20200926.htm with 1329 facts``
 
 If the logging level is lower or equal then INFO the CacheHelper will print out the urls that where
@@ -84,7 +86,7 @@ OUT: Instance Document aapl-20200926.htm with 1329 facts
 
 <br>
 
-__Inline XBRL Instance Document__
+##### Inline XBRL Instance Document
 ```python
 from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
 from xbrl_parser.cache import HttpCache
@@ -97,6 +99,7 @@ cache: HttpCache = HttpCache('./cache/')
 inst: XbrlInstance = parse_ixbrl_instance(cache, instance_url)
 print(inst)
 ```
+
 ``OUT: Instance Document aapl-20200926.htm with 1344 facts``
 
 Both functions return exactly the same object structure. So a parsed XBRL Filing looks the same as a parsed iXBRL file.

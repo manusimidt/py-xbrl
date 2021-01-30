@@ -14,7 +14,7 @@ def read(filename):
 
 
 setup(
-    name="xbrl_parser",
+    name="py-xbrl",
     version="0.1.0",
     url="https://github.com/manusimidt/xbrl_parser",
     license='MIT',
@@ -22,6 +22,7 @@ setup(
     author_email="hello@schmidt-manuel.de",
 
     description="This parser can parse XBRL documents",
+    long_description_content_type="text/markdown",
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests',)),
 
