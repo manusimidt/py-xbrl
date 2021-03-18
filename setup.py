@@ -15,16 +15,16 @@ def read(filename):
 
 setup(
     name="py-xbrl",
-    version="0.1.0",
+    version="1.0.0",
     url="https://github.com/manusimidt/xbrl_parser",
-    license='MIT',
+    license='GNU General Public License v3 (GPLv3)',
     author="Manuel Schmidt",
     author_email="hello@schmidt-manuel.de",
 
     description="This parser can parse XBRL documents",
     long_description_content_type="text/markdown",
     long_description=read("README.md"),
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('tests','cache', 'workdir')),
 
     install_requires=["requests"],
 
