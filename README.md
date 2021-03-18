@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/py-xbrl)](https://pypi.org/project/py-xbrl/#history)
 [![PyPI - Status](https://img.shields.io/pypi/status/py-xbrl)](https://pypi.org/project/py-xbrl/)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-xbrl)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-xbrl)](https://pypi.org/project/py-xbrl/)
 [![GitHub](https://img.shields.io/github/license/manusimidt/xbrl_parser)](https://github.com/manusimidt/xbrl_parser/blob/main/LICENSE)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/py-xbrl)](https://pypi.org/project/py-xbrl/)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/manusimidt/xbrl_parser)](https://github.com/m4nu3l99/xbrl_parser)

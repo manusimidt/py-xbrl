@@ -24,6 +24,9 @@
 # *.iml
 # *.ipr
 
+
+workdir/
+
 # CMake
 cmake-build-*/
 

@@ -28,7 +28,7 @@ class HttpCache:
 
     """
 
-    def __init__(self, cache_dir: str, delay: int = 2000):
+    def __init__(self, cache_dir: str, delay: int = 500):
         """
         :param cache_dir: Root directory of the disk cache (all requested files will be cached in this directory)
         :param delay: How many milliseconds should the cache wait, before requesting another file from the same server
