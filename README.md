@@ -12,44 +12,50 @@
 
 > #### DISCLAIMER - BETA PHASE
 > This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
-> 
+>
 
 
-This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document
-module, the Taxonomy-Schema module and the Linkbase module.
+This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document module, the
+Taxonomy-Schema module and the Linkbase module.
 
-The functionality and interactions between the different modules are outlined in my bachelor thesis. 
-The goal of this documentation is to explain how to use the various modules of the XBRL Parser.
+The functionality and interactions between the different modules are outlined in my bachelor thesis. The goal of this
+documentation is to explain how to use the various modules of the XBRL Parser.
 
 ### 1 Instance document module
-For a quick start just import the parse_XBRL_instance_file or the parse_iXBRL_file and insert the
-link to the instance document. The parser will automatically download the Taxonomy-schema as well as all
-Taxonomies and Linkbases used by the Instance Document.
+
+For a quick start just import the parse_XBRL_instance_file or the parse_iXBRL_file and insert the link to the instance
+document. The parser will automatically download the Taxonomy-schema as well as all Taxonomies and Linkbases used by the
+Instance Document.
 
 ##### XBRL Instance Document
 
 ```python
-from xbrl_parser.instance import parse_xbrl_instance, XbrlInstance
+from xbrl_parser.instance import parse_xbrl, parse_xbrl_url, XbrlInstance
 from xbrl_parser.cache import HttpCache
 import logging
 logging.basicConfig(level=logging.INFO)
-
-instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929.xml'
+# define a location for caching all xbrl files that must be downloaded for parsing the instance file (taxonomies, linkbases, ...)
 cache: HttpCache = HttpCache('./cache/')
 
-inst: XbrlInstance = parse_xbrl_instance(cache, instance_url)
-print(inst)
+# parse from path
+instance_path: str = './data/Prod224_0087_05713227_20191231.xml'
+inst1: XbrlInstance = parse_xbrl(instance_path, cache)
+print(inst1)
+
+# parse from url
+instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/aapl-20180929.xml'
+inst2: XbrlInstance = parse_xbrl_url(instance_url, cache)
+print(inst2)
 ```
 
 ``OUT: Instance Document aapl-20200926.htm with 1329 facts``
 
-If the logging level is lower or equal then INFO the CacheHelper will print out the urls that where
-cached. These are displayed in the details sections. 
+If the logging level is lower or equal then INFO the CacheHelper will print out the urls that where cached. These are
+displayed in the details sections.
 
-It should be noted that the instance file and the extension taxonomy schema are downloaded first. 
-Then the parser recursively goes through all the taxonomy imports and downloads them.
-When all the underlying taxonomies are downloaded and parsed, the linkbases of the extension taxonomy 
-are read in.
+It should be noted that the instance file and the extension taxonomy schema are downloaded first. Then the parser
+recursively goes through all the taxonomy imports and downloads them. When all the underlying taxonomies are downloaded
+and parsed, the linkbases of the extension taxonomy are read in.
 
 Click on details for the full logs
 
@@ -87,31 +93,37 @@ OUT: Instance Document aapl-20200926.htm with 1329 facts
 <br>
 
 ##### Inline XBRL Instance Document
+
 ```python
-from xbrl_parser.instance import parse_ixbrl_instance, XbrlInstance
+from xbrl_parser.instance import parse_ixbrl, parse_ixbrl_url, XbrlInstance
 from xbrl_parser.cache import HttpCache
 import logging
 logging.basicConfig(level=logging.INFO)
-
-instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
+# define a location for caching all xbrl files that must be downloaded for parsing the instance file (taxonomies, linkbases, ...)
 cache: HttpCache = HttpCache('./cache/')
 
-inst: XbrlInstance = parse_ixbrl_instance(cache, instance_url)
-print(inst)
+# parse from local path
+instance_path: str = './data/Prod224_0087_02664682_20201231.html'
+inst1: XbrlInstance = parse_ixbrl(instance_path, cache)
+print(inst1)
+
+# parse from url
+instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
+inst2: XbrlInstance = parse_ixbrl_url(instance_url, cache)
+print(inst2)
 ```
 
 ``OUT: Instance Document aapl-20200926.htm with 1344 facts``
 
 Both functions return exactly the same object structure. So a parsed XBRL Filing looks the same as a parsed iXBRL file.
-This structure is further explained in Point 4. 
-
+This structure is further explained in Point 4.
 
 ### 2 Taxonomy-schema module
-The taxonomy schema module is responsible for parsing the taxonomy schema.
-This includes parsing the concepts defined in the taxonomy and extracting linkbase references.
-The following example code parses the main entry point for the ESEF taxonomy.
-The logging output beneath displays all other taxonomy-schemas and linkbases that where imported 
-by the taxonomy and thus had also to be downloaded and parsed.
+
+The taxonomy schema module is responsible for parsing the taxonomy schema. This includes parsing the concepts defined in
+the taxonomy and extracting linkbase references. The following example code parses the main entry point for the ESEF
+taxonomy. The logging output beneath displays all other taxonomy-schemas and linkbases that where imported by the
+taxonomy and thus had also to be downloaded and parsed.
 
 ```python
 from xbrl_parser.taxonomy import parse_taxonomy, TaxonomySchema
@@ -187,13 +199,11 @@ INFO:src.helper.CacheHelper:200 https://www.esma.europa.eu/taxonomy/2019-03-27/e
 
 </details>
 
-
-
 ### 3 Linkbase module
-With the linkbase module you can parse linkbases. Due to their similar structure all linkbase
-objects use the same class. The type of the linkbase is specified by the enum "LinkbaseType" 
-and stored in the parameter "type" of the linkbase class.
 
+With the linkbase module you can parse linkbases. Due to their similar structure all linkbase objects use the same
+class. The type of the linkbase is specified by the enum "LinkbaseType"
+and stored in the parameter "type" of the linkbase class.
 
 ```python
 from xbrl_parser.linkbase import parse_linkbase, Linkbase, LinkbaseType
@@ -213,9 +223,9 @@ pre_link: Linkbase = parse_linkbase(cache, label_linkbase, LinkbaseType.PRESENTA
 
 ```
 
-
 ### 4 XBRL Object instances
-The parser stores the parsed filing into a structure of object instances. This structure will be
-explained in the following diagram.
+
+The parser stores the parsed filing into a structure of object instances. This structure will be explained in the
+following diagram.
 
 ![alt text](./docs/img/parser_class_diagram.png "Class Diagram")
