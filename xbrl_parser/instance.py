@@ -241,11 +241,11 @@ class XbrlInstance(abc.ABC):
         return "{} with {} facts".format(self.instance_url, len(self.facts))
 
 
-def parse_xbrl_instance(cache: HttpCache, instance_url: str) -> XbrlInstance:
+def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
-    :param cache: HttpCache instance
     :param instance_url: url to the instance file (on the internet)
+    :param cache: HttpCache instance
     This function will check, if the instance file is already in the cache and load it from there based on the
     instance_url.
     For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
@@ -319,7 +319,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
 
     return XbrlInstance(instance_url, taxonomy, facts, context_dir, unit_dir)
 
-def parse_ixbrl_instance(cache: HttpCache, instance_url: str) -> XbrlInstance:
+
+def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
     :param cache: HttpCache instance
@@ -333,9 +334,11 @@ def parse_ixbrl_instance(cache: HttpCache, instance_url: str) -> XbrlInstance:
     instance_path: str = cache.cache_file(instance_url)
     return parse_ixbrl(instance_path, cache, instance_url)
 
-def parse_ixbrl(instance_path:str , cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
+
+def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+    :param instance_path: path to the submission you want to parse
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     This function will check, if the instance file is already in the cache and load it from there based on the
