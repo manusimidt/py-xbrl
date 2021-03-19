@@ -15,7 +15,7 @@ def read(filename):
 
 setup(
     name="py-xbrl",
-    version="1.1.0",
+    version="1.1.1",
     url="https://github.com/manusimidt/xbrl_parser",
     license='GNU General Public License v3 (GPLv3)',
     author="Manuel Schmidt",
@@ -26,7 +26,7 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests','cache', 'workdir')),
 
-    install_requires=["requests", "zipfile"],
+    install_requires=["requests"],
 
     classifiers=[
         'Development Status :: 4 - Beta',
