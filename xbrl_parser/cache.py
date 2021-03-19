@@ -6,7 +6,7 @@ import re
 import os
 import requests
 import logging
-
+import zipfile
 logger = logging.getLogger(__name__)
 
 
@@ -57,14 +57,11 @@ class HttpCache:
         logger.info(str(query_response.status_code) + " " + file_url)
 
         # Set a timeout, so that we do not get blocked by the SEC servers for making to many requests
-        # since the downloading and parsing is often done on multiple processes, make the timeout dependent on the
-        # CPU Core count
-        # time.sleep(multiprocessing.cpu_count() * 1.0)
         time.sleep(self.delay / 1000)
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
-                raise FileNotFoundError("Could not find file on {}".format(file_url, query_response.status_code))
+                raise Exception("Could not find file on {}".format(file_url, query_response.status_code))
             else:
                 raise Exception(
                     "Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))
@@ -96,3 +93,28 @@ class HttpCache:
         @return:
         """
         return self.cache_dir + re.sub("https?://", "", url)
+
+    def cache_edgar_enclosure(self, enclosure_url: str) -> None:
+        """
+        The SEC provides zip folders that contain all xbrl related files for a given submission.
+        These files are i.e: Instance Document, Extension Taxonomy, Linkbases.
+        Due to the fact that the zip compression is very effective on xbrl submissions that naturally contain
+        repeating test, it is way more efficient to download the zip folder and extract it.
+        So if you want to do the SEC servers and your downloading time a favour, use this method for downloading
+        the submission :).
+        One way to get the zip enclosure url is through the Structured Disclosure RSS Feeds provided by the SEC:
+        https://www.sec.gov/structureddata/rss-feeds-submitted-filings
+        :param enclosure_url: url to the zip folder.
+        :return:
+        """
+        if not enclosure_url.endswith('.zip'):
+            raise Exception("This is not a valid zip folder")
+        # download the zip folder and store it into the default http cache
+        enclosure_path = self.cache_file(file_url=enclosure_url)
+        submission_dir_path = self.url_to_path('/'.join(enclosure_url.split('/')[:-1]))
+        # extract the zip folder
+        with zipfile.ZipFile(enclosure_path, "r") as zip_ref:
+            zip_ref.extractall(submission_dir_path)
+            zip_ref.close()
+
+

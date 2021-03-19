@@ -26,7 +26,7 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests','cache', 'workdir')),
 
-    install_requires=["requests"],
+    install_requires=["requests", "zipfile"],
 
     classifiers=[
         'Development Status :: 4 - Beta',
