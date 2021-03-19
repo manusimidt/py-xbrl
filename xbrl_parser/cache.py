@@ -7,6 +7,7 @@ import os
 import requests
 import logging
 import zipfile
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +34,8 @@ class HttpCache:
         :param cache_dir: Root directory of the disk cache (all requested files will be cached in this directory)
         :param delay: How many milliseconds should the cache wait, before requesting another file from the same server
         """
+        # check if the cache_dir ends with a /
+        if not cache_dir.endswith('/'): cache_dir += '/'
         self.cache_dir: str = cache_dir
         self.delay: int = delay
 
@@ -116,5 +119,3 @@ class HttpCache:
         with zipfile.ZipFile(enclosure_path, "r") as zip_ref:
             zip_ref.extractall(submission_dir_path)
             zip_ref.close()
-
-
