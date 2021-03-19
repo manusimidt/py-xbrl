@@ -1,4 +1,4 @@
-"""xbrl_parser - This parser can parse XBRL documents"""
+"""xbrl_parser - Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases)."""
 
 """
 This package contains all classes and methods for parsing both XBRL and iXBRL

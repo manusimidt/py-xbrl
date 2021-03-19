@@ -21,7 +21,7 @@ setup(
     author="Manuel Schmidt",
     author_email="hello@schmidt-manuel.de",
 
-    description="This parser can parse XBRL documents",
+    description="Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases).",
     long_description_content_type="text/markdown",
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests','cache', 'workdir')),
