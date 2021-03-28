@@ -192,7 +192,7 @@ def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
     # parse ELR's
     for elr in role_type_elements:
         elr_definition = elr.find(LINK_NS + 'definition')
-        if not elr_definition or not elr_definition.text: continue
+        if elr_definition is None or elr_definition.text is None: continue
         taxonomy.link_roles.append(
             ExtendedLinkRole(elr.attrib['id'], elr.attrib['roleURI'], elr_definition.text.strip()))
 
