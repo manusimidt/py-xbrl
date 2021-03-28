@@ -148,12 +148,18 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
     """
     Parses a taxonomy by namespace. This is only possible for certain well known taxonomies, as we need the schema_url for
     parsing it.
+    Some xbrl documents from the sec use namespaces without defining a schema url for those namespaces, so this function
+    might come in handy
     :param cache:
     :param namespace: namespace of the taxonomy
     :return:
     """
     ns_schema_map: dict = {
-        "http://xbrl.us/invest/2009-01-31": "https://taxonomies.xbrl.us/us-gaap/2009/non-gaap/invest-2009-01-31.xsd"
+        "http://xbrl.us/invest/2009-01-31": "https://taxonomies.xbrl.us/us-gaap/2009/non-gaap/invest-2009-01-31.xsd",
+        "http://xbrl.sec.gov/invest/2011-01-31": "https://xbrl.sec.gov/invest/2011/invest-2011-01-31.xsd",
+        "http://xbrl.sec.gov/invest/2012-01-31": "https://xbrl.sec.gov/invest/2012/invest-2012-01-31.xsd",
+        "http://xbrl.sec.gov/invest/2013-01-31": "https://xbrl.sec.gov/invest/2013/invest-2013-01-31.xsd",
+        "http://xbrl.sec.gov/dei/2011-01-31 ": "https://xbrl.sec.gov/dei/2011/dei-2011-01-31.xsd",
     }
     if namespace in ns_schema_map:
         return parse_taxonomy(cache, ns_schema_map[namespace])
