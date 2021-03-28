@@ -12,7 +12,8 @@
 
 > #### DISCLAIMER - BETA PHASE
 > This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
->
+> 
+> ❗ Feedback: Feel free to ask me any questions, suggestions and ideas in the [discussions form](https://github.com/manusimidt/xbrl_parser/discussions) or contact me directly
 
 
 This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document module, the
