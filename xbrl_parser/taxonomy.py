@@ -124,7 +124,7 @@ class TaxonomySchema:
         self.name_id_map: dict = {}
 
     def __str__(self) -> str:
-        return self.namespace if self.namespace else self.schema_url
+        return self.namespace
 
     def get_taxonomy(self, namespace: str):
         """
@@ -175,8 +175,8 @@ def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
         raise TaxonomyNotFound(f"Could not find schema document from {schema_url}")
 
     root: ET.Element = ET.parse(schema_path).getroot()
-    # get the target namespace of the taxonomy (if it is present)
-    target_ns = root.attrib['targetNamespace'] if 'targetNamespace' in root.attrib else None
+    # get the target namespace of the taxonomy
+    target_ns = root.attrib['targetNamespace']
     taxonomy: TaxonomySchema = TaxonomySchema(schema_url, target_ns)
 
     import_elements: [ET.Element] = root.findall('xsd:import', NAME_SPACES)
