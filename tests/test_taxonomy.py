@@ -30,6 +30,7 @@ class TaxonomySchemaTest(unittest.TestCase):
 
         """ Parse extending taxonomy of Apple Inc. and check if all us-gaap concepts where parsed """
         extension_schema_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.xsd'
+        extension_schema_url = 'https://www.sec.gov/Archives/edgar/data/19617/000095012311045948/jpm-20110331.xsd'
 
         tax: TaxonomySchema = parse_taxonomy(cache, extension_schema_url)
         print(tax)

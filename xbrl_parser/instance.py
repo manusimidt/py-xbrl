@@ -14,7 +14,7 @@ from time import strptime
 
 from xbrl_parser import TaxonomyNotFound, InstanceParseException
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy
+from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy
 from xbrl_parser.helper.uri_resolver import resolve_uri
 from xbrl_parser.helper.xml_parser import parse_file
 
@@ -301,7 +301,14 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy_ns = taxonomy_ns.replace('{', '')
         # get the concept object from the taxonomy
         tax = taxonomy.get_taxonomy(taxonomy_ns)
-        if tax is None: raise TaxonomyNotFound(taxonomy_ns)
+        if tax is None:
+            # Change as requested in https://github.com/manusimidt/xbrl_parser/issues/6
+            # some submissions are using a well known namespace (i.e "us-gaap", "invest", "dei",...) but are not importing
+            # the schema file for that namespace. if import_known_tax is true, this function will subsequently parse and
+            # return some pre-defined well known submissions
+            tax = parse_common_taxonomy(cache, taxonomy_ns)
+            if tax is None: raise TaxonomyNotFound(taxonomy_ns)
+
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         context: AbstractContext = context_dir[fact_elem.attrib['contextRef']]
 

@@ -144,6 +144,22 @@ class TaxonomySchema:
         return None
 
 
+def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or None:
+    """
+    Parses a taxonomy by namespace. This is only possible for certain well known taxonomies, as we need the schema_url for
+    parsing it.
+    :param cache:
+    :param namespace: namespace of the taxonomy
+    :return:
+    """
+    ns_schema_map: dict = {
+        "http://xbrl.us/invest/2009-01-31": "https://taxonomies.xbrl.us/us-gaap/2009/non-gaap/invest-2009-01-31.xsd"
+    }
+    if namespace in ns_schema_map:
+        return parse_taxonomy(cache, ns_schema_map[namespace])
+    return None
+
+
 @lru_cache(maxsize=60)
 def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
     """
