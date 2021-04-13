@@ -38,6 +38,16 @@ class HttpCache:
         if not cache_dir.endswith('/'): cache_dir += '/'
         self.cache_dir: str = cache_dir
         self.delay: int = delay
+        self.headers: dict or None = None
+
+    def set_headers(self, headers: dict) -> None:
+        """
+        Sets the header for all following request
+        :param headers: python dictionary with string key and value
+                i.e.: {"From": "pete.smith@example.com", "User-Agent" : "ExampleBot/1.0 (https.example.com/exampleBot)"}
+        :return:
+        """
+        self.headers = headers
 
     def cache_file(self, file_url: str) -> str:
         """
@@ -56,10 +66,14 @@ class HttpCache:
         # try to download the file
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
-        query_response = requests.get(file_url)
+
+        if self.headers:
+            query_response = requests.get(file_url, headers=self.headers)
+        else:
+            query_response = requests.get(file_url)
         logger.info(str(query_response.status_code) + " " + file_url)
 
-        # Set a timeout, so that we do not get blocked by the SEC servers for making to many requests
+        # Set a timeout, so that we do not get blocked by the for making to many requests
         time.sleep(self.delay / 1000)
 
         if not query_response.status_code == 200:
