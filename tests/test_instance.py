@@ -19,10 +19,11 @@ class TaxonomySchemaTest(unittest.TestCase):
         cache_dir: str = os.path.abspath('./../cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)
         """ Integration test for instance.parse_xbrl_instance() """
-        instance_doc_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000007/aapl-20171230.xml'
-        inst: XbrlInstance = parse_xbrl_url(instance_doc_url, cache)
-        print(inst)
-        self.assertEqual(len(inst.facts), 882)
+        # instance_doc_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000007/aapl-20171230.xml'
+        # inst: XbrlInstance = parse_xbrl_url(instance_doc_url, cache)
+        # print(inst)
+        # self.assertEqual(len(inst.facts), 882)
+        # todo: Add integration test that tests with local files
 
     def test_parse_ixbrl_document(self):
         """ Integration test for instance.parse_ixbrl_instance() """
@@ -30,10 +31,11 @@ class TaxonomySchemaTest(unittest.TestCase):
         cache_dir: str = os.path.abspath('./../cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)
         """ Integration test for instance.parse_ixbrl_instance() """
-        instance_doc_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
-        inst: XbrlInstance = parse_ixbrl_url(instance_doc_url, cache)
-        print(inst)
-        self.assertEqual(len(inst.facts), 1334)
+        # instance_doc_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm'
+        # inst: XbrlInstance = parse_ixbrl_url(instance_doc_url, cache)
+        # print(inst)
+        # self.assertEqual(len(inst.facts), 1334)
+        # todo: Add integration test that tests with local files
 
 
 if __name__ == '__main__':
