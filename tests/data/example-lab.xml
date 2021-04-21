@@ -1,0 +1,37 @@
+<!-- This is a dummy label linkbase file -->
+<link:linkbase xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://www.xbrl.org/2003/linkbase http://www.xbrl.org/2003/xbrl-linkbase-2003-12-31.xsd">
+
+    <link:labelLink
+            xlink:role="http://www.xbrl.org/2003/role/link"
+            xlink:type="extended">
+
+        <link:label
+                xml:lang="en-US"
+                xlink:label="example_Assets_lab1"
+                xlink:type="resource"
+                xlink:role="http://www.xbrl.org/2003/role/terseLabel">Assets, total
+        </link:label>
+
+        <link:label
+                xml:lang="en-US"
+                xlink:label="example_Assets_lab2"
+                xlink:type="resource"
+                xlink:role="http://www.xbrl.org/2003/role/documentation">
+            An asset is a resource with economic value that an individual, corporation, or country owns or controls with
+            the expectation that it will provide a future benefit
+        </link:label>
+
+        <link:loc xlink:href="./example.xsd#example_Assets"
+                  xlink:type="locator" xlink:label="example_Assets"/>
+
+        <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
+                       xlink:from="example_Assets" xlink:to="example_Assets_lab1"/>
+        <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
+                       xlink:from="example_Assets" xlink:to="example_Assets_lab2"/>
+
+
+    </link:labelLink>
+
+</link:linkbase>

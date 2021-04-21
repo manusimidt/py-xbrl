@@ -273,7 +273,11 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
     if not schema_uri.startswith('http'):
-        schema_url = resolve_uri(instance_url, schema_uri)
+        if instance_url:
+            schema_url = resolve_uri(instance_url, schema_uri)
+        else:
+            # try to find the schema file in the same directory as the current instance file
+            schema_url = resolve_uri(instance_path, schema_uri)
     else:
         schema_url = schema_uri
     taxonomy: TaxonomySchema = parse_taxonomy(cache, schema_url)

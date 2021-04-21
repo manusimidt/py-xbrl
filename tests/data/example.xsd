@@ -1,0 +1,41 @@
+<!-- This is a dummy taxonomy schema file -->
+<xsd:schema
+        xmlns:xbrli="http://www.xbrl.org/2003/instance"
+        xmlns:link="http://www.xbrl.org/2003/linkbase"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.example.com/20210101">
+
+    <xsd:annotation>
+        <xsd:appinfo>
+            <!-- region Linkbase References -->
+            <link:linkbaseRef xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase"
+                              xlink:href="example-lab.xml"
+                              xlink:role="http://www.xbrl.org/2003/role/labelLinkbase"
+                              xlink:type="simple"/>
+            <!--endregion Linkbase References -->
+            <!-- region ELR Definitions -->
+            <link:roleType
+                    id="ExampleLink"
+                    roleURI="http://www.example.com/20210101/role/ExampleLink"
+                    xmlns:link="http://www.xbrl.org/2003/linkbase">
+                <link:definition>00000 - Example Role Definition</link:definition>
+                <link:usedOn>link:presentationLink</link:usedOn>
+                <link:usedOn>link:calculationLink</link:usedOn>
+                <link:usedOn>link:definitionLink</link:usedOn>
+            </link:roleType>
+            <!-- endregion ELR Definitions -->
+        </xsd:appinfo>
+    </xsd:annotation>
+
+    <!-- region Concept Declaration -->
+    <xsd:element id="example_Assets"
+                 name="Assets"
+                 nillable="true"
+                 substitutionGroup="xbrli:item"
+                 type="xbrli:monetaryItemType"
+                 xbrli:balance="debit"
+                 xbrli:periodType="instant"/>
+    <!-- endregion Concept Declaration -->
+
+</xsd:schema>

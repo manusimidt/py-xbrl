@@ -197,6 +197,7 @@ def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
     :return:
     """
     # Get the local absolute path to the schema file (and download it if it is not yet cached)
+    # todo this function should also support parsing a locally saved taxonomy! (especially needed for local taxonomies)
     try:
         schema_path: str = cache.cache_file(schema_url)
     except FileNotFoundError:

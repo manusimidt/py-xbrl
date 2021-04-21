@@ -1,0 +1,32 @@
+<!-- This is a dummy instance file -->
+<xbrl
+        xmlns="http://www.xbrl.org/2003/instance"
+        xmlns:link="http://www.xbrl.org/2003/linkbase"
+        xmlns:iso4217="http://www.xbrl.org/2003/iso4217"
+        xmlns:example="http://www.example.com/20210101"
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <link:schemaRef xlink:href="example.xsd" xlink:type="simple"/>
+
+    <context id="context_123">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0000000000</identifier>
+        </entity>
+        <period>
+            <startDate>2020-01-01</startDate>
+            <endDate>2020-12-31</endDate>
+        </period>
+    </context>
+
+    <unit id="usd">
+        <measure>iso4217:USD</measure>
+    </unit>
+
+    <example:Assets
+            contextRef="context_123"
+            decimals="-6"
+            id="fact_123"
+            unitRef="usd">123000000
+    </example:Assets>
+
+</xbrl>

@@ -37,8 +37,8 @@ class LinkbaseType(Enum):
         """
         return LinkbaseType.DEFINITION if role == 'http://www.xbrl.org/2003/role/definitionLinkbaseRef' else \
             LinkbaseType.CALCULATION if role == "http://www.xbrl.org/2003/role/calculationLinkbaseRef" else \
-            LinkbaseType.PRESENTATION if role == "http://www.xbrl.org/2003/role/presentationLinkbaseRef" else \
-            LinkbaseType.LABEL if role == "http://www.xbrl.org/2003/role/labelLinkbaseRef" else None
+                LinkbaseType.PRESENTATION if role == "http://www.xbrl.org/2003/role/presentationLinkbaseRef" else \
+                    LinkbaseType.LABEL if role == "http://www.xbrl.org/2003/role/labelLinkbaseRef" else None
 
     @staticmethod
     def guess_linkbase_role(href: str) -> int or None:
@@ -421,6 +421,7 @@ def parse_linkbase(cache: HttpCache, linkbase_url: str, linkbase_type: LinkbaseT
     :param linkbase_type: Type of the linkbase
     :return:
     """
+    # todo this function should also be able to parse a locally saved linkbase!
     linkbase_path: str = cache.cache_file(linkbase_url)
     root: ET.Element = ET.parse(linkbase_path).getroot()
 
