@@ -246,7 +246,7 @@ class Label:
         self.label: str = label
         self.language = language
         # the label itself i.e: "Defined Benefit Plan Disclosure [Line Items]"
-        self.text: str = text
+        self.text: str = text.strip()
         # the role of the label i.e: http://www.xbrl.org/2003/role/terseLabel
         self.label_type: str = label_type
 

@@ -9,14 +9,14 @@
 
         <link:label
                 xml:lang="en-US"
-                xlink:label="example_Assets_lab1"
+                xlink:label="lab_Assets_terse"
                 xlink:type="resource"
                 xlink:role="http://www.xbrl.org/2003/role/terseLabel">Assets, total
         </link:label>
 
         <link:label
                 xml:lang="en-US"
-                xlink:label="example_Assets_lab2"
+                xlink:label="lab_Assets_documentation"
                 xlink:type="resource"
                 xlink:role="http://www.xbrl.org/2003/role/documentation">
             An asset is a resource with economic value that an individual, corporation, or country owns or controls with
@@ -27,9 +27,9 @@
                   xlink:type="locator" xlink:label="example_Assets"/>
 
         <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
-                       xlink:from="example_Assets" xlink:to="example_Assets_lab1"/>
+                       xlink:from="example_Assets" xlink:to="lab_Assets_terse"/>
         <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
-                       xlink:from="example_Assets" xlink:to="example_Assets_lab2"/>
+                       xlink:from="example_Assets" xlink:to="lab_Assets_documentation"/>
 
 
     </link:labelLink>
