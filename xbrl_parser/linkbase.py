@@ -412,17 +412,24 @@ class Linkbase:
         return {"standardExtendedLinkElements": [el.to_simple_dict() for el in self.extended_links]}
 
 
-def parse_linkbase(cache: HttpCache, linkbase_url: str, linkbase_type: LinkbaseType) -> Linkbase:
+def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: HttpCache) -> Linkbase:
+    """
+    Parses a linkbase given given a url
+    """
+    linkbase_path: str = cache.cache_file(linkbase_url)
+    return parse_linkbase(linkbase_path, linkbase_type)
+
+
+def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
     """
     Parses a linkbase and returns a Linkbase object containing all
     locators, arcs and links of the linkbase in a hierarchical order (a Tree)
-    :param cache: HttpCache instance
-    :param linkbase_url: url to the linkbase
+    A Linkbase usually does not import any additional files.
+    Thus we do not need a cache instance
+    :param linkbase_path: path to the linkbase
     :param linkbase_type: Type of the linkbase
     :return:
     """
-    # todo this function should also be able to parse a locally saved linkbase!
-    linkbase_path: str = cache.cache_file(linkbase_url)
     root: ET.Element = ET.parse(linkbase_path).getroot()
 
     # store the role refs in a dictionary, with the role uri as key.
@@ -468,7 +475,7 @@ def parse_linkbase(cache: HttpCache, linkbase_url: str, linkbase_type: LinkbaseT
             locator_href = loc.attrib[XLINK_NS + 'href']
             if not locator_href.startswith('http'):
                 # resolve the path
-                locator_href = resolve_uri(linkbase_url, locator_href)
+                locator_href = resolve_uri(linkbase_path, locator_href)
             locator_map[loc_label] = Locator(locator_href, loc_label)
 
         # Performance: extract the labels in advance. The label name (xlink:label) is the key and the value is

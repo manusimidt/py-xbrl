@@ -17,9 +17,10 @@ class LinkbaseTest(unittest.TestCase):
         cache_dir: str = os.path.abspath('./../cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)
 
-        # linkbase_url: str = 'https://www.esma.europa.eu/taxonomy/2019-03-27/esef_cor-lab-de.xml'
-        # linkbase: Linkbase = parse_linkbase(cache, linkbase_url, LinkbaseType.LABEL)
-        # todo: Test linkbase from local files
+        linkbase_path: str = './data/example-lab.xml'
+        linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.LABEL)
+        self.assertEqual(len(linkbase.extended_links), 1)
+        self.assertEqual(linkbase.extended_links[0].root_locators[0].name, 'example_Assets')
 
 
 if __name__ == '__main__':
