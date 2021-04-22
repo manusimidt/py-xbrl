@@ -36,6 +36,22 @@
                  type="xbrli:monetaryItemType"
                  xbrli:balance="debit"
                  xbrli:periodType="instant"/>
+
+        <xsd:element id="example_NonCurrentAssets"
+                 name="NonCurrentAssets"
+                 nillable="true"
+                 substitutionGroup="xbrli:item"
+                 type="xbrli:monetaryItemType"
+                 xbrli:balance="debit"
+                 xbrli:periodType="instant"/>
+
+        <xsd:element id="example_CurrentAssets"
+                 name="CurrentAssets"
+                 nillable="true"
+                 substitutionGroup="xbrli:item"
+                 type="xbrli:monetaryItemType"
+                 xbrli:balance="debit"
+                 xbrli:periodType="instant"/>
     <!-- endregion Concept Declaration -->
 
 </xsd:schema>
