@@ -6,6 +6,11 @@
         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
         targetNamespace="http://www.example.com/20210101">
 
+    <xsd:import
+            schemaLocation="http://xbrl.fasb.org/srt/2020/elts/srt-2020-01-31.xsd"
+            namespace="http://fasb.org/srt/2020-01-31"/>
+
+
     <xsd:annotation>
         <xsd:appinfo>
             <!-- region Linkbase References -->
@@ -37,7 +42,7 @@
                  xbrli:balance="debit"
                  xbrli:periodType="instant"/>
 
-        <xsd:element id="example_NonCurrentAssets"
+    <xsd:element id="example_NonCurrentAssets"
                  name="NonCurrentAssets"
                  nillable="true"
                  substitutionGroup="xbrli:item"
@@ -45,7 +50,7 @@
                  xbrli:balance="debit"
                  xbrli:periodType="instant"/>
 
-        <xsd:element id="example_CurrentAssets"
+    <xsd:element id="example_CurrentAssets"
                  name="CurrentAssets"
                  nillable="true"
                  substitutionGroup="xbrli:item"

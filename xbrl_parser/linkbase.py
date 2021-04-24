@@ -7,10 +7,12 @@ label linkbase: lab
 reference linkbase: ref
 """
 import abc
+import os
 import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
 
+from xbrl_parser import XbrlParseException, LinkbaseNotFoundException
 from xbrl_parser.cache import HttpCache
 from xbrl_parser.helper.uri_resolver import resolve_uri
 
@@ -416,6 +418,9 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
     """
     Parses a linkbase given given a url
     """
+    if not linkbase_url.startswith('http'): raise XbrlParseException(
+        'This function only parses remotely saved linkbases. Please use parse_linkbase to parse local linkbases')
+
     linkbase_path: str = cache.cache_file(linkbase_url)
     return parse_linkbase(linkbase_path, linkbase_type)
 
@@ -430,8 +435,12 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
     :param linkbase_type: Type of the linkbase
     :return:
     """
-    root: ET.Element = ET.parse(linkbase_path).getroot()
+    if linkbase_path.startswith('http'): raise XbrlParseException(
+        'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
+    if not os.path.exists(linkbase_path):
+        raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_type}")
 
+    root: ET.Element = ET.parse(linkbase_path).getroot()
     # store the role refs in a dictionary, with the role uri as key.
     # Role Refs are xlink's that connect the extended Links to the ELR defined in the schema
     role_refs: dict = {}

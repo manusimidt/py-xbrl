@@ -13,7 +13,7 @@ class LinkbaseTest(unittest.TestCase):
         """
         Unit test for linkbase.parse_linkbase()
         """
-        linkbase_path: str = './data/example-lab.xml'
+        linkbase_path: str = os.path.abspath('./data/example-lab.xml')
         linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.LABEL)
 
         self.assertEqual(len(linkbase.extended_links), 1)
@@ -26,7 +26,7 @@ class LinkbaseTest(unittest.TestCase):
         """
         Unit test for linkbase.parse_linkbase()
         """
-        linkbase_path: str = './data/example-cal.xml'
+        linkbase_path: str = os.path.abspath('./data/example-cal.xml')
         linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.CALCULATION)
 
         assets_locator = linkbase.extended_links[0].root_locators[0]

@@ -12,8 +12,7 @@ from functools import lru_cache
 
 from xbrl_parser.cache import HttpCache
 from xbrl_parser.helper.uri_resolver import resolve_uri
-from xbrl_parser import TaxonomyNotFound
-from xbrl_parser.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase
+from xbrl_parser.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +153,7 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
     :param namespace: namespace of the taxonomy
     :return:
     """
+
     ns_schema_map: dict = {
         "http://fasb.org/srt/2018-01-31": "http://xbrl.fasb.org/srt/2018/elts/srt-2018-01-31.xsd",
         "http://fasb.org/srt/2019-01-31": "http://xbrl.fasb.org/srt/2019/elts/srt-2019-01-31.xsd",
@@ -184,38 +184,57 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
         "http://fasb.org/us-gaap/2020-01-31": "http://xbrl.fasb.org/us-gaap/2020/elts/us-gaap-2020-01-31.xsd",
     }
     if namespace in ns_schema_map:
-        return parse_taxonomy(cache, ns_schema_map[namespace])
+        return parse_taxonomy(ns_schema_map[namespace], cache)
     return None
 
 
 @lru_cache(maxsize=60)
-def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
+def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
+    """
+    Parses a taxonomy schema file from the internet
+    :param schema_url:
+    :param cache:
+    :return:
+    """
+    schema_path: str = cache.cache_file(schema_url)
+    return parse_taxonomy(schema_path, cache)
+
+
+def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
+    :param schema_path: url to the schema (on the internet)
     :param cache: HttpCache instance
-    :param schema_url: url to the schema (on the internet)
+    :param schema_url: if this url is set, the script will try to fetch additionally imported files such as linkbases or
+    imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
     :return:
     """
     # Get the local absolute path to the schema file (and download it if it is not yet cached)
-    # todo this function should also support parsing a locally saved taxonomy! (especially needed for local taxonomies)
-    try:
-        schema_path: str = cache.cache_file(schema_url)
-    except FileNotFoundError:
-        raise TaxonomyNotFound(f"Could not find schema document from {schema_url}")
-
     root: ET.Element = ET.parse(schema_path).getroot()
     # get the target namespace of the taxonomy
     target_ns = root.attrib['targetNamespace']
-    taxonomy: TaxonomySchema = TaxonomySchema(schema_url, target_ns)
+    taxonomy: TaxonomySchema = TaxonomySchema(schema_url if schema_url else schema_path, target_ns)
 
     import_elements: [ET.Element] = root.findall('xsd:import', NAME_SPACES)
 
     for import_element in import_elements:
         import_url = import_element.attrib['schemaLocation']
-        # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"!!
+
+        # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"
+        if import_url.startswith('http'):
+            # fetch the schema file from remote
+            taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
+        elif schema_url:
+            # fetch the schema file from remote by reconstructing the full url
+            import_url = resolve_uri(schema_url, schema_url)
+            taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
+        else:
+            # We have to try to fetch the linkbase locally because no full url can be constructed
+            taxonomy.imports.append(parse_taxonomy(import_url, cache))
+
         if not import_url.startswith('http'):
-            import_url = resolve_uri(schema_url, import_url)
-        taxonomy.imports.append(parse_taxonomy(cache, import_url))
+            import_url = resolve_uri(schema_url if schema_url else schema_path, import_url)
+        taxonomy.imports.append(parse_taxonomy(import_url, cache))
 
     role_type_elements: [ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's
@@ -242,8 +261,8 @@ def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
         balance_attr_name = XBRLI_NS + 'balance'
         concept.balance = element.attrib[balance_attr_name] if balance_attr_name in element.attrib else None
         # remove the prefix from the substitutionGroup (i.e xbrli:item -> item)
-        concept.substitution_group = element.attrib['substitutionGroup'].split(':')[
-            -1] if 'substitutionGroup' in element.attrib else None
+        concept.substitution_group = \
+            element.attrib['substitutionGroup'].split(':')[-1] if 'substitutionGroup' in element.attrib else None
 
         taxonomy.concepts[concept.xml_id] = concept
         taxonomy.name_id_map[concept.name] = concept.xml_id
@@ -254,11 +273,19 @@ def parse_taxonomy(cache: HttpCache, schema_url: str) -> TaxonomySchema:
         role = linkbase_ref.attrib[XLINK_NS + 'role'] if XLINK_NS + 'role' in linkbase_ref.attrib else None
         linkbase_type = LinkbaseType.get_type_from_role(role) if role is not None else LinkbaseType.guess_linkbase_role(
             linkbase_url)
-        # check if the linkbase url is relative
-        if not linkbase_url.startswith('http'):
-            linkbase_url = resolve_uri(schema_url, linkbase_url)
 
-        linkbase: Linkbase = parse_linkbase(cache, linkbase_url, linkbase_type)
+        # check if the linkbase url is relative
+        if linkbase_url.startswith('http'):
+            # fetch the linkbase from remote
+            linkbase: Linkbase = parse_linkbase_url(linkbase_url, linkbase_type, cache)
+        elif schema_url:
+            # fetch the linkbase from remote by reconstructing the full URL
+            linkbase_url = resolve_uri(schema_url, linkbase_url)
+            linkbase: Linkbase = parse_linkbase_url(linkbase_url, linkbase_type, cache)
+        else:
+            # We have to try to fetch the linkbase locally because no full url can be constructed
+            linkbase: Linkbase = parse_linkbase(linkbase_url, linkbase_type)
+
         # add the linkbase to the taxonomy
         if linkbase_type == LinkbaseType.DEFINITION:
             taxonomy.def_linkbases.append(linkbase)

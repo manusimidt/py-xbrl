@@ -14,7 +14,7 @@ from time import strptime
 
 from xbrl_parser import TaxonomyNotFound, InstanceParseException
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy
+from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl_parser.helper.uri_resolver import resolve_uri
 from xbrl_parser.helper.xml_parser import parse_file
 
@@ -272,15 +272,16 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
-    if not schema_uri.startswith('http'):
-        if instance_url:
-            schema_url = resolve_uri(instance_url, schema_uri)
-        else:
-            # try to find the schema file in the same directory as the current instance file
-            schema_url = resolve_uri(instance_path, schema_uri)
+    if schema_uri.startswith('http'):
+        # fetch the taxonomy extension schema from remote
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+    elif instance_url:
+        # fetch the taxonomy extension schema from remote by reconstructing the url
+        schema_url = resolve_uri(instance_url, schema_uri)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
-        schema_url = schema_uri
-    taxonomy: TaxonomySchema = parse_taxonomy(cache, schema_url)
+        # try to find the taxonomy extension schema file locally because no full url can be constructed
+        taxonomy: TaxonomySchema = parse_taxonomy(schema_uri, cache)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy)

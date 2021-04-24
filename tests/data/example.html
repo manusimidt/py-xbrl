@@ -1,0 +1,122 @@
+<!--This is an example iXBRL File -->
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:link="http://www.xbrl.org/2003/linkbase"
+      xmlns:xbrli="http://www.xbrl.org/2003/instance"
+      xmlns:iso4217="http://www.xbrl.org/2003/iso4217"
+      xmlns:example="http://www.example.com/20210101">
+<head>
+    <title>Sample iXBRL file</title>
+    <style>* {
+        text-align: center
+    }
+
+    table {
+        margin: auto
+    }</style>
+</head>
+<body>
+
+<div style="display:none">
+    <ix:header>
+        <ix:references>
+            <link:schemaRef xlink:href="example.xsd" xlink:type="simple"></link:schemaRef>
+        </ix:references>
+
+        <ix:resources>
+            <xbrli:context id="FY2020">
+                <xbrli:entity>
+                    <xbrli:identifier scheme="http://www.sec.gov/CIK">0000000000</xbrli:identifier>
+                </xbrli:entity>
+                <xbrli:period>
+                    <xbrli:startDate>2020-01-01</xbrli:startDate>
+                    <xbrli:endDate>2020-12-31</xbrli:endDate>
+                </xbrli:period>
+            </xbrli:context>
+            <xbrli:context id="END_2020">
+                <xbrli:entity>
+                    <xbrli:identifier scheme="http://www.sec.gov/CIK">0000000000</xbrli:identifier>
+                </xbrli:entity>
+                <xbrli:period>
+                    <xbrli:instant>2020-12-31</xbrli:instant>
+                </xbrli:period>
+            </xbrli:context>
+            <xbrli:unit id="usd">
+                <xbrli:measure>iso4217:USD</xbrli:measure>
+            </xbrli:unit>
+            <xbrli:unit id="usdPerShare">
+                <xbrli:divide>
+                    <xbrli:unitNumerator>
+                        <xbrli:measure>iso4217:USD</xbrli:measure>
+                    </xbrli:unitNumerator>
+                    <xbrli:unitDenominator>
+                        <xbrli:measure>xbrli:shares</xbrli:measure>
+                    </xbrli:unitDenominator>
+                </xbrli:divide>
+            </xbrli:unit>
+            <xbrli:unit id="shares">
+                <xbrli:measure>xbrli:shares</xbrli:measure>
+            </xbrli:unit>
+        </ix:resources>
+
+        <ix:hidden>
+            <!-- Hidden Facts can be placed here -->
+        </ix:hidden>
+    </ix:header>
+</div>
+
+<h1>This is a dummy iXBRL file</h1>
+<table>
+    <tr>
+        <th>Concept</th>
+        <th>Value as of 2020</th>
+    </tr>
+    <tr>
+        <td>Non current Assets</td>
+        <td>
+            <ix:nonFraction id="fact1"
+                            name="example:NonCurrentAssets"
+                            contextRef="END_2020"
+                            unitRef="usd"
+                            decimals="-6"
+                            scale="6"
+                            format="ixt:numdotdecimal">
+                16,132
+            </ix:nonFraction>
+        </td>
+    </tr>
+    <tr>
+        <td>Current Assets</td>
+        <td>
+            <ix:nonFraction id="fact2"
+                            name="example:CurrentAssets"
+                            contextRef="END_2020"
+                            unitRef="usd"
+                            decimals="-6"
+                            scale="6"
+                            format="ixt:numdotdecimal">
+                8,142
+            </ix:nonFraction>
+        </td>
+    </tr>
+    <tr>
+        <td>Assets</td>
+        <td>
+            <ix:nonFraction id="fact3"
+                            name="example:Assets"
+                            contextRef="END_2020"
+                            unitRef="usd"
+                            decimals="-6"
+                            scale="6"
+                            format="ixt:numdotdecimal">
+                24,274
+            </ix:nonFraction>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
