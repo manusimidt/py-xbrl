@@ -25,12 +25,13 @@
         </link:label>
 
         <link:loc xlink:href="./example.xsd#example_Assets"
-                  xlink:type="locator" xlink:label="example_Assets"/>
+                  xlink:label="loc_Assets"
+                  xlink:type="locator"/>
 
         <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
-                       xlink:from="example_Assets" xlink:to="lab_Assets_terse"/>
+                       xlink:from="loc_Assets" xlink:to="lab_Assets_terse"/>
         <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label"
-                       xlink:from="example_Assets" xlink:to="lab_Assets_documentation"/>
+                       xlink:from="loc_Assets" xlink:to="lab_Assets_documentation"/>
 
 
     </link:labelLink>

@@ -23,7 +23,7 @@ class TaxonomySchemaTest(unittest.TestCase):
         print(tax)
         srt_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/srt/2020-01-31')
         self.assertTrue(srt_tax)
-        self.assertEqual(len(srt_tax.concepts), 2)
+        self.assertEqual(len(srt_tax.concepts), 489)
 
 
 if __name__ == '__main__':

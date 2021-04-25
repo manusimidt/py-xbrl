@@ -17,7 +17,7 @@ class LinkbaseTest(unittest.TestCase):
         linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.LABEL)
 
         self.assertEqual(len(linkbase.extended_links), 1)
-        self.assertEqual(linkbase.extended_links[0].root_locators[0].name, 'example_Assets')
+        self.assertEqual(linkbase.extended_links[0].root_locators[0].name, 'loc_Assets')
         label_arcs = linkbase.extended_links[0].root_locators[0].children
         self.assertEqual(label_arcs[0].labels[0].text, 'Assets, total')
         self.assertIn('An asset is a resource with economic value', label_arcs[1].labels[0].text)

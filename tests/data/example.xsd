@@ -16,7 +16,7 @@
             <!-- region Linkbase References -->
             <link:linkbaseRef xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase"
                               xlink:href="example-lab.xml"
-                              xlink:role="http://www.xbrl.org/2003/role/labelLinkbase"
+                              xlink:role="http://www.xbrl.org/2003/role/labelLinkbaseRef"
                               xlink:type="simple"/>
             <!--endregion Linkbase References -->
             <!-- region ELR Definitions -->

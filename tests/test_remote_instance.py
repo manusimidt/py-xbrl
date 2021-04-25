@@ -3,16 +3,19 @@ import logging
 import sys
 from xbrl_parser.cache import HttpCache
 from xbrl_parser.instance import parse_xbrl_url, parse_ixbrl_url, XbrlInstance
+from tests.utils import get_bot_header
 
 cache: HttpCache = HttpCache('../cache/', delay=1500)
+bot_header = get_bot_header()
+if bot_header: cache.set_headers(bot_header)
 
 
 class RemoteInstanceTest(unittest.TestCase):
-    # class RemoteInstanceTest:
     """
     Unit tests for all http related parsing
     """
 
+    @unittest.skipIf(bot_header is None, "Bot Header was not provided")
     def test_xbrl(self):
         """ Testing parsing xbrl submissions directly from the internet """
         instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019318000007/aapl-20171230.xml'
@@ -20,12 +23,13 @@ class RemoteInstanceTest(unittest.TestCase):
         self.assertEqual(len(inst.context_map), 274)
         self.assertEqual(len(inst.unit_map), 10)
 
+    @unittest.skipIf(bot_header is None, "Bot Header was not provided")
     def test_ixbrl(self):
         """ Testing parsing xbrl submissions directly from the internet """
         instance_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019321000010/aapl-20201226.htm'
-        inst: XbrlInstance = parse_xbrl_url(instance_url, cache)
+        inst: XbrlInstance = parse_ixbrl_url(instance_url, cache)
         self.assertEqual(len(inst.context_map), 207)
-        self.assertEqual(len(inst.unit_map), 11)
+        self.assertEqual(len(inst.unit_map), 9)
 
 
 if __name__ == '__main__':
@@ -38,25 +42,10 @@ if __name__ == '__main__':
     https://www.sec.gov/privacy.htm#security
     """
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    try:
-        f = open(".env", "r")
-        from_header: str or None = None
-        user_agent_header: str or None = None
-        for line in f:
-            env_name, env_value = [x.strip() for x in line.strip().split('=')]
-            if env_name == 'FROM':
-                from_header = env_value
-            elif env_name == 'USER_AGENT':
-                user_agent_header = env_value
-        if from_header and user_agent_header:
-            cache.set_headers({
-                'From': from_header,
-                'User-Agent': user_agent_header
-            })
-            unittest.main()
-        else:
-            print("Skipping remote instance test. Reason: .env file either missing FROM or USER_AGENT attribute")
-            exit(0)
-    except FileNotFoundError as e:
-        print("Skipping remote instance test. Reason: No .env file provided")
+    headers = get_bot_header()
+    if headers:
+        cache.set_headers(headers)
+        unittest.main()
+    else:
+        print("Skipping remote instance test. Reason: Could not load FROM and/or USER_AGENT attributes from .env file")
         exit(0)

@@ -2,7 +2,7 @@ import unittest
 import logging
 import sys
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.linkbase import parse_linkbase_url, LinkbaseType, Linkbase, Locator, Label
+from xbrl_parser.taxonomy import parse_taxonomy, TaxonomySchema, parse_taxonomy_url
 from tests.utils import get_bot_header
 
 cache: HttpCache = HttpCache('../cache/', delay=1500)
@@ -10,25 +10,26 @@ bot_header = get_bot_header()
 if bot_header: cache.set_headers(bot_header)
 
 
-class RemoteLinkbaseTest(unittest.TestCase):
+class RemoteTaxonomyTest(unittest.TestCase):
+    """
+    Unit tests for all http related parsing
+    """
 
     @unittest.skipIf(bot_header is None, "Bot Header was not provided")
-    def test_parse_linkbase_url(self):
+    def test_parse_taxonomy(self):
         """ Testing parsing xbrl submissions directly from the internet """
-        linkbase_url: str = 'https://www.esma.europa.eu/taxonomy/2019-03-27/esef_cor-lab-de.xml'
-        linkbase: Linkbase = parse_linkbase_url(linkbase_url, LinkbaseType.LABEL, cache)
-        self.assertEqual(len(linkbase.extended_links), 1)
-        self.assertEqual(len(linkbase.extended_links[0].root_locators), 5028)
-        assets_locator: Locator = next(filter(lambda x: x.name == 'Assets', linkbase.extended_links[0].root_locators))
-        assets_label: Label = assets_locator.children[0].labels[0]
-        self.assertEqual(assets_label.text, 'Vermögenswerte')
+        schema_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019321000010/aapl-20201226.xsd'
+        tax: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
+        self.assertEqual(len(tax.concepts), 65)
+        us_gaap_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/us-gaap/2020-01-31')
+        self.assertEqual(len(us_gaap_tax.concepts), 17281)
 
 
 if __name__ == '__main__':
     """
     This script should not be triggered by GitHub Actions, since it relies on downloading huge files from external servers.
     If you want to run the test on your machine, please create a .env file and provide a parameter "USER_AGENT".
-
+    
     This script downloads submissions from SEC EDGAR. The SEC requires you to identify and classify your bot by
     providing a User-Agent and a FROM header to your http request.
     https://www.sec.gov/privacy.htm#security
