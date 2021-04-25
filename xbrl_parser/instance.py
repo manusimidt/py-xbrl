@@ -238,7 +238,8 @@ class XbrlInstance(abc.ABC):
         self.unit_map: dict = unit_map
 
     def __str__(self) -> str:
-        return "{} with {} facts".format(self.instance_url, len(self.facts))
+        file_name: str = self.instance_url.split('/')[-1]
+        return "{} with {} facts".format(file_name, len(self.facts))
 
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
@@ -330,7 +331,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
             fact = TextFact(concept, context, fact_elem.text.strip())
         facts.append(fact)
 
-    return XbrlInstance(instance_url, taxonomy, facts, context_dir, unit_dir)
+    return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
 def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
@@ -372,11 +373,17 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
-    if not schema_uri.startswith('http'):
+    if schema_uri.startswith('http'):
+        # fetch the taxonomy extension schema from remote
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+    elif instance_url:
+        # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
-        schema_url = schema_uri
-    taxonomy: TaxonomySchema = parse_taxonomy(cache, schema_url)
+        # try to find the taxonomy extension schema file locally because no full url can be constructed
+        schema_path = resolve_uri(instance_path, schema_uri)
+        taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # get all contexts and units
     xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
@@ -413,7 +420,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
             # the fact is probably a text fact
             fact = TextFact(concept, context, str(fact_value))
         facts.append(fact)
-    return XbrlInstance(instance_url, taxonomy, facts, context_dir, unit_dir)
+    return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
 def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
