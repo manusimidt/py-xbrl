@@ -12,21 +12,51 @@
 
 > #### DISCLAIMER - BETA PHASE
 > This xbrl-parser is currently in a beta phase. Each new release can introduce breaking changes.
-> 
+>
 > ❗ Feedback: Feel free to ask me any questions, suggestions and ideas in the [discussions form](https://github.com/manusimidt/xbrl_parser/discussions) or contact me directly
 
 
 This is the documentation for the XBRL Parser. The XBRL Parser consists of 3 Modules. The Instance Document module, the
 Taxonomy-Schema module and the Linkbase module.
-
 The functionality and interactions between the different modules are outlined in my bachelor thesis. The goal of this
 documentation is to explain how to use the various modules of the XBRL Parser.
 
-### 1 Instance document module
+### Instance document module
+For a quick start use the examples below:
 
-For a quick start just import the parse_XBRL_instance_file or the parse_iXBRL_file and insert the link to the instance
-document. The parser will automatically download the Taxonomy-schema as well as all Taxonomies and Linkbases used by the
-Instance Document.
+```python
+import logging
+from xbrl_parser.cache import HttpCache
+from xbrl_parser.instance import parse_xbrl, parse_ixbrl, XbrlInstance, parse_xbrl_url, parse_ixbrl_url
+
+logging.basicConfig(level=logging.INFO)
+cache: HttpCache = HttpCache('./../cache')
+# Replace the dummy header with your information!! 
+# Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
+cache.set_headers(
+    {'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
+inst: XbrlInstance
+
+# Parse a XBRL instance document from the internet
+xbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
+inst = parse_xbrl_url(xbrl_url, cache)
+print(inst)
+
+# Parse a iXBRL instance document from the internet
+ixbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/0000789019/000156459021002316/msft-10q_20201231.htm'
+inst = parse_ixbrl_url(ixbrl_url, cache)
+print(inst)
+
+# Parse a XBRL file that is saved locally
+xbrl_path: str = './data/TSLA/2018_Q1/tsla-20180331.xml'
+inst = parse_xbrl(xbrl_path, cache)
+print(inst)
+
+# Parse a iXBRL file that is saved locally
+ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
+inst = parse_ixbrl(ixbrl_path, cache)
+print(inst)
+```
 
 ##### XBRL Instance Document
 
@@ -34,6 +64,7 @@ Instance Document.
 from xbrl_parser.instance import parse_xbrl, parse_xbrl_url, XbrlInstance
 from xbrl_parser.cache import HttpCache
 import logging
+
 logging.basicConfig(level=logging.INFO)
 # define a location for caching all xbrl files that must be downloaded for parsing the instance file (taxonomies, linkbases, ...)
 cache: HttpCache = HttpCache('./cache/')
@@ -99,6 +130,7 @@ OUT: Instance Document aapl-20200926.htm with 1329 facts
 from xbrl_parser.instance import parse_ixbrl, parse_ixbrl_url, XbrlInstance
 from xbrl_parser.cache import HttpCache
 import logging
+
 logging.basicConfig(level=logging.INFO)
 # define a location for caching all xbrl files that must be downloaded for parsing the instance file (taxonomies, linkbases, ...)
 cache: HttpCache = HttpCache('./cache/')
