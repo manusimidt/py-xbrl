@@ -1,6 +1,7 @@
 """
 Module containing functions for creating and resolving uri's
 """
+import os
 
 
 def resolve_uri(dir_uri: str, relative_uri: str) -> str:
@@ -18,12 +19,17 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     """
     if relative_uri.startswith('http'):
         return relative_uri
+
+    # make sure the correct path separator was selected according to the given dir_uri (/, \, \\)
+    path_separator: str = '/'
+    if '\\' in dir_uri: path_separator = '\\'
+
     # this is just for convenience, if the dir_url is not a link to a directory but to a file in a directory.
-    if '.' in dir_uri.split('/')[-1]:
+    if '.' in dir_uri.split(path_separator)[-1]:
         # remove the last part, because it is the file_name with extension
-        dir_uri = '/'.join(dir_uri.split('/')[0:-1])
-    if not dir_uri.endswith('/'):
-        dir_uri += '/'
+        dir_uri = path_separator.join(dir_uri.split(path_separator)[0:-1])
+    if not dir_uri.endswith(path_separator):
+        dir_uri += path_separator
 
     if relative_uri.startswith('/'):
         relative_uri = relative_uri[1:]
@@ -31,7 +37,7 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
         relative_uri = relative_uri[2:]
 
     absolute_uri = dir_uri + relative_uri
-    path_parts = absolute_uri.split('/')
+    path_parts = absolute_uri.split(path_separator)
     for x in range(0, absolute_uri.count('/..')):
         # loop over the path_parts array and remove the path_part, that has a '..' after it
         for y in range(0, len(path_parts) - 1):
@@ -39,6 +45,4 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
                 del path_parts[y]  # delete the path part affected by the '/../'
                 del path_parts[y]  # delete the '/../' itself
                 break
-    return '/'.join(path_parts)
-
-
+    return '/'.join(path_parts) if dir_uri.startswith('http') else os.sep.join(path_parts)
