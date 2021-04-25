@@ -20,29 +20,35 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     if relative_uri.startswith('http'):
         return relative_uri
 
-    # make sure the correct path separator was selected according to the given dir_uri (/, \, \\)
-    path_separator: str = '/'
-    if '\\' in dir_uri: path_separator = '\\'
+    # remove redundant characters in the relative uri
+    if relative_uri.startswith('/'): relative_uri = relative_uri[1:]
+    if relative_uri.startswith('./'): relative_uri = relative_uri[2:]
 
-    # this is just for convenience, if the dir_url is not a link to a directory but to a file in a directory.
-    if '.' in dir_uri.split(path_separator)[-1]:
-        # remove the last part, because it is the file_name with extension
-        dir_uri = path_separator.join(dir_uri.split(path_separator)[0:-1])
-    if not dir_uri.endswith(path_separator):
-        dir_uri += path_separator
+    if not dir_uri.startswith('http'):
+        # check if the dir_uri was really a path to a directory or a file
+        if '.' in dir_uri.split(os.sep)[-1]:
+            return os.path.normpath(os.path.dirname(dir_uri) + os.sep + relative_uri)
+        else:
+            return os.path.normpath(dir_uri + os.sep + relative_uri)
 
-    if relative_uri.startswith('/'):
-        relative_uri = relative_uri[1:]
-    if relative_uri.startswith('./'):
-        relative_uri = relative_uri[2:]
+    # === From here on we only process urls ===
+    # remove the file name if the dir_uri was the url to a file
+    if '.' in dir_uri.split('/')[-1]: dir_uri = '/'.join(dir_uri.split('/')[0:-1])
+    if not dir_uri.endswith('/'):
+        dir_uri += '/'
 
     absolute_uri = dir_uri + relative_uri
-    path_parts = absolute_uri.split(path_separator)
-    for x in range(0, absolute_uri.count('/..')):
-        # loop over the path_parts array and remove the path_part, that has a '..' after it
-        for y in range(0, len(path_parts) - 1):
-            if path_parts[y + 1] == '..':
-                del path_parts[y]  # delete the path part affected by the '/../'
-                del path_parts[y]  # delete the '/../' itself
+    if not dir_uri.startswith('http'):
+        # make sure the path is correct
+        absolute_uri = os.path.normpath(absolute_uri)
+
+    url_parts = absolute_uri.split('/')
+    for x in range(0, absolute_uri.count(f'/..')):
+        # loop over the url_parts array and remove the path_part, that has a '..' after it
+        for y in range(0, len(url_parts) - 1):
+            if url_parts[y + 1] == '..':
+                del url_parts[y]  # delete the path part affected by the '/../'
+                del url_parts[y]  # delete the '/../' itself
                 break
-    return '/'.join(path_parts) if dir_uri.startswith('http') else os.sep.join(path_parts)
+
+    return '/'.join(url_parts)

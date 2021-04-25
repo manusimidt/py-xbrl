@@ -1,12 +1,12 @@
 import sys
 import unittest
 import os
-import time
 from xbrl_parser.cache import HttpCache
 from xbrl_parser.instance import parse_ixbrl, parse_xbrl, XbrlInstance
-from xbrl_parser.taxonomy import parse_taxonomy, TaxonomySchema
 import logging
 
+
+# abs_file_path: str = str(os.path.dirname(os.path.abspath(inspect.getframeinfo(inspect.currentframe()).filename)))
 
 class TaxonomySchemaTest(unittest.TestCase):
     """

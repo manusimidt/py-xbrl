@@ -22,10 +22,13 @@ class UriResolverTest(unittest.TestCase):
              os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'tests', 'data', 'example-lab.xml'])),
             (('E:/Programming/python/xbrl_parser/tests/data/example.xsd', '/example-lab.xml'),
              os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'tests', 'data', 'example-lab.xml'])),
+            # test different path separators
+            (('E:\\Programming\\python\\xbrl_parser\\tests\\data/example.xsd', '/example-lab.xml'),
+             os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'tests', 'data', 'example-lab.xml'])),
             # test directory traversal
-            (('E:/Programming/python/xbrl_parser/tests/data/example.xsd', '/../example-lab.xml'),
+            (('E:/Programming/python/xbrl_parser/tests/data/', '/../example-lab.xml'),
              os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'tests', 'example-lab.xml'])),
-            (('E:/Programming/python/xbrl_parser/tests/data/example.xsd', './../example-lab.xml'),
+            (('E:/Programming/python/xbrl_parser/tests/data', './../example-lab.xml'),
              os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'tests', 'example-lab.xml'])),
             (('E:/Programming/python/xbrl_parser/tests/data/example.xsd', '../../example-lab.xml'),
              os.sep.join(['E:', 'Programming', 'python', 'xbrl_parser', 'example-lab.xml'])),
@@ -40,11 +43,14 @@ class UriResolverTest(unittest.TestCase):
             (('http://example.com/a/b/c/d/e/f/g', '../../file.xml'), 'http://example.com/a/b/c/d/e/file.xml'),
             (('http://example.com/a/b/c/d/e/f/g', '/../../file.xml'), 'http://example.com/a/b/c/d/e/file.xml'),
             (('http://example.com/a/b/c/d/e/f/g', './../../file.xml'), 'http://example.com/a/b/c/d/e/file.xml'),
-            (('http://example.com/a/b/c/d/e/f/g', '../../../file.xml'), 'http://example.com/a/b/c/d/file.xml')
+            (('http://example.com/a/b/c/d/e/f/g/', '../../../file.xml'), 'http://example.com/a/b/c/d/file.xml'),
+            (('http://example.com/a/b/c/d/e/f/g.xml', '../../../file.xml'), 'http://example.com/a/b/c/file.xml')
 
         ]
         for i, elem in enumerate(test_arr):
-            self.assertEqual(elem[1], resolve_uri(elem[0][0], elem[0][1]), msg=f'Failed at test elem {i}')
+            expected = elem[1]
+            received = resolve_uri(elem[0][0], elem[0][1])
+            self.assertEqual(expected, received, msg=f'Failed at test elem {i}')
 
 
 if __name__ == '__main__':
