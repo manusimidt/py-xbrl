@@ -281,7 +281,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
-        taxonomy: TaxonomySchema = parse_taxonomy(schema_uri, cache)
+        schema_path = resolve_uri(instance_path, schema_uri)
+        taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy)

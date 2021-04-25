@@ -438,7 +438,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
     if linkbase_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
     if not os.path.exists(linkbase_path):
-        raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_type}")
+        raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_path}")
 
     root: ET.Element = ET.parse(linkbase_path).getroot()
     # store the role refs in a dictionary, with the role uri as key.
