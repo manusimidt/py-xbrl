@@ -248,7 +248,7 @@ class Label:
         self.label: str = label
         self.language = language
         # the label itself i.e: "Defined Benefit Plan Disclosure [Line Items]"
-        self.text: str = text.strip()
+        self.text: str = text.strip() if text is not None else text
         # the role of the label i.e: http://www.xbrl.org/2003/role/terseLabel
         self.label_type: str = label_type
 
@@ -492,7 +492,6 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
         label_map = {}
         if linkbase_type == LinkbaseType.LABEL:
             for label_element in extended_link.findall(LINK_NS + 'label'):
-                # if the label is empty, just ignore it
                 label_name: str = label_element.attrib[XLINK_NS + 'label']
                 label_role: str = label_element.attrib[XLINK_NS + 'role']
                 label_lang: str = label_element.attrib[XML_NS + 'lang']

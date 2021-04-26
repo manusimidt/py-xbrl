@@ -186,7 +186,7 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
         "http://fasb.org/us-gaap/2020-01-31": "http://xbrl.fasb.org/us-gaap/2020/elts/us-gaap-2020-01-31.xsd",
     }
     if namespace in ns_schema_map:
-        return parse_taxonomy(ns_schema_map[namespace], cache)
+        return parse_taxonomy_url(ns_schema_map[namespace], cache)
     return None
 
 

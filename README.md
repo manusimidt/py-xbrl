@@ -67,7 +67,6 @@ cache: HttpCache = HttpCache('./cache')
 # Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
 
-# Parse a inline XBRL file that is saved locally
 ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
 inst: XbrlInstance = parse_ixbrl(ixbrl_path, cache)
 ```
