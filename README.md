@@ -19,6 +19,10 @@
 >
 > ❗ Feedback: Feel free to ask me any questions, suggestions and ideas in the [discussions form](https://github.com/manusimidt/xbrl_parser/discussions) or contact me directly
 
+## Installation
+```python
+pip install py-xbrl
+```
 
 The XBRL Parser consists of three modules:
 
