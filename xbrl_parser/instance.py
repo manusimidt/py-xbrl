@@ -232,7 +232,7 @@ class XbrlInstance(abc.ABC):
         """
         self.taxonomy: TaxonomySchema = taxonomy
         self.facts: List[AbstractFact] = facts
-        self.instance_url = url
+        self.instance_url: str = url
         self.context_map: dict = context_map
         self.unit_map: dict = unit_map
 
