@@ -6,8 +6,6 @@ as well as the taxonomies and linkbases used by the instance files
 """
 import abc
 import logging
-import sys
-import time
 from typing import List
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
