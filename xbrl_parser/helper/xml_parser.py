@@ -6,7 +6,7 @@ It is used by the different parsing modules.
 import xml.etree.ElementTree as ET
 
 
-def parse_file(path) -> ET:
+def parse_file(path: str) -> ET:
     """
     Parses a file, returns the Root element with an attribute 'ns_map' containing the prefix - namespaces map
     @return:
