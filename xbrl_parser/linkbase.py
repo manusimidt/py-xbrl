@@ -38,10 +38,12 @@ class LinkbaseType(Enum):
         @param role:
         @return: LinkbaseType or None if the role is unknown
         """
-        return LinkbaseType.DEFINITION if role == 'http://www.xbrl.org/2003/role/definitionLinkbaseRef' else \
-            LinkbaseType.CALCULATION if role == "http://www.xbrl.org/2003/role/calculationLinkbaseRef" else \
-                LinkbaseType.PRESENTATION if role == "http://www.xbrl.org/2003/role/presentationLinkbaseRef" else \
-                    LinkbaseType.LABEL if role == "http://www.xbrl.org/2003/role/labelLinkbaseRef" else None
+        return {
+            'http://www.xbrl.org/2003/role/definitionLinkbaseRef': LinkbaseType.DEFINITION,
+            'http://www.xbrl.org/2003/role/calculationLinkbaseRef': LinkbaseType.CALCULATION,
+            'http://www.xbrl.org/2003/role/presentationLinkbaseRef': LinkbaseType.PRESENTATION,
+            'http://www.xbrl.org/2003/role/labelLinkbaseRef': LinkbaseType.LABEL,
+        }.get(role, None)
 
     @staticmethod
     def guess_linkbase_role(href: str) -> int or None:
@@ -50,11 +52,11 @@ class LinkbaseType(Enum):
         @param href:
         @return:
         """
-        return LinkbaseType.DEFINITION \
-            if '_def' in href else LinkbaseType.CALCULATION \
-            if '_cal' in href else LinkbaseType.PRESENTATION \
-            if '_pre' in href else LinkbaseType.LABEL \
-            if '_lab' in href else None
+        return LinkbaseType.DEFINITION if '_def' in href \
+            else LinkbaseType.CALCULATION if '_cal' in href \
+            else LinkbaseType.PRESENTATION if '_pre' in href \
+            else LinkbaseType.LABEL if '_lab' in href \
+            else None
 
 
 class AbstractArcElement(ABC):
