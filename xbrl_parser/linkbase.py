@@ -8,6 +8,7 @@ reference linkbase: ref
 """
 import abc
 import os
+from typing import List
 import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
@@ -265,7 +266,7 @@ class LabelArc(AbstractArcElement):
 
     """
 
-    def __init__(self, from_locator, order: int, labels: [Label]) -> None:
+    def __init__(self, from_locator, order: int, labels: List[Label]) -> None:
         """
         @type from_locator: Locator
         @param labels: Array of label objects, the arc is pointing to
@@ -311,9 +312,9 @@ class Locator:
         # This array stores the locators that that are connected with this locator via a label arc, there
         # the current locator was in the to attribute. This array is only used for finding the root locators (the locators
         # that have no parents)
-        self.parents: [Locator] = []
+        self.parents: List[Locator] = []
         # This array stores all the labelArcs that reference this locator in the "from" attribute
-        self.children: [AbstractArcElement] = []
+        self.children: List[AbstractArcElement] = []
 
     def __str__(self) -> str:
         return "{} with {} children".format(self.name, len(self.children))
@@ -350,7 +351,7 @@ class ExtendedLink:
 
     """
 
-    def __init__(self, role: str, elr_id: str or None, root_locators: [Locator]) -> None:
+    def __init__(self, role: str, elr_id: str or None, root_locators: List[Locator]) -> None:
         """
         @param role: role of the extended link element
         @param elr_id: the link to the extended Link role (as defined in the schema file)
@@ -360,7 +361,7 @@ class ExtendedLink:
         """
         self.role: str = role
         self.elr_id: str or None = elr_id
-        self.root_locators: [Locator] = root_locators
+        self.root_locators: List[Locator] = root_locators
 
     def to_dict(self) -> dict:
         """
@@ -394,7 +395,7 @@ class Linkbase:
         @type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or
                                 [ExtendedLabelArc]
         """
-        self.extended_links: [ExtendedLink] = extended_links
+        self.extended_links: List[ExtendedLink] = extended_links
         self.type = linkbase_type
 
     def to_dict(self) -> dict:
@@ -449,7 +450,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
 
     # Loop over all definition/calculation/presentation/label links.
     # Each extended link contains the locators and the definition arc's
-    extended_links: [ExtendedLink] = []
+    extended_links: List[ExtendedLink] = []
 
     # figure out if we want to search for definitionLink, calculationLink, presentationLink or labelLink
     # figure out for what type of arcs we are searching; definitionArc, calculationArc, presentationArc or labelArc

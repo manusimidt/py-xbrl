@@ -8,6 +8,7 @@ Taxonomy schemas can import multiple different taxonomy schemas.
 """
 import logging
 import os
+from typing import List
 import xml.etree.ElementTree as ET
 from functools import lru_cache
 
@@ -108,12 +109,12 @@ class TaxonomySchema:
         4. Overriding of resources:
             The Label Linkbase of this taxonomy can override the labels of the base taxonomy!
         """
-        self.imports: [TaxonomySchema] = []
-        self.link_roles: [ExtendedLinkRole] = []
-        self.lab_linkbases: [Linkbase] = []
-        self.def_linkbases: [Linkbase] = []
-        self.cal_linkbases: [Linkbase] = []
-        self.pre_linkbases: [Linkbase] = []
+        self.imports: List[TaxonomySchema] = []
+        self.link_roles: List[ExtendedLinkRole] = []
+        self.lab_linkbases: List[Linkbase] = []
+        self.def_linkbases: List[Linkbase] = []
+        self.cal_linkbases: List[Linkbase] = []
+        self.pre_linkbases: List[Linkbase] = []
 
         self.schema_url = schema_url
         self.namespace = namespace
@@ -225,7 +226,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
     target_ns = root.attrib['targetNamespace']
     taxonomy: TaxonomySchema = TaxonomySchema(schema_url if schema_url else schema_path, target_ns)
 
-    import_elements: [ET.Element] = root.findall('xsd:import', NAME_SPACES)
+    import_elements: List[ET.Element] = root.findall('xsd:import', NAME_SPACES)
 
     for import_element in import_elements:
         import_uri = import_element.attrib['schemaLocation']
@@ -243,7 +244,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
             import_path = resolve_uri(schema_path, import_uri)
             taxonomy.imports.append(parse_taxonomy(import_path, cache))
 
-    role_type_elements: [ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
+    role_type_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's
     for elr in role_type_elements:
         elr_definition = elr.find(LINK_NS + 'definition')
@@ -274,7 +275,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         taxonomy.concepts[concept.xml_id] = concept
         taxonomy.name_id_map[concept.name] = concept.xml_id
 
-    linkbase_ref_elements: [ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:linkbaseRef', NAME_SPACES)
+    linkbase_ref_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:linkbaseRef', NAME_SPACES)
     for linkbase_ref in linkbase_ref_elements:
         linkbase_uri = linkbase_ref.attrib[XLINK_NS + 'href']
         role = linkbase_ref.attrib[XLINK_NS + 'role'] if XLINK_NS + 'role' in linkbase_ref.attrib else None
