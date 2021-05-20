@@ -47,7 +47,7 @@ from xbrl_parser.instance import parse_xbrl, XbrlInstance
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
-# Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
+# services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
 
 xbrl_path: str = './data/TSLA/2018_Q1/tsla-20180331.xml'
@@ -64,7 +64,7 @@ from xbrl_parser.instance import parse_xbrl, parse_ixbrl, XbrlInstance, parse_xb
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
-# Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
+# services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
 
 ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
@@ -83,7 +83,7 @@ from xbrl_parser.instance import XbrlInstance, parse_xbrl_url
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
-# Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
+# services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
 
 xbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
@@ -100,7 +100,7 @@ from xbrl_parser.instance import XbrlInstance, parse_ixbrl_url
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
-# Websites like the SEC require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
+# services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
 
 ixbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/0000789019/000156459021002316/msft-10q_20201231.htm'
