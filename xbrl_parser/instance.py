@@ -6,8 +6,7 @@ as well as the taxonomies and linkbases used by the instance files
 """
 import abc
 import logging
-import sys
-import time
+from typing import List
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from time import strptime
@@ -62,7 +61,7 @@ class AbstractContext(abc.ABC):
     def __init__(self, xml_id: str, entity: str) -> None:
         self.xml_id: str = xml_id
         self.entity: str = entity
-        self.segments: [ExplicitMember] = []
+        self.segments: List[ExplicitMember] = []
 
 
 class InstantContext(AbstractContext):
@@ -225,15 +224,15 @@ class XbrlInstance(abc.ABC):
     Class representing a xbrl instance file
     """
 
-    def __init__(self, url: str, taxonomy: TaxonomySchema, facts: [AbstractFact], context_map: dict,
+    def __init__(self, url: str, taxonomy: TaxonomySchema, facts: List[AbstractFact], context_map: dict,
                  unit_map: dict) -> None:
         """
         :param taxonomy: taxonomy file that the instance file references (via link:schemaRef)
         :param facts: array of all facts that the instance contains
         """
         self.taxonomy: TaxonomySchema = taxonomy
-        self.facts: [AbstractFact] = facts
-        self.instance_url = url
+        self.facts: List[AbstractFact] = facts
+        self.instance_url: str = url
         self.context_map: dict = context_map
         self.unit_map: dict = unit_map
 
@@ -290,7 +289,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
-    facts: [AbstractFact] = []
+    facts: List[AbstractFact] = []
     for fact_elem in root:
         # skip contexts and units
         if 'context' in fact_elem.tag or 'unit' in fact_elem.tag or 'schemaRef' in fact_elem.tag:
@@ -393,8 +392,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     unit_dir = _parse_unit_elements(xbrl_resources.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
-    facts: [AbstractFact] = []
-    fact_elements: [ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric', ns_map)
+    facts: List[AbstractFact] = []
+    fact_elements: List[ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric', ns_map)
     for fact_elem in fact_elements:
         # check fi the fact actually has data in it
         if fact_elem.text is None or len(fact_elem.text.strip()) == 0:
@@ -489,7 +488,7 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     return raw_value
 
 
-def _parse_context_elements(context_elements: [ET.Element], ns_map: dict, taxonomy: TaxonomySchema) -> dict:
+def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema) -> dict:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
     context id as key
@@ -545,7 +544,7 @@ def _parse_context_elements(context_elements: [ET.Element], ns_map: dict, taxono
     return context_dict
 
 
-def _parse_unit_elements(unit_elements: [ET.Element]) -> dict:
+def _parse_unit_elements(unit_elements: List[ET.Element]) -> dict:
     """
     Parses all unit elements from the instance file and stores them into a dictionary with the
     unit id as key

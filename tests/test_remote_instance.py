@@ -36,7 +36,7 @@ if __name__ == '__main__':
     """
     This script should not be triggered by GitHub Actions, since it relies on downloading huge files from external servers.
     If you want to run the test on your machine, please create a .env file and provide a parameter "USER_AGENT".
-    
+
     This script downloads submissions from SEC EDGAR. The SEC requires you to identify and classify your bot by
     providing a User-Agent and a FROM header to your http request.
     https://www.sec.gov/privacy.htm#security

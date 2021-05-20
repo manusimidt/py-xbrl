@@ -1,9 +1,5 @@
-import logging
-import sys
 import unittest
 import os
-import time
-from xbrl_parser.cache import HttpCache
 from xbrl_parser.linkbase import parse_linkbase, Linkbase, LinkbaseType
 
 
