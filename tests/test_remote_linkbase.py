@@ -1,3 +1,8 @@
+"""
+This unittest tests the parsing of remotely saved linkbases.
+It needs a header to be able to execute. The unit tests will be skipped if no
+http headers are provided
+"""
 import unittest
 import logging
 import sys
@@ -5,6 +10,7 @@ from xbrl_parser.cache import HttpCache
 from xbrl_parser.linkbase import parse_linkbase_url, LinkbaseType, Linkbase, Locator, Label
 from tests.utils import get_bot_header
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 cache: HttpCache = HttpCache('../cache/', delay=1500)
 bot_header = get_bot_header()
 if bot_header: cache.set_headers(bot_header)

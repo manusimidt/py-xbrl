@@ -1,3 +1,6 @@
+"""
+This unittest tests the parsing of locally saved linkbases
+"""
 import unittest
 import os
 from xbrl_parser.linkbase import parse_linkbase, Linkbase, LinkbaseType
@@ -9,7 +12,7 @@ class LinkbaseTest(unittest.TestCase):
         """
         Unit test for linkbase.parse_linkbase()
         """
-        linkbase_path: str = os.path.abspath('./data/example-lab.xml')
+        linkbase_path: str = os.path.abspath('./tests/data/example-lab.xml')
         linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.LABEL)
 
         self.assertEqual(len(linkbase.extended_links), 1)
@@ -22,7 +25,7 @@ class LinkbaseTest(unittest.TestCase):
         """
         Unit test for linkbase.parse_linkbase()
         """
-        linkbase_path: str = os.path.abspath('./data/example-cal.xml')
+        linkbase_path: str = os.path.abspath('./tests/data/example-cal.xml')
         linkbase: Linkbase = parse_linkbase(linkbase_path, LinkbaseType.CALCULATION)
 
         assets_locator = linkbase.extended_links[0].root_locators[0]

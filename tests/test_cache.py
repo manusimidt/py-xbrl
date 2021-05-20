@@ -1,3 +1,8 @@
+"""
+This is just a very simple unit test, that checks if the HttpCache is able to download a file, save it in the
+specified cache directory and serves it from there.
+"""
+
 import sys
 import unittest
 import os

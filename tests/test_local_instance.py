@@ -1,3 +1,7 @@
+"""
+This unittest tests the parsing of locally saved instance documents.
+"""
+
 import sys
 import unittest
 import os
@@ -16,10 +20,10 @@ class TaxonomySchemaTest(unittest.TestCase):
     def test_parse_xbrl_document(self):
         """ Integration test for instance.parse_xbrl_instance() """
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-        cache_dir: str = os.path.abspath('./../cache/') + '/'
+        cache_dir: str = os.path.abspath('./cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)
 
-        instance_doc_url: str = os.path.abspath('./data/example.xml')
+        instance_doc_url: str = os.path.abspath('./tests/data/example.xml')
         inst: XbrlInstance = parse_xbrl(instance_doc_url, cache)
         print(inst)
         self.assertEqual(len(inst.facts), 1)
@@ -27,10 +31,10 @@ class TaxonomySchemaTest(unittest.TestCase):
     def test_parse_ixbrl_document(self):
         """ Integration test for instance.parse_ixbrl_instance() """
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-        cache_dir: str = os.path.abspath('./../cache/') + '/'
+        cache_dir: str = os.path.abspath('./cache/') + '/'
         cache: HttpCache = HttpCache(cache_dir)
 
-        instance_doc_url: str = os.path.abspath('./data/example.html')
+        instance_doc_url: str = os.path.abspath('./tests/data/example.html')
         inst: XbrlInstance = parse_ixbrl(instance_doc_url, cache)
         print(inst)
         self.assertEqual(len(inst.facts), 3)

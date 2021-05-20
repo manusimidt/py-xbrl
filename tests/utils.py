@@ -1,6 +1,11 @@
+"""
+This module contains helper functions used by the unit test
+"""
+
+
 def get_bot_header() -> dict or None:
     try:
-        f = open(".env", "r")
+        f = open("./tests/.env", "r")
         from_header: str or None = None
         user_agent_header: str or None = None
         for line in f:

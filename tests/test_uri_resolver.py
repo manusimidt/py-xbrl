@@ -1,3 +1,10 @@
+"""
+This unit test tests the uri resolver.
+It is often the case, that a taxonomy schema imports another taxonomy using a relative path.
+i.e:
+<link:linkbaseRef [..] xlink:href="./../example_lab.xml" [..]/>
+The job of the uri resolver is to resolve those relative paths and urls and return an absolute path or url
+"""
 import unittest
 import os
 from xbrl_parser.helper.uri_resolver import resolve_uri
