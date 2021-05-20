@@ -17,4 +17,3 @@ def get_bot_header() -> dict or None:
     except FileNotFoundError:
         return None
     return None
-

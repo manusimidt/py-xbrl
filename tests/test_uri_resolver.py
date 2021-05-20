@@ -1,9 +1,5 @@
-import sys
 import unittest
 import os
-import time
-from xbrl_parser.cache import HttpCache
-import logging
 from xbrl_parser.helper.uri_resolver import resolve_uri
 
 

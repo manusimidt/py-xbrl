@@ -32,6 +32,7 @@ class LinkbaseNotFoundException(XbrlParseException):
     """ Generic exception for imported linkbases that could not be fetched locally or remote """
     pass
 
+
 class TaxonomyParseException(XbrlParseException):
     """
     Generic class for a exception thrown while parsing a taxonomy

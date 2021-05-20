@@ -78,7 +78,7 @@ class HttpCache:
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
-                raise Exception("Could not find file on {}".format(file_url, query_response.status_code))
+                raise Exception("Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
             else:
                 raise Exception(
                     "Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))

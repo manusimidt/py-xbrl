@@ -43,7 +43,7 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
         absolute_uri = os.path.normpath(absolute_uri)
 
     url_parts = absolute_uri.split('/')
-    for x in range(0, absolute_uri.count(f'/..')):
+    for x in range(0, absolute_uri.count('/..')):
         # loop over the url_parts array and remove the path_part, that has a '..' after it
         for y in range(0, len(url_parts) - 1):
             if url_parts[y + 1] == '..':
