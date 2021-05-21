@@ -2,7 +2,6 @@
 This unittest tests the parsing of locally saved linkbases
 """
 import unittest
-import os
 from xbrl_parser.linkbase import parse_linkbase, Linkbase, LinkbaseType
 
 
