@@ -5,9 +5,13 @@ i.e:
 <link:linkbaseRef [..] xlink:href="./../example_lab.xml" [..]/>
 The job of the uri resolver is to resolve those relative paths and urls and return an absolute path or url
 """
+import logging
+import sys
 import unittest
 import os
 from xbrl_parser.helper.uri_resolver import resolve_uri
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class UriResolverTest(unittest.TestCase):
@@ -51,6 +55,12 @@ class UriResolverTest(unittest.TestCase):
 
         ]
         for i, elem in enumerate(test_arr):
+            # only windows uses the \\ file path separator
+            # for now skip the first tests with \\ if we are on a unix system, since the \\ is an invalid path on
+            # a unix like os such as macOS or linux
+            if elem[0][0].startswith('E:\\') and os.sep != '\\':
+                logging.info("Skipping Windows specific unit test case")
+                continue
             expected = elem[1]
             received = resolve_uri(elem[0][0], elem[0][1])
             self.assertEqual(expected, received, msg=f'Failed at test elem {i}')
