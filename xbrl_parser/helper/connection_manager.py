@@ -43,7 +43,7 @@ class ConnectionManager:
         return response
 
     def _create_session(self,
-                        status_forcelist: tuple = (500, 502, 504, 403)) -> requests.Session:
+                        status_forcelist: tuple = (500, 502, 503, 504, 403)) -> requests.Session:
 
         session = requests.Session()
         retry = Retry(
