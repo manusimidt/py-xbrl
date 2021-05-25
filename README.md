@@ -111,6 +111,16 @@ ixbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/0000789019/00015645902
 inst: XbrlInstance = parse_ixbrl_url(ixbrl_url, cache)
 ```
 
+#### Extra configuration:
+You can modify the downloading default configuration params adding this simple line of code:
+```python
+cache.set_connection_params(delay=500, retries=5, backoff_factor=0.8)
+```
+where each of the parameters is explained here:
+* _delay_: number of millisecons to wait between successfull requests
+* _retries_: number of times to retry a request in case it fails
+* _backoff_factor_: Factor used to measure time to sleep between failed requests with the formula: `{backoff factor} * (2 ** ({number of total retries} - 1))`
+
 ### How to use the XbrlInstance object
 The data of every submission that is parsed with one of the four functions of this parser will be stored into
 the XbrlInstance object. This way you no longer have to deal with the differentiation between XBRL and inline XBRL.

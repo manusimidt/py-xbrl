@@ -1,14 +1,11 @@
 """
 Downloads files and stores them locally.
 """
-import time
 import re
 import os
-import requests
-import logging
 import zipfile
 
-logger = logging.getLogger(__name__)
+from xbrl_parser.helper.connection_manager import ConnectionManager
 
 
 class HttpCache:
@@ -39,6 +36,7 @@ class HttpCache:
         self.cache_dir: str = cache_dir
         self.delay: int = delay
         self.headers: dict or None = None
+        self.connection_manager = ConnectionManager(delay)
 
     def set_headers(self, headers: dict) -> None:
         """
@@ -48,6 +46,21 @@ class HttpCache:
         :return:
         """
         self.headers = headers
+        self.connection_manager._headers = headers
+
+    def set_connection_params(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8) -> None:
+        """
+        Sets the connection params for all following request
+        :param delay: int specifying milliseconds to wait between each successfull request
+        :param retries: int specifying how many times a request will be tried before assuming its failure.
+        :param backoff_factor: Used to measure time to sleep between failed requests. The formula used is:
+            {backoff factor} * (2 ** ({number of total retries} - 1))
+        :return:
+        """
+        self.connection_manager._delay = delay
+        self.connection_manager._retries = retries
+        self.connection_manager._backoff_factor = backoff_factor
+        self.connection_manager._delay = delay
 
     def cache_file(self, file_url: str) -> str:
         """
@@ -67,14 +80,7 @@ class HttpCache:
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
 
-        if self.headers:
-            query_response = requests.get(file_url, headers=self.headers)
-        else:
-            query_response = requests.get(file_url)
-        logger.info(str(query_response.status_code) + " " + file_url)
-
-        # Set a timeout, so that we do not get blocked by the for making to many requests
-        time.sleep(self.delay / 1000)
+        query_response = self.connection_manager.download(file_url, headers=self.headers)
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:

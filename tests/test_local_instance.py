@@ -4,7 +4,6 @@ This unittest tests the parsing of locally saved instance documents.
 
 import sys
 import unittest
-import os
 from xbrl_parser.cache import HttpCache
 from xbrl_parser.instance import parse_ixbrl, parse_xbrl, XbrlInstance
 import logging
