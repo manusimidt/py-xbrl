@@ -46,16 +46,17 @@ cache is required even if you already have downloaded the instance documents ont
 ```python
 import logging
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import parse_xbrl, XbrlInstance
+from xbrl_parser.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
 # services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
+xbrlParser = XbrlParser(cache)
 
-xbrl_path: str = './data/TSLA/2018_Q1/tsla-20180331.xml'
-inst: XbrlInstance = parse_xbrl(xbrl_path, cache)
+xbrl_path = './data/TSLA/2018_Q1/tsla-20180331.xml'
+inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
 ```
 
 #### inline XBRL:
@@ -63,16 +64,17 @@ inst: XbrlInstance = parse_xbrl(xbrl_path, cache)
 ```python
 import logging
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import parse_xbrl, parse_ixbrl, XbrlInstance, parse_xbrl_url, parse_ixbrl_url
+from xbrl_parser.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
 # services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
+xbrlParser = XbrlParser(cache)
 
 ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
-inst: XbrlInstance = parse_ixbrl(ixbrl_path, cache)
+inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
 ```
 
 ### Parse remotely saved submissions
@@ -82,16 +84,17 @@ inst: XbrlInstance = parse_ixbrl(ixbrl_path, cache)
 ```python
 import logging
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlInstance, parse_xbrl_url
+from xbrl_parser.instance import XbrlInstance, XbrlParser
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
 # services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
+xbrlParser = XbrlParser(cache)
 
-xbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
-inst: XbrlInstance = parse_xbrl_url(xbrl_url, cache)
+xbrl_url = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
+inst: XbrlInstance = XbrlParser.parse_xbrl(xbrl_url)
 ```
 
 #### inline XBRL:
@@ -99,16 +102,17 @@ inst: XbrlInstance = parse_xbrl_url(xbrl_url, cache)
 ```python
 import logging
 from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlInstance, parse_ixbrl_url
+from xbrl_parser.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
 # Replace the dummy header with your information!! 
 # services like SEC EDGAR require you to disclose information about your bot! (https://www.sec.gov/privacy.htm#security)
 cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version (Website)'})
+xbrlParser = XbrlParser(cache)
 
-ixbrl_url: str = 'https://www.sec.gov/Archives/edgar/data/0000789019/000156459021002316/msft-10q_20201231.htm'
-inst: XbrlInstance = parse_ixbrl_url(ixbrl_url, cache)
+ixbrl_url = 'https://www.sec.gov/Archives/edgar/data/0000789019/000156459021002316/msft-10q_20201231.htm'
+inst: XbrlInstance = xbrlParser.parse_xbrl(ixbrl_url)
 ```
 
 #### Extra configuration:
