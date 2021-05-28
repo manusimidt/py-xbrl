@@ -566,3 +566,23 @@ def _parse_unit_elements(unit_elements: List[ET.Element]) -> dict:
                               divide.find('xbrli:unitDenominator/xbrli:measure', NAME_SPACES).text.strip())
         unit_dict[unit_id] = unit
     return unit_dict
+
+
+class XbrlParser:
+    """
+    XbrlParser to make interaction easier.
+
+    """
+
+    def __init__(self, cache: HttpCache):
+        self.cache = cache
+
+    def parse_xbrl(self, url: str) -> XbrlInstance:
+        instance_path: str = self.cache.cache_file(url)
+
+        if url.split('.')[-1] == 'xml':
+            return parse_xbrl(instance_path, self.cache, url)
+        return parse_ixbrl(instance_path, self.cache, url)
+
+    def __str__(self) -> str:
+        return 'XbrlParser with cache dir at {}'.format(self.cache.cache_dir)
