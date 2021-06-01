@@ -94,7 +94,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 xbrl_url = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
-inst: XbrlInstance = XbrlParser.parse_xbrl(xbrl_url)
+inst: XbrlInstance = XbrlParser.parse_instance(xbrl_url)
 ```
 
 #### inline XBRL:
@@ -112,7 +112,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 ixbrl_url = 'https://www.sec.gov/Archives/edgar/data/0000789019/000156459021002316/msft-10q_20201231.htm'
-inst: XbrlInstance = xbrlParser.parse_xbrl(ixbrl_url)
+inst: XbrlInstance = xbrlParser.parse_instance(ixbrl_url)
 ```
 
 #### Extra configuration:

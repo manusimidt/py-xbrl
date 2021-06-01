@@ -577,7 +577,7 @@ class XbrlParser:
     def __init__(self, cache: HttpCache):
         self.cache = cache
 
-    def parse_xbrl(self, url: str) -> XbrlInstance:
+    def parse_instance(self, url: str) -> XbrlInstance:
         instance_path: str = self.cache.cache_file(url)
 
         if url.split('.')[-1] == 'xml':
