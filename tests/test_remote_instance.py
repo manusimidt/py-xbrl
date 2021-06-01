@@ -6,8 +6,8 @@ http headers are provided
 import unittest
 import logging
 import sys
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import parse_xbrl_url, parse_ixbrl_url, XbrlInstance
+from xbrl.cache import HttpCache
+from xbrl.instance import parse_xbrl_url, parse_ixbrl_url, XbrlInstance
 from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)

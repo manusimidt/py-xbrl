@@ -9,7 +9,7 @@ import logging
 import sys
 import unittest
 import os
-from xbrl_parser.helper.uri_resolver import resolve_uri
+from xbrl.helper.uri_resolver import resolve_uri
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 

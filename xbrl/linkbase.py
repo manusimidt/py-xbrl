@@ -13,9 +13,9 @@ import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
 
-from xbrl_parser import XbrlParseException, LinkbaseNotFoundException
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.helper.uri_resolver import resolve_uri
+from xbrl import XbrlParseException, LinkbaseNotFoundException
+from xbrl.cache import HttpCache
+from xbrl.helper.uri_resolver import resolve_uri
 
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
 XLINK_NS: str = "{http://www.w3.org/1999/xlink}"

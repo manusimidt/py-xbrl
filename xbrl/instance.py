@@ -11,11 +11,11 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from time import strptime
 
-from xbrl_parser import TaxonomyNotFound, InstanceParseException
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
-from xbrl_parser.helper.uri_resolver import resolve_uri
-from xbrl_parser.helper.xml_parser import parse_file
+from xbrl import TaxonomyNotFound, InstanceParseException
+from xbrl.cache import HttpCache
+from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
+from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.helper.xml_parser import parse_file
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -450,7 +450,8 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     and more:
     https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2015-02-26/inlineXBRL-transformationRegistry-REC-2015-02-26.html#d1e167
     """
-    # todo learn more about text fact continuation and exclusion https://www.xbrl.org/guidance/ixbrl-tagging-features/#12-multiple-documents
+    # todo learn more about text fact continuation and exclusion
+    # https://www.xbrl.org/guidance/ixbrl-tagging-features/#12-multiple-documents
     # The scale factor is expressed as a power of ten and denotes the amount by which the presented figure must be multiplied
     value_scale: int = int(fact_elem.attrib['scale']) if 'scale' in fact_elem.attrib else 0
     value_sign: str or None = fact_elem.attrib['sign'] if 'sign' in fact_elem.attrib else None

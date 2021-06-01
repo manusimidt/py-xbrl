@@ -5,7 +5,7 @@ import re
 import os
 import zipfile
 
-from xbrl_parser.helper.connection_manager import ConnectionManager
+from xbrl.helper.connection_manager import ConnectionManager
 
 
 class HttpCache:

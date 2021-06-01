@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     """
     This class handles http requests. If a requests fails, the method will retry the http requests as many times as specified.
-    Between each requests the process will sleep {backoff factor} * (2 ** ({number of total retries} - 1)) seconds between failed requests.
-    After the request is successfull, the process will sleep delay / 1000 seconds so that it is compliant with sec's policy.
+    Between each requests the process will sleep {backoff factor} * (2 ** ({number of total retries} - 1)) seconds between
+    failed requests. After the request is successful, the process will sleep delay / 1000 seconds so that it is
+    compliant with sec's policy.
 
     https://www.sec.gov/privacy.htm#security
 

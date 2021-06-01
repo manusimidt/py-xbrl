@@ -1,3 +1,5 @@
+#flake8 --ignore E501,E701
+
 name: Python Unit tests
 
 on:
@@ -12,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [ 3.8, 3.9 ]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,6 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 --ignore E701 --count --exit-zero --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
           pytest tests/

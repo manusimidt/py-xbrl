@@ -6,8 +6,8 @@ http headers are provided
 import unittest
 import logging
 import sys
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.taxonomy import TaxonomySchema, parse_taxonomy_url
+from xbrl.cache import HttpCache
+from xbrl.taxonomy import TaxonomySchema, parse_taxonomy_url
 from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)

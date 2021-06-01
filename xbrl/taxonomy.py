@@ -12,10 +12,10 @@ from typing import List
 import xml.etree.ElementTree as ET
 from functools import lru_cache
 
-from xbrl_parser import XbrlParseException, TaxonomyNotFound
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.helper.uri_resolver import resolve_uri
-from xbrl_parser.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url
+from xbrl import XbrlParseException, TaxonomyNotFound
+from xbrl.cache import HttpCache
+from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url
 
 logger = logging.getLogger(__name__)
 
