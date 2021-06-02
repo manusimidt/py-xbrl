@@ -19,8 +19,8 @@
 >
 > ❗ Feedback: Feel free to ask me any questions, suggestions and ideas in the [discussions form](https://github.com/manusimidt/xbrl_parser/discussions) or contact me directly
 
-## Installation
-```python
+### Installation
+```shell
 pip install py-xbrl
 ```
 
@@ -45,8 +45,8 @@ cache is required even if you already have downloaded the instance documents ont
 
 ```python
 import logging
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlParser, XbrlInstance
+from xbrl.cache import HttpCache
+from xbrl.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
@@ -63,8 +63,8 @@ inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
 
 ```python
 import logging
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlParser, XbrlInstance
+from xbrl.cache import HttpCache
+from xbrl.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
@@ -83,8 +83,8 @@ inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
 
 ```python
 import logging
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlInstance, XbrlParser
+from xbrl.cache import HttpCache
+from xbrl.instance import XbrlInstance, XbrlParser
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
@@ -101,8 +101,8 @@ inst: XbrlInstance = XbrlParser.parse_instance(xbrl_url)
 
 ```python
 import logging
-from xbrl_parser.cache import HttpCache
-from xbrl_parser.instance import XbrlParser, XbrlInstance
+from xbrl.cache import HttpCache
+from xbrl.instance import XbrlParser, XbrlInstance
 
 logging.basicConfig(level=logging.INFO)
 cache: HttpCache = HttpCache('./cache')
