@@ -285,7 +285,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # parse contexts and units
-    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy)
+    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy, cache)
     unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
@@ -388,7 +388,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
     if xbrl_resources is None: raise InstanceParseException('Could not find xbrl resources in file')
     # parse contexts and units
-    context_dir = _parse_context_elements(xbrl_resources.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy)
+    context_dir = _parse_context_elements(xbrl_resources.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy, cache)
     unit_dir = _parse_unit_elements(xbrl_resources.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
@@ -489,7 +489,8 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     return raw_value
 
 
-def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema) -> dict:
+def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema,
+                            cache: HttpCache) -> dict:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
     context id as key
@@ -529,12 +530,17 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
                 # get the taxonomy where the dimension attribute is defined
                 dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
                 # check if the taxonomy was found
-                if dimension_tax is None: raise TaxonomyNotFound(ns_map[dimension_prefix])
+                if dimension_tax is None:
+                    # try to subsequently load the taxonomy
+                    dimension_tax = _load_common_taxonomy(cache, ns_map[dimension_prefix], taxonomy)
+
                 # get the taxonomy where the member attribute is defined
                 member_tax = dimension_tax if member_prefix == dimension_prefix else taxonomy.get_taxonomy(
                     ns_map[member_prefix])
                 # check if the taxonomy was found
-                if member_tax is None: raise TaxonomyNotFound(ns_map[member_prefix])
+                if member_tax is None:
+                    # try to subsequently load the taxonomy
+                    dimension_tax = _load_common_taxonomy(cache, ns_map[dimension_prefix], taxonomy)
                 dimension_concept: Concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
                 member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
 
@@ -567,6 +573,20 @@ def _parse_unit_elements(unit_elements: List[ET.Element]) -> dict:
                               divide.find('xbrli:unitDenominator/xbrli:measure', NAME_SPACES).text.strip())
         unit_dict[unit_id] = unit
     return unit_dict
+
+
+def _load_common_taxonomy(cache: HttpCache, namespace: str, taxonomy: TaxonomySchema) -> TaxonomySchema:
+    """
+    tries to load a common taxonomy
+    :param cache: http cache instance
+    :param namespace: namespace of the taxonomy
+    :raises TaxonomyNotFound: if the taxonomy could not be loaded
+    :return:
+    """
+    tax = parse_common_taxonomy(cache, namespace)
+    if tax is None: raise TaxonomyNotFound(namespace)
+    taxonomy.imports.append(tax)
+    return tax
 
 
 class XbrlParser:
