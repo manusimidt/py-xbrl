@@ -29,4 +29,32 @@
             unitRef="usd">123000000
     </example:Assets>
 
+    <link:footnoteLink
+            xlink:role="http://www.xbrl.org/2003/role/link"
+            xlink:type="extended">
+        <link:footnote
+                xlink:type="resource"
+                xlink:label="footnote1"
+                xlink:role="http://www.xbrl.org/2003/role/footnote"
+                xml:lang="en">Including four priceless coffee machines
+        </link:footnote>
+        <link:footnote
+                xlink:type="resource"
+                xlink:label="footnote2"
+                xlink:role="http://www.xbrl.org/2003/role/footnote"
+                xml:lang="de">Die Vermögenswerte umfassen vier unbezahlbare Kaffeemaschinen
+        </link:footnote>
+        <link:loc xlink:type="locator" xlink:label="fact123" xlink:href="#fact_123"/>
+        <link:footnoteArc
+                xlink:arcrole="http://www.xbrl.org/2003/arcrole/fact-footnote"
+                xlink:type="arc"
+                xlink:from="fact123"
+                xlink:to="footnote1"/>
+        <link:footnoteArc
+                xlink:arcrole="http://www.xbrl.org/2003/arcrole/fact-footnote"
+                xlink:type="arc"
+                xlink:from="fact123"
+                xlink:to="footnote2"/>
+    </link:footnoteLink>
+
 </xbrl>
