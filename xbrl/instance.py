@@ -179,6 +179,7 @@ class AbstractFact(abc.ABC):
         self.concept: Concept = concept
         self.context: AbstractContext = context
         self.value: any = value
+        self.footnote: Footnote or None = None
 
     def __str__(self) -> str:
         return "{}: {}".format(self.concept.name, str(self.value))
@@ -217,6 +218,26 @@ class TextFact(AbstractFact):
 
     def __init__(self, concept: Concept, context: AbstractContext, value: str) -> None:
         super().__init__(concept, context, value)
+
+
+class Footnote:
+    """
+    Class representing a footnote
+    https://www.xbrl.org/Specification/XBRL-2.1/REC-2003-12-31/XBRL-2.1-REC-2003-12-31+corrected-errata-2013-02-20.html#_4.11
+
+    XML Example:
+     <link:footnote id=".." xlink:label=".." xlink:role="http://www.xbrl.org/2003/role/footnote" xlink:type="resource"
+     xml:lang="en-US">The domestic loss in 2020 versus domestic income in 2019 was mainly related to the ... </link:footnote>
+
+    """
+
+    def __init__(self, content: str, lang: str) -> None:
+        """
+        :param content: content of the footnote
+        :param lang: language of the footnote
+        """
+        self.content = content
+        self.lang = lang
 
 
 class XbrlInstance(abc.ABC):
