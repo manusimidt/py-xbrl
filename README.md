@@ -74,7 +74,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
-inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
+inst: XbrlInstance = xbrlParser.parse_instance_locally(xbrl_path)
 ```
 
 ### Parse remotely saved submissions
@@ -118,12 +118,13 @@ inst: XbrlInstance = xbrlParser.parse_instance(ixbrl_url)
 #### Extra configuration:
 You can modify the downloading default configuration params adding this simple line of code:
 ```python
-cache.set_connection_params(delay=500, retries=5, backoff_factor=0.8)
+cache.set_connection_params(delay=500, retries=5, backoff_factor=0.8, logs=True)
 ```
 where each of the parameters is explained here:
 * _delay_: number of millisecons to wait between successfull requests
 * _retries_: number of times to retry a request in case it fails
 * _backoff_factor_: Factor used to measure time to sleep between failed requests with the formula: `{backoff factor} * (2 ** ({number of total retries} - 1))`
+* _logs_: Boolean to show logs (default True)
 
 ### How to use the XbrlInstance object
 The data of every submission that is parsed with one of the four functions of this parser will be stored into
