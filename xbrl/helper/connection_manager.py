@@ -19,7 +19,7 @@ class ConnectionManager:
 
     """
 
-    def __init__(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, headers: dict = None):
+    def __init__(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, headers: dict = None, logs =True):
         """
 
         @param from_locator: Specifies sleeping time after the request is successfull.
@@ -33,11 +33,12 @@ class ConnectionManager:
         self._backoff_factor = backoff_factor
         self._headers = headers
         self._session = self._create_session()
+        self.logs = logs
 
     def download(self, url: str, headers: str):
 
         response = self._session.get(url, headers=headers, allow_redirects=True)
-        logger.info(str(response.status_code) + " " + url)
+        if self.logs: logger.info(str(response.status_code) + " " + url)
         # Set a timeout, so that we do not get blocked by the for making to many requests
         time.sleep(self._delay / 1000)
 
