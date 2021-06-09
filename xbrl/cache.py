@@ -48,7 +48,8 @@ class HttpCache:
         self.headers = headers
         self.connection_manager._headers = headers
 
-    def set_connection_params(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, logs: bool = True) -> None:
+    def set_connection_params(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8,
+                              logs: bool = True) -> None:
         """
         Sets the connection params for all following request
         :param delay: int specifying milliseconds to wait between each successfull request
