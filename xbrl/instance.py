@@ -556,7 +556,7 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
                 # check if the taxonomy was found
                 if member_tax is None:
                     # try to subsequently load the taxonomy
-                    dimension_tax = _load_common_taxonomy(cache, ns_map[dimension_prefix], taxonomy)
+                    member_tax = _load_common_taxonomy(cache, ns_map[member_prefix], taxonomy)
                 dimension_concept: Concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
                 member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
 
