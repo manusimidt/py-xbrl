@@ -56,7 +56,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 xbrl_path = './data/TSLA/2018_Q1/tsla-20180331.xml'
-inst: XbrlInstance = xbrlParser.parse_xbrl(xbrl_path)
+inst: XbrlInstance = xbrlParser.parse_instance_locally(xbrl_path)
 ```
 
 #### inline XBRL:
@@ -74,7 +74,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 ixbrl_path: str = './data/AAPL/2020_FY/aapl-20201226.htm'
-inst: XbrlInstance = xbrlParser.parse_instance_locally(xbrl_path)
+inst: XbrlInstance = xbrlParser.parse_instance_locally(ixbrl_path)
 ```
 
 ### Parse remotely saved submissions
@@ -94,7 +94,7 @@ cache.set_headers({'From': 'your.name@company.com', 'User-Agent': 'Tool/Version 
 xbrlParser = XbrlParser(cache)
 
 xbrl_url = 'https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/msft-20170630.xml'
-inst: XbrlInstance = XbrlParser.parse_instance(xbrl_url)
+inst: XbrlInstance = xbrlParser.parse_instance(xbrl_url)
 ```
 
 #### inline XBRL:
