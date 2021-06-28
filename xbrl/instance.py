@@ -621,7 +621,7 @@ class XbrlParser:
             i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm
         :return:
         """
-        if url.split('.')[-1] == 'xml':
+        if url.split('.')[-1] == 'xml' or url.split('.')[-1] == 'xbrl':
             return parse_xbrl_url(url, self.cache)
         return parse_ixbrl_url(url, self.cache)
 
@@ -640,7 +640,7 @@ class XbrlParser:
         instance document was downloaded, the parser can fetch relative imports using this base url
         :return:
         """
-        if path.split('.')[-1] == 'xml':
+        if path.split('.')[-1] == 'xml' or path.split('.')[-1] == 'xbrl':
             return parse_xbrl(path, self.cache, instance_url)
         return parse_ixbrl(path, self.cache, instance_url)
 
