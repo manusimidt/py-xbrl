@@ -487,6 +487,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
             locator_href = loc.attrib[XLINK_NS + 'href']
             if not locator_href.startswith('http'):
                 # resolve the path
+                # todo, try to get the URL here, instead of the path!!!
                 locator_href = resolve_uri(linkbase_path, locator_href)
             locator_map[loc_label] = Locator(locator_href, loc_label)
 

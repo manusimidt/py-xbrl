@@ -15,7 +15,7 @@ from functools import lru_cache
 from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_resolver import resolve_uri
-from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url
+from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +90,7 @@ class Concept:
         self.nillable: bool or None = None
         self.period_type: str or None = None
         self.balance: str or None = None
+        self.labels: [Label] = []
 
     def __str__(self) -> str:
         return self.name
@@ -161,19 +162,19 @@ class TaxonomySchema:
     def __str__(self) -> str:
         return self.namespace
 
-    def get_taxonomy(self, namespace: str):
+    def get_taxonomy(self, url: str):
         """
         Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
         If the taxonomy cannot be found, the function will return None
-        :param namespace:
+        :param url: can either be the namespace or the schema url
         :return either a TaxonomySchema obj or None
         :return:
         """
-        if self.namespace == namespace:
+        if self.namespace == url or self.schema_url == url:
             return self
 
         for imported_tax in self.imports:
-            result = imported_tax.get_taxonomy(namespace)
+            result = imported_tax.get_taxonomy(url)
             if result is not None:
                 return result
         return None
@@ -326,5 +327,19 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
                 if extended_cal_link.elr_id.split('#')[1] == elr.xml_id:
                     elr.calculation_link = extended_cal_link
                     break
+
+    for label_linkbase in taxonomy.lab_linkbases:
+        for extended_link in label_linkbase.extended_links:
+            for root_locator in extended_link.root_locators:
+                # find the taxonomy the locator is referring to
+                schema_url, concept_id = root_locator.href.split('#')
+                c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
+                if c_taxonomy is None:
+                    continue
+                concept: Concept = c_taxonomy.concepts[concept_id]
+
+                for children in root_locator.children:
+                    concept.labels = children.labels
+
 
     return taxonomy
