@@ -29,6 +29,7 @@ class RemoteTaxonomyTest(unittest.TestCase):
         self.assertEqual(len(tax.concepts), 65)
         us_gaap_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/us-gaap/2020-01-31')
         self.assertEqual(len(us_gaap_tax.concepts), 17281)
+        self.assertEqual(len(tax.concepts['aapl_MacMember'].labels), 3)
 
 
 if __name__ == '__main__':

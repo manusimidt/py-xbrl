@@ -341,5 +341,4 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
                 for children in root_locator.children:
                     concept.labels = children.labels
 
-
     return taxonomy

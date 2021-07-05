@@ -20,6 +20,7 @@ class TaxonomySchemaTest(unittest.TestCase):
         print(f"Saving to {cache_dir}")
 
         extension_schema_path: str = './tests/data/example.xsd'
+        # extension_schema_path: str = './data/example.xsd'
         tax: TaxonomySchema = parse_taxonomy(extension_schema_path, cache)
         print(tax)
         srt_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/srt/2020-01-31')
