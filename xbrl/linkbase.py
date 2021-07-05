@@ -425,10 +425,10 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
         'This function only parses remotely saved linkbases. Please use parse_linkbase to parse local linkbases')
 
     linkbase_path: str = cache.cache_file(linkbase_url)
-    return parse_linkbase(linkbase_path, linkbase_type)
+    return parse_linkbase(linkbase_path, linkbase_type, linkbase_url)
 
 
-def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
+def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url: str or None = None) -> Linkbase:
     """
     Parses a linkbase and returns a Linkbase object containing all
     locators, arcs and links of the linkbase in a hierarchical order (a Tree)
@@ -436,6 +436,8 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
     Thus we do not need a cache instance
     :param linkbase_path: path to the linkbase
     :param linkbase_type: Type of the linkbase
+    :param linkbase_url: if the locator of the linkbase contain relative references to concepts (i.e.: './../schema.xsd#Assets'
+    the url has to be set so that the parser can connect the locator with concept from the taxonomy
     :return:
     """
     if linkbase_path.startswith('http'): raise XbrlParseException(
@@ -488,7 +490,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType) -> Linkbase:
             if not locator_href.startswith('http'):
                 # resolve the path
                 # todo, try to get the URL here, instead of the path!!!
-                locator_href = resolve_uri(linkbase_path, locator_href)
+                locator_href = resolve_uri(linkbase_url if linkbase_url else linkbase_path, locator_href)
             locator_map[loc_label] = Locator(locator_href, loc_label)
 
         # Performance: extract the labels in advance. The label name (xlink:label) is the key and the value is
