@@ -37,6 +37,8 @@ ns_schema_map: dict = {
     "http://fasb.org/srt/2019-01-31": "http://xbrl.fasb.org/srt/2019/elts/srt-2019-01-31.xsd",
     "http://fasb.org/srt/2020-01-31": "http://xbrl.fasb.org/srt/2020/elts/srt-2020-01-31.xsd",
 
+    "http://xbrl.sec.gov/stpr/2018-01-31": "https://xbrl.sec.gov/stpr/2018/stpr-2018-01-31.xsd",
+
     "http://xbrl.sec.gov/country/2017-01-31": "https://xbrl.sec.gov/country/2017/country-2017-01-31.xsd",
     "http://xbrl.sec.gov/country/2020-01-31": "https://xbrl.sec.gov/country/2020/country-2020-01-31.xsd",
 
@@ -63,6 +65,7 @@ ns_schema_map: dict = {
     "http://fasb.org/us-gaap/2018-01-31": "http://xbrl.fasb.org/us-gaap/2018/elts/us-gaap-2018-01-31.xsd",
     "http://fasb.org/us-gaap/2019-01-31": "http://xbrl.fasb.org/us-gaap/2019/elts/us-gaap-2019-01-31.xsd",
     "http://fasb.org/us-gaap/2020-01-31": "http://xbrl.fasb.org/us-gaap/2020/elts/us-gaap-2020-01-31.xsd",
+    "http://fasb.org/us-gaap/2021-01-31": "http://xbrl.fasb.org/us-gaap/2021/elts/us-gaap-2021-01-31.xsd"
 }
 
 
