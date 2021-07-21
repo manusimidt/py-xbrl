@@ -54,6 +54,7 @@ ns_schema_map: dict = {
     "http://xbrl.sec.gov/dei/2018-01-31": "https://xbrl.sec.gov/dei/2018/dei-2018-01-31.xsd",
     "http://xbrl.sec.gov/dei/2019-01-31": "https://xbrl.sec.gov/dei/2019/dei-2019-01-31.xsd",
     "http://xbrl.sec.gov/dei/2020-01-31": "https://xbrl.sec.gov/dei/2020/dei-2020-01-31.xsd",
+    "http://xbrl.sec.gov/dei/2021": "https://xbrl.sec.gov/dei/2021/dei-2021.xsd",
 
     "http://fasb.org/us-gaap/2011-01-31": "http://xbrl.fasb.org/us-gaap/2011/elts/us-gaap-2011-01-31.xsd",
     "http://fasb.org/us-gaap/2012-01-31": "http://xbrl.fasb.org/us-gaap/2012/elts/us-gaap-2012-01-31.xsd",
