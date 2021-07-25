@@ -12,7 +12,8 @@ from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 cache: HttpCache = HttpCache('../cache/', delay=1500)
-bot_header = get_bot_header()
+# bot_header = get_bot_header()
+bot_header = get_bot_header('.env')
 if bot_header: cache.set_headers(bot_header)
 
 

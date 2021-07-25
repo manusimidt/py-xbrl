@@ -20,12 +20,15 @@ class TaxonomySchemaTest(unittest.TestCase):
         print(f"Saving to {cache_dir}")
 
         extension_schema_path: str = './tests/data/example.xsd'
-        # extension_schema_path: str = './data/example.xsd'
+        #extension_schema_path: str = './data/example.xsd'
         tax: TaxonomySchema = parse_taxonomy(extension_schema_path, cache)
         print(tax)
         srt_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/srt/2020-01-31')
         self.assertTrue(srt_tax)
         self.assertEqual(len(srt_tax.concepts), 489)
+
+        # check if the labels where successfully linked to the concept
+        self.assertEqual(len(tax.concepts['example_Assets'].labels), 2)
 
 
 if __name__ == '__main__':

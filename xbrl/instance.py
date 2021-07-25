@@ -14,7 +14,7 @@ from time import strptime
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
-from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
 
 logger = logging.getLogger(__name__)

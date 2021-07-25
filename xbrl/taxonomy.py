@@ -14,7 +14,7 @@ from functools import lru_cache
 
 from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri, compare_uri
 from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
 
 logger = logging.getLogger(__name__)
@@ -174,7 +174,7 @@ class TaxonomySchema:
         :return either a TaxonomySchema obj or None
         :return:
         """
-        if self.namespace == url or self.schema_url == url:
+        if compare_uri(self.namespace, url) or compare_uri(self.schema_url, url):
             return self
 
         for imported_tax in self.imports:
@@ -339,10 +339,11 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
                 schema_url, concept_id = root_locator.href.split('#')
                 c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
                 if c_taxonomy is None:
+                    print("Could not find taxonomy with schema_url " + schema_url)
                     continue
                 concept: Concept = c_taxonomy.concepts[concept_id]
-
+                concept.labels = []
                 for children in root_locator.children:
-                    concept.labels = children.labels
+                    concept.labels.append(children.labels)
 
     return taxonomy

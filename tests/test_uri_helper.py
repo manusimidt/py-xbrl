@@ -9,7 +9,7 @@ import logging
 import sys
 import unittest
 import os
-from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri, compare_uri
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -63,6 +63,18 @@ class UriResolverTest(unittest.TestCase):
                 continue
             expected = elem[1]
             received = resolve_uri(elem[0][0], elem[0][1])
+            self.assertEqual(expected, received, msg=f'Failed at test elem {i}')
+
+    def test_compare_uri(self):
+        test_arr = [
+            ['./abc', 'abc', True],
+            ['./abc', '\\abc\\', True],
+            ['./abc', 'abcd', False],
+            ['http://abc.de', 'https://abc.de', True]
+        ]
+        for i, test_case in enumerate(test_arr):
+            expected = test_case[2]
+            received = compare_uri(test_case[0], test_case[1])
             self.assertEqual(expected, received, msg=f'Failed at test elem {i}')
 
 

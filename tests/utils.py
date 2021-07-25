@@ -3,9 +3,9 @@ This module contains helper functions used by the unit test
 """
 
 
-def get_bot_header() -> dict or None:
+def get_bot_header(env_path:str = './tests/.env') -> dict or None:
     try:
-        f = open("./tests/.env", "r")
+        f = open(env_path, "r")
         from_header: str or None = None
         user_agent_header: str or None = None
         for line in f:

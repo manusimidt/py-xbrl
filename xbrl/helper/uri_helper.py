@@ -2,6 +2,7 @@
 Module containing functions for creating and resolving uri's
 """
 import os
+import re
 
 
 def resolve_uri(dir_uri: str, relative_uri: str) -> str:
@@ -52,3 +53,23 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
                 break
 
     return '/'.join(url_parts)
+
+
+def compare_uri(uri1: str, uri2: str) -> bool:
+    """
+    Compares two uri's and returns true if they are considered equal and false if not.
+    Examples:
+        - uri1: http://abc.de/2020, uri2: https://abc.de/2020 -> True
+        - uri1: ./abc.de/2020, uri2: abc.de\\2020 -> True
+        - uri1: /abc.de/2020, uri2: /abc/2020 -> False
+    :param uri1:
+    :param uri2:
+    :return:
+    """
+    # first remove any protocol
+    if '://' in uri1: uri1 = uri1.split('://')[1]
+    if '://' in uri2: uri2 = uri2.split('://')[1]
+
+    uri1_segments: [str] = re.findall(r"[\w']+", uri1)
+    uri2_segments: [str] = re.findall(r"[\w']+", uri2)
+    return uri1_segments == uri2_segments

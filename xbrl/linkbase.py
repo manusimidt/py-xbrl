@@ -15,7 +15,7 @@ from enum import Enum
 
 from xbrl import XbrlParseException, LinkbaseNotFoundException
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_resolver import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri
 
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
 XLINK_NS: str = "{http://www.w3.org/1999/xlink}"
