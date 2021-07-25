@@ -343,7 +343,8 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
                     continue
                 concept: Concept = c_taxonomy.concepts[concept_id]
                 concept.labels = []
-                for children in root_locator.children:
-                    concept.labels.append(children.labels)
+                for label_arc in root_locator.children:
+                    for label in label_arc.labels:
+                        concept.labels.append(label)
 
     return taxonomy
