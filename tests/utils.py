@@ -3,7 +3,7 @@ This module contains helper functions used by the unit test
 """
 
 
-def get_bot_header(env_path:str = './tests/.env') -> dict or None:
+def get_bot_header(env_path: str = './tests/.env') -> dict or None:
     try:
         f = open(env_path, "r")
         from_header: str or None = None
