@@ -339,8 +339,11 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
                 schema_url, concept_id = root_locator.href.split('#')
                 c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
                 if c_taxonomy is None:
-                    print("Could not find taxonomy with schema_url " + schema_url)
-                    continue
+                    if schema_url in ns_schema_map.values():
+                        c_taxonomy = parse_taxonomy_url(schema_url, cache)
+                        taxonomy.imports.append(c_taxonomy)
+                    else:
+                        continue
                 concept: Concept = c_taxonomy.concepts[concept_id]
                 concept.labels = []
                 for label_arc in root_locator.children:
