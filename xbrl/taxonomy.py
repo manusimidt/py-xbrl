@@ -11,6 +11,7 @@ import os
 from typing import List
 import xml.etree.ElementTree as ET
 from functools import lru_cache
+from urllib.parse import unquote
 
 from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
@@ -336,7 +337,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         for extended_link in label_linkbase.extended_links:
             for root_locator in extended_link.root_locators:
                 # find the taxonomy the locator is referring to
-                schema_url, concept_id = root_locator.href.split('#')
+                schema_url, concept_id = unquote(root_locator.href).split('#')
                 c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
                 if c_taxonomy is None:
                     if schema_url in ns_schema_map.values():
