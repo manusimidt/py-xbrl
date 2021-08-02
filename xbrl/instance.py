@@ -470,12 +470,14 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     """
     # todo learn more about text fact continuation and exclusion
     # https://www.xbrl.org/guidance/ixbrl-tagging-features/#12-multiple-documents
+
+    # Stores the unscaled number
+    raw_value: str or float
+
     # The scale factor is expressed as a power of ten and denotes the amount by which the presented figure must be multiplied
     value_scale: int = int(fact_elem.attrib['scale']) if 'scale' in fact_elem.attrib else 0
     value_sign: str or None = fact_elem.attrib['sign'] if 'sign' in fact_elem.attrib else None
 
-    # Stores the unscaled number
-    raw_value: str or float
     if 'format' not in fact_elem.attrib:
         # check if the value has a unit. We do not want to convert text facts like the cik 0000023432 to a float!
         if 'unitRef' not in fact_elem.attrib:
@@ -500,6 +502,10 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
             else:
                 parsed_date = strptime(fact_elem.text, '%B %d')
             raw_value = '--{}-{}'.format(parsed_date.tm_mon, parsed_date.tm_mday)
+        elif value_format == 'numwordsen' and fact_elem.text.strip().lower() in ('no', 'none'):
+            # https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf 5.2.5.12
+            # if the fact is numerical and has the value 'no', interpret the fact as zero (0)
+            raw_value = 0
         else:
             raw_value = str(fact_elem.text.strip())
 
