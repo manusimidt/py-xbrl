@@ -410,6 +410,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     facts: List[AbstractFact] = []
     fact_elements: List[ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric', ns_map)
     for fact_elem in fact_elements:
+        # update the prefix map (sometimes the xmlns is defined at XML-Element level and not at the root element)
+        _update_ns_map(ns_map, fact_elem.attrib['ns_map'])
         # check fi the fact actually has data in it
         if fact_elem.text is None or len(fact_elem.text.strip()) == 0:
             continue
@@ -547,6 +549,7 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
         segment: ET.Element = context_elem.find('xbrli:entity/xbrli:segment', NAME_SPACES)
         if segment is not None:
             for explicit_member_elem in segment.findall('xbrldi:explicitMember', NAME_SPACES):
+                _update_ns_map(ns_map, explicit_member_elem.attrib['ns_map'])
                 dimension_prefix, dimension_concept_name = explicit_member_elem.attrib['dimension'].strip().split(':')
                 member_prefix, member_concept_name = explicit_member_elem.text.strip().split(':')
                 # get the taxonomy where the dimension attribute is defined
@@ -571,6 +574,18 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
 
         context_dict[context_id] = context
     return context_dict
+
+
+def _update_ns_map(ns_map: dict, new_ns_map: dict) -> None:
+    """
+    Compares the new_ns_map with the ns_map and adds prefix/namespace mappings that are not present in ns_map
+    :param ns_map:
+    :param new_ns_map:
+    :return:
+    """
+    for prefix in new_ns_map:
+        if prefix not in ns_map:
+            ns_map[prefix] = new_ns_map[prefix]
 
 
 def _parse_unit_elements(unit_elements: List[ET.Element]) -> dict:
