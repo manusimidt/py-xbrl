@@ -26,7 +26,7 @@ class HttpCache:
 
     """
 
-    def __init__(self, cache_dir: str, delay: int = 500):
+    def __init__(self, cache_dir: str, delay: int = 500, verify_https: bool = True):
         """
         :param cache_dir: Root directory of the disk cache (all requested files will be cached in this directory)
         :param delay: How many milliseconds should the cache wait, before requesting another file from the same server
@@ -36,7 +36,7 @@ class HttpCache:
         self.cache_dir: str = cache_dir
         self.delay: int = delay
         self.headers: dict or None = None
-        self.connection_manager = ConnectionManager(delay)
+        self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
     def set_headers(self, headers: dict) -> None:
         """
