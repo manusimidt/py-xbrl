@@ -119,7 +119,7 @@ class HttpCache:
         """
         return self.cache_dir + re.sub("https?://", "", url)
 
-    def cache_edgar_enclosure(self, enclosure_url: str) -> None:
+    def cache_edgar_enclosure(self, enclosure_url: str) -> str:
         """
         The SEC provides zip folders that contain all xbrl related files for a given submission.
         These files are i.e: Instance Document, Extension Taxonomy, Linkbases.
@@ -130,7 +130,7 @@ class HttpCache:
         One way to get the zip enclosure url is through the Structured Disclosure RSS Feeds provided by the SEC:
         https://www.sec.gov/structureddata/rss-feeds-submitted-filings
         :param enclosure_url: url to the zip folder.
-        :return:
+        :return: relative path to extracted zip's content
         """
         if not enclosure_url.endswith('.zip'):
             raise Exception("This is not a valid zip folder")
@@ -141,3 +141,4 @@ class HttpCache:
         with zipfile.ZipFile(enclosure_path, "r") as zip_ref:
             zip_ref.extractall(submission_dir_path)
             zip_ref.close()
+        return submission_dir_path
