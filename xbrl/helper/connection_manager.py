@@ -28,22 +28,30 @@ class ConnectionManager:
             The formula used is {backoff factor} * (2 ** ({number of total retries} - 1))
         @param headers: Headers to use in http request.
         """
-        self._delay = delay
+        self._delay_ms = delay # post delay after download
         self._retries = retries
         self._backoff_factor = backoff_factor
         self._headers = headers
         self._session = self._create_session()
         self.logs = logs
         self.verify_https = verify_https
+        self.next_try_systime_ms = self._get_systime_ms() # when can we try next download
 
         if verify_https is False:
           requests.packages.urllib3.disable_warnings()
 
+    def _get_systime_ms(self):
+        return int(time.time() * 1000)
+
     def download(self, url: str, headers: str):
+        # make sure last post-delay elapsed, to rate limit API usage
+        time.sleep(max(0, self.next_try_systime_ms - self._get_systime_ms()) / 1000)
+
         response = self._session.get(url, headers=headers, allow_redirects=True, verify=self.verify_https)
         if self.logs: logger.info(str(response.status_code) + " " + url)
-        # Set a timeout, so that we do not get blocked by the for making to many requests
-        time.sleep(self._delay / 1000)
+        
+        # no actual delay after last download
+        self.next_try_systime_ms = self._get_systime_ms() + self._delay_ms
 
         return response
 

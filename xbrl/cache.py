@@ -35,7 +35,6 @@ class HttpCache:
         # check if the cache_dir ends with a /
         if not cache_dir.endswith('/'): cache_dir += '/'
         self.cache_dir: str = cache_dir
-        self.delay: int = delay
         self.headers: dict or None = None
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
@@ -59,10 +58,9 @@ class HttpCache:
             {backoff factor} * (2 ** ({number of total retries} - 1))
         :return:
         """
-        self.connection_manager._delay = delay
+        self.connection_manager._delay_ms = delay
         self.connection_manager._retries = retries
         self.connection_manager._backoff_factor = backoff_factor
-        self.connection_manager._delay = delay
         self.connection_manager.logs = logs
 
     def cache_file(self, file_url: str) -> str:
