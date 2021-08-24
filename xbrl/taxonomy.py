@@ -39,6 +39,8 @@ ns_schema_map: dict = {
     "http://fasb.org/srt/2020-01-31": "http://xbrl.fasb.org/srt/2020/elts/srt-2020-01-31.xsd",
 
     "http://xbrl.sec.gov/stpr/2018-01-31": "https://xbrl.sec.gov/stpr/2018/stpr-2018-01-31.xsd",
+    # Replace draft taxonomy with official STPR 2021 one once it is released
+    "http://xbrl.sec.gov/stpr/2021": "https://xbrl.sec.gov/stpr/2021/stpr-2021.xsd",
 
     "http://xbrl.sec.gov/country/2017-01-31": "https://xbrl.sec.gov/country/2017/country-2017-01-31.xsd",
     "http://xbrl.sec.gov/country/2020-01-31": "https://xbrl.sec.gov/country/2020/country-2020-01-31.xsd",
