@@ -19,7 +19,8 @@ class ConnectionManager:
 
     """
 
-    def __init__(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, headers: dict = None, logs=True, verify_https: bool = True):
+    def __init__(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, headers: dict = None, logs=True,
+                 verify_https: bool = True):
         """
 
         @param from_locator: Specifies sleeping time after the request is successfull.
@@ -37,7 +38,7 @@ class ConnectionManager:
         self.verify_https = verify_https
 
         if verify_https is False:
-          requests.packages.urllib3.disable_warnings()
+            requests.packages.urllib3.disable_warnings()
 
     def download(self, url: str, headers: str):
         response = self._session.get(url, headers=headers, allow_redirects=True, verify=self.verify_https)
