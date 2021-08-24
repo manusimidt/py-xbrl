@@ -3,27 +3,19 @@ This module wraps the parse function of the Element Tree library to parse XML fi
 namespace map. Element tree discards all prefixes when parsing the file.
 It is used by the different parsing modules.
 """
-import xml.etree.ElementTree as ET
-
+import lxml.html
+from lxml import etree as ET
 
 def parse_file(path: str) -> ET:
     """
     Parses a file, returns the Root element with an attribute 'ns_map' containing the prefix - namespaces map
     @return:
     """
-    events = "start", "start-ns", "end-ns"
 
-    root = None
-    ns_map = []
+    # parse even html as xml to retain namespace, otherwise ignores it 
+    # https://stackoverflow.com/questions/6597271/how-to-preserve-namespace-information-when-parsing-html-with-lxml
+    # parse as xml, xsd
+    tree = ET.parse(path)
 
-    for event, elem in ET.iterparse(path, events):
-        if event == "start-ns":
-            ns_map.append(elem)
-        elif event == "end-ns":
-            ns_map.pop()
-        elif event == "start":
-            if root is None:
-                root = elem
-            elem.set('ns_map', dict(ns_map))
-
-    return ET.ElementTree(root)
+    return ET.ElementTree(tree.getroot())
+ 

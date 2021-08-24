@@ -9,7 +9,7 @@ reference linkbase: ref
 import abc
 import os
 from typing import List
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from abc import ABC
 from enum import Enum
 

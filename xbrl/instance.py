@@ -7,7 +7,7 @@ as well as the taxonomies and linkbases used by the instance files
 import abc
 import logging
 from typing import List
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from datetime import date, datetime
 from time import strptime
 
@@ -287,9 +287,11 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
     :return:
     """
-    root: ET.Element = parse_file(instance_path).getroot()
+    tree: ET = parse_file(instance_path)
+    root = tree.getroot()
+    ns_map: dict = root.nsmap
     # get the link to the taxonomy schema and parse it
-    schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
+    schema_ref: ET.Element = tree.find('.//{}schemaRef'.format(LINK_NS))
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
@@ -306,8 +308,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # parse contexts and units
-    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy, cache)
-    unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
+    context_dir = _parse_context_elements(tree.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy, cache)
+    unit_dir = _parse_unit_elements(tree.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
     facts: List[AbstractFact] = []
@@ -380,10 +382,10 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     to the .getRoot() is missing. This has the benefit, that we can search the document with absolute xpath expressions
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
-    root: ET = parse_file(instance_path)
-    ns_map: dict = root.getroot().attrib['ns_map']
+    tree: ET = parse_file(instance_path)
+    ns_map: dict = tree.getroot().nsmap
     # get the link to the taxonomy schema and parse it
-    schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
+    schema_ref: ET.Element = tree.find('.//{}schemaRef'.format(LINK_NS))
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
@@ -400,7 +402,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # get all contexts and units
-    xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
+    xbrl_resources: ET.Element = tree.find('.//ix:resources', ns_map)
     if xbrl_resources is None: raise InstanceParseException('Could not find xbrl resources in file')
     # parse contexts and units
     context_dir = _parse_context_elements(xbrl_resources.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy, cache)
@@ -408,10 +410,10 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
 
     # parse facts
     facts: List[AbstractFact] = []
-    fact_elements: List[ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric', ns_map)
+    fact_elements: List[ET.Element] = tree.findall('.//ix:nonFraction', ns_map) + tree.findall('.//ix:nonNumeric', ns_map)
     for fact_elem in fact_elements:
         # update the prefix map (sometimes the xmlns is defined at XML-Element level and not at the root element)
-        _update_ns_map(ns_map, fact_elem.attrib['ns_map'])
+        _update_ns_map(ns_map, fact_elem.nsmap)
         # check fi the fact actually has data in it
         if fact_elem.text is None or len(fact_elem.text.strip()) == 0:
             continue
@@ -555,7 +557,7 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
         segment: ET.Element = context_elem.find('xbrli:entity/xbrli:segment', NAME_SPACES)
         if segment is not None:
             for explicit_member_elem in segment.findall('xbrldi:explicitMember', NAME_SPACES):
-                _update_ns_map(ns_map, explicit_member_elem.attrib['ns_map'])
+                _update_ns_map(ns_map, explicit_member_elem.nsmap)
                 dimension_prefix, dimension_concept_name = explicit_member_elem.attrib['dimension'].strip().split(':')
                 member_prefix, member_concept_name = explicit_member_elem.text.strip().split(':')
                 # get the taxonomy where the dimension attribute is defined
