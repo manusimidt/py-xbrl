@@ -14,7 +14,7 @@ from time import strptime
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
-from xbrl.helper.uri_helper import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri, normalise_uri_dict, normalise_uri
 from xbrl.helper.xml_parser import parse_file
 
 logger = logging.getLogger(__name__)
@@ -305,8 +305,13 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         schema_path = resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
+    # one common table to prevent frequent recursion
+    ns_to_taxonomy_LUT: dict = taxonomy.get_taxonomy_LUT(dict())
+    # normalise each entry for fast comparison
+    ns_to_taxonomy_LUT = normalise_uri_dict(ns_to_taxonomy_LUT)
+
     # parse contexts and units
-    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy, cache)
+    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy, cache, ns_to_taxonomy_LUT)
     unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
@@ -326,8 +331,9 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         # find the taxonomy where the tag is coming from
         taxonomy_ns, concept_name = fact_elem.tag.split('}')
         taxonomy_ns = taxonomy_ns.replace('{', '')
+
         # get the concept object from the taxonomy
-        tax = taxonomy.get_taxonomy(taxonomy_ns)
+        tax = ns_to_taxonomy_LUT.get(normalise_uri(taxonomy_ns), None)
         if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
@@ -398,12 +404,18 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
+    
+    # one common table to prevent frequent recursion
+    ns_to_taxonomy_LUT: dict = taxonomy.get_taxonomy_LUT(dict())
+    # normalise each entry for fast comparison
+    ns_to_taxonomy_LUT = normalise_uri_dict(ns_to_taxonomy_LUT)
 
     # get all contexts and units
     xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
     if xbrl_resources is None: raise InstanceParseException('Could not find xbrl resources in file')
     # parse contexts and units
-    context_dir = _parse_context_elements(xbrl_resources.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy, cache)
+
+    context_dir = _parse_context_elements(xbrl_resources.findall('xbrli:context', NAME_SPACES), ns_map, taxonomy, cache, ns_to_taxonomy_LUT)
     unit_dir = _parse_unit_elements(xbrl_resources.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
@@ -417,7 +429,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
             continue
         taxonomy_prefix, concept_name = fact_elem.attrib['name'].split(':')
 
-        tax = taxonomy.get_taxonomy(ns_map[taxonomy_prefix])
+        # get the concept object from the taxonomy
+        tax = ns_to_taxonomy_LUT.get(normalise_uri(ns_map[taxonomy_prefix]), None)
         if tax is None: tax = _load_common_taxonomy(cache, ns_map[taxonomy_prefix], taxonomy)
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
@@ -520,7 +533,7 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
 
 
 def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema,
-                            cache: HttpCache) -> dict:
+                            cache: HttpCache, taxonomy_LUT: dict) -> dict:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
     context id as key
@@ -558,16 +571,19 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
                 _update_ns_map(ns_map, explicit_member_elem.attrib['ns_map'])
                 dimension_prefix, dimension_concept_name = explicit_member_elem.attrib['dimension'].strip().split(':')
                 member_prefix, member_concept_name = explicit_member_elem.text.strip().split(':')
+                
                 # get the taxonomy where the dimension attribute is defined
-                dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
-                # check if the taxonomy was found
+                dimension_tax = taxonomy_LUT.get(normalise_uri(ns_map[dimension_prefix]), None)
+                # check if the taxonomy was found or try to subsequently load the taxonomy
                 if dimension_tax is None:
-                    # try to subsequently load the taxonomy
                     dimension_tax = _load_common_taxonomy(cache, ns_map[dimension_prefix], taxonomy)
 
                 # get the taxonomy where the member attribute is defined
-                member_tax = dimension_tax if member_prefix == dimension_prefix else taxonomy.get_taxonomy(
-                    ns_map[member_prefix])
+                if member_prefix == dimension_prefix:
+                    member_tax = dimension_tax
+                else:
+                    member_tax = taxonomy_LUT.get(normalise_uri(ns_map[member_prefix]), None)
+
                 # check if the taxonomy was found
                 if member_tax is None:
                     # try to subsequently load the taxonomy

@@ -15,7 +15,7 @@ from urllib.parse import unquote
 
 from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_helper import resolve_uri, compare_uri
+from xbrl.helper.uri_helper import resolve_uri, normalise_uri, normalise_uri_dict
 from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
 
 logger = logging.getLogger(__name__)
@@ -167,23 +167,27 @@ class TaxonomySchema:
     def __str__(self) -> str:
         return self.namespace
 
-    def get_taxonomy(self, url: str):
+    def get_taxonomy_LUT(self, lut: dict) -> dict:
         """
-        Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
-        If the taxonomy cannot be found, the function will return None
-        :param url: can either be the namespace or the schema url
-        :return either a TaxonomySchema obj or None
-        :return:
+        Builds a namespace->taxonomy look up table by recursion.
+        If the taxonomy cannot be found, it will insert None
+        
+        :param lut: an empty dict to fill up
+        :return a dict look up table containsing TaxonomySchema objs or None
         """
-        if compare_uri(self.namespace, url) or compare_uri(self.schema_url, url):
-            return self
 
+        # one taxonomy goes by two names, keep first instance
+        if not self.namespace in lut:
+            lut[self.namespace] = self 
+
+        if not self.schema_url in lut:
+            lut[self.schema_url] = self 
+        # name normalised on consumption only, for speed
+
+        # recurse children
         for imported_tax in self.imports:
-            result = imported_tax.get_taxonomy(url)
-            if result is not None:
-                return result
-        return None
-
+            lut.update(imported_tax.get_taxonomy_LUT(lut))
+        return lut
 
 def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or None:
     """
@@ -338,7 +342,11 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
             for root_locator in extended_link.root_locators:
                 # find the taxonomy the locator is referring to
                 schema_url, concept_id = unquote(root_locator.href).split('#')
-                c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
+
+                ns_to_taxonomy_LUT: dict = taxonomy.get_taxonomy_LUT(dict())
+                ns_to_taxonomy_LUT = normalise_uri_dict(ns_to_taxonomy_LUT)
+                c_taxonomy: TaxonomySchema = ns_to_taxonomy_LUT.get(normalise_uri(schema_url), None)
+
                 if c_taxonomy is None:
                     if schema_url in ns_schema_map.values():
                         c_taxonomy = parse_taxonomy_url(schema_url, cache)
