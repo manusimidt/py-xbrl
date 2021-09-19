@@ -6,6 +6,7 @@ as well as the taxonomies and linkbases used by the instance files
 """
 import abc
 import logging
+import re
 from typing import List
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
@@ -193,7 +194,7 @@ class NumericFact(AbstractFact):
         unitRef="usd">377284000</us-gaap:Assets>
     """
 
-    def __init__(self, concept: Concept, context: AbstractContext, value: float, unit: AbstractUnit,
+    def __init__(self, concept: Concept, context: AbstractContext, value: float or None, unit: AbstractUnit,
                  decimals: int or None) -> None:
         """
         :param concept: see Abstract Fact
@@ -412,9 +413,6 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     for fact_elem in fact_elements:
         # update the prefix map (sometimes the xmlns is defined at XML-Element level and not at the root element)
         _update_ns_map(ns_map, fact_elem.attrib['ns_map'])
-        # check fi the fact actually has data in it
-        if fact_elem.text is None or len(fact_elem.text.strip()) == 0:
-            continue
         taxonomy_prefix, concept_name = fact_elem.attrib['name'].split(':')
 
         tax = taxonomy.get_taxonomy(ns_map[taxonomy_prefix])
@@ -423,56 +421,40 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         context: AbstractContext = context_dir[fact_elem.attrib['contextRef']]
         # ixbrl values are not normalized! They are formatted (i.e. 123,000,000)
-        fact_value: str or float = _extract_ixbrl_value(fact_elem)
 
-        if isinstance(fact_value, float) and 'unitRef' in fact_elem.attrib:
-            # the fact is a numerical fact
-            # get the unit
+        if fact_elem.tag == '{' + ns_map['ix'] + '}nonFraction':
+            fact_value: float or None = _extract_non_fraction_value(fact_elem)
+
             unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef']]
-            decimals_text: str = str(fact_elem.attrib['decimals']).strip()
+            decimals_text: str = str(fact_elem.attrib['decimals']).strip() if 'decimals' in fact_elem.attrib else '0'
             decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
 
-            fact = NumericFact(concept, context, fact_value, unit, decimals)
-        else:
-            # the fact is probably a text fact
-            fact = TextFact(concept, context, str(fact_value))
-        facts.append(fact)
+            facts.append(NumericFact(concept, context, fact_value, unit, decimals))
+        elif fact_elem.tag == '{' + ns_map['ix'] + '}nonNumeric':
+            fact_value: str = _extract_non_numeric_value(fact_elem)
+            facts.append(TextFact(concept, context, str(fact_value)))
+
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
 def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     """
-    The values in inline xbrl files are not normalized!
-    This function normalizes the value
+    This function takes a elementtree element and extracts the value.
+    If the value is scaled by some factor, the function will return the normalized value
+
+    Read more about fact formats in iXBRL:
+    https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2015-02-26/inlineXBRL-transformationRegistry-REC-2015-02-26.html#d1e167
+
+    TODO: The parser is currently ignoring fact continuation and exclusion
+    https://www.xbrl.org/guidance/ixbrl-tagging-features/#12-multiple-documents
     :param fact_elem:
     :return:
     """
 
-    """
-    The value of the fact can have the following formats:
-
-    numcommadecimal: number with comma as decimal separator and dot/space as optional thousands separator
-    numdotdecimal: number with dot as decimal separator and comma/space as optional thousands separator
-    numdotdecimalin: some weird indian number format
-
-    datedaymonthyear: i.e: 31.12.2016 or 31/12/2016
-    datemonthdayyear: i.e: 12.31.2016
-    datemonthdayyearen: i.e: December 31, 2016
-    datedaymonthyearen: i.e: 31-Dec-16
-    dateyearmonthday: i.e: 2016-12-31
-
-    numdash: some filings are using dashes for zero values
-
-    booleantrue: boolean value
-
-    and more:
-    https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2015-02-26/inlineXBRL-transformationRegistry-REC-2015-02-26.html#d1e167
-    """
-    # todo learn more about text fact continuation and exclusion
-    # https://www.xbrl.org/guidance/ixbrl-tagging-features/#12-multiple-documents
+    raw_text: str = fact_elem.text
 
     # Stores the unscaled number
-    raw_value: str or float
+    raw_value: str or float = raw_text
 
     # The scale factor is expressed as a power of ten and denotes the amount by which the presented figure must be multiplied
     value_scale: int = int(fact_elem.attrib['scale']) if 'scale' in fact_elem.attrib else 0
@@ -481,34 +463,34 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
     if 'format' not in fact_elem.attrib:
         # check if the value has a unit. We do not want to convert text facts like the cik 0000023432 to a float!
         if 'unitRef' not in fact_elem.attrib:
-            return str(fact_elem.text).strip()
+            return str(raw_value).strip()
         try:
-            raw_value = float(fact_elem.text)
+            raw_value = float(raw_value)
         except ValueError:
-            raw_value = str(fact_elem.text).strip()
+            raw_value = str(raw_value).strip()
     else:
         value_format: str = fact_elem.attrib['format'].split(':')[1]
         # go through the different formats
         if value_format == 'numcommadecimal':
-            raw_value = float(fact_elem.text.strip().replace(' ', '').replace('.', '').replace(',', '.'))
+            raw_value = float(raw_value.strip().replace(' ', '').replace('.', '').replace(',', '.'))
         elif value_format == 'numdotdecimal':
-            raw_value = float(fact_elem.text.strip().replace(' ', '').replace(',', ''))
+            raw_value = float(raw_value.strip().replace(' ', '').replace(',', ''))
         elif value_format == 'datemonthdayen':
             # Value is in the format Month(en) Day i.e: December 31 or Dec 31 or December-31 or Dec-31
-            fact_elem.text = fact_elem.text.replace('-', ' ')
+            raw_value = raw_value.replace('-', ' ')
             # convert it into the default format also used by standard xbrl (--MM-DD)
-            if len(fact_elem.text.split(' ')[0]) == 3:
+            if len(raw_value.split(' ')[0]) == 3:
                 # The month is in the abbreviated form (i.e: Dec)
-                parsed_date = strptime(fact_elem.text, '%b %d')
+                parsed_date = strptime(raw_value, '%b %d')
             else:
-                parsed_date = strptime(fact_elem.text, '%B %d')
+                parsed_date = strptime(raw_value, '%B %d')
             raw_value = '--{}-{}'.format(parsed_date.tm_mon, parsed_date.tm_mday)
-        elif value_format == 'numwordsen' and fact_elem.text.strip().lower() in ('no', 'none'):
+        elif value_format == 'numwordsen' and raw_value.strip().lower() in ('no', 'none'):
             # https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf 5.2.5.12
             # if the fact is numerical and has the value 'no', interpret the fact as zero (0)
             raw_value = 0
         else:
-            raw_value = str(fact_elem.text.strip())
+            raw_value = str(raw_value.strip())
 
     if isinstance(raw_value, float):
         raw_value = raw_value * pow(10, value_scale)
@@ -518,6 +500,168 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
             raw_value = -raw_value
 
     return raw_value
+
+
+
+def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
+    """
+    This function parses a ix:nonNumeric fact as defined in:
+    https://www.xbrl.org/Specification/inlineXBRL-part1/PWD-2013-02-13/inlineXBRL-part1-PWD-2013-02-13.html#d1e6391
+
+
+    :param fact_elem:
+    :return:
+    """
+    fact_value = '' if fact_elem.text is None else fact_elem.text
+
+    # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)
+    for children in fact_elem:
+        fact_value += _extract_non_numeric_value(children)
+
+    fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
+    if fact_format:
+        if fact_format.startswith('ixt:'):
+            fact_value = _normalize_transformed_value(fact_value, fact_format.split(':')[1])
+        elif fact_format.startswith('ixt-sec'):
+            # todo normalize values according to the ixt-sec format (i.e: ixt-sec:numwordsen)
+            # https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf
+            pass
+
+    return fact_value
+
+
+def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
+    """
+    https://www.xbrl.org/Specification/inlineXBRL-part1/PWD-2013-02-13/inlineXBRL-part1-PWD-2013-02-13.html#d1e5045
+    :param fact_elem:
+    :return:
+    """
+    xsi_nil_attrib: str = '{' + fact_elem.attrib['ns_map']['xsi'] + '}nil'
+    if xsi_nil_attrib in fact_elem.attrib and fact_elem.attrib[xsi_nil_attrib] == 'true':
+        return None
+
+    fact_value = '' if fact_elem.text is None else fact_elem.text
+    # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)
+    for children in fact_elem:
+        fact_value += _extract_non_numeric_value(children)
+
+    fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
+    value_scale: int = int(fact_elem.attrib['scale']) if 'scale' in fact_elem.attrib else 0
+    value_sign: str or None = fact_elem.attrib['sign'] if 'sign' in fact_elem.attrib else None
+
+    if fact_format:
+        if fact_format.startswith('ixt:'):
+            fact_value = _normalize_transformed_value(fact_value, fact_format.split(':')[1])
+        elif fact_format.startswith('ixt-sec'):
+            # todo normalize values according to the ixt-sec format (i.e: ixt-sec:numwordsen)
+            # https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf
+            pass
+
+    scaled_value = float(fact_value) * pow(10, value_scale)
+    # Floating-point error mitigation
+    if abs(scaled_value) > 1e6: scaled_value = float(round(scaled_value))
+    if value_sign == '-':
+        scaled_value = -scaled_value
+
+    return scaled_value
+
+
+def _normalize_transformed_value(value: str, transform_format: str) -> str:
+    """
+    Takes a transformed value and returns a normalized value.
+    The transformation rules are listed here:
+    https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2015-02-26/inlineXBRL-transformationRegistry-REC-2015-02-26.html#d1e167
+
+    In short: this function will perform the following normalizations:
+    - Numbers: float value with a dot (.) as fraction separator. All thousands separators will be removed
+    - Full Date: YYYY-DD-MM
+    - Month-Day: --MM-DD
+    - boolean: "true" or "false"
+    :param value: the raw text value
+    :param transform_format: the transformation format
+    :return:
+    """
+    value = value.lower().strip()
+
+    if transform_format == 'booleanfalse':
+        # * -> false
+        return 'false'
+
+    elif transform_format == 'booleantrue':
+        # * -> true
+        return 'true'
+
+    elif transform_format == 'zerodash':
+        # - -> 0
+        return '0'
+
+    elif transform_format == 'nocontent':
+        # any string -> ''
+        return ''
+
+    elif transform_format.startswith('date'):
+        # replace dashes, dots etc. (Dec. 2021 -> Dec  2021)
+        value = re.sub(r'[,\-\._]', ' ', value)
+        # remove unnecessary spaces (Dec  2021 -> Dec 2021)
+        value = re.sub(r'\s{2,}', ' ', value)
+        seg = value.split(' ')
+
+        if transform_format == 'datedaymonth':
+            # (D)D*(M)M -> --MM-DD
+            return f"--{seg[1].zfill(2)}-{seg[0].zfill(2)}"
+
+        elif transform_format == 'datedaymonthen':
+            # (D)D*Mon(th) -> --MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]}', '%d %b') if len(seg[1]) == 3 \
+                else strptime(f'{seg[0]} {seg[1]}', '%d %B')
+            return f'--{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}'
+
+        elif transform_format == 'datedaymonthyear':
+            # (D)D*(M)M*(Y)Y(YY) -> YYYY-MM-DD
+            return f"{seg[2].zfill(2)}-{seg[1].zfill(2)}-{seg[0].zfill(2)}"
+
+        elif transform_format == 'datedaymonthyearen':
+            # (D)D*Mon(th)*(Y)Y(YY) -> YYYY-MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%d %b %Y') if len(seg[1]) == 3 \
+                else strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%d %B %Y')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}"
+
+        elif transform_format == 'datemonthday':
+            # (M)M*(D)D -> --MM-DD
+            return f"--{seg[0].zfill(2)}-{seg[1].zfill(2)}"
+
+        elif transform_format == 'datemonthdayen':
+            # Mon(th)*(D)D -> --MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]}', '%b %d') if len(seg[0]) == 3 \
+                else strptime(f'{seg[0]} {seg[1]}', '%B %d')
+            return f'--{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}'
+
+        elif transform_format == 'datemonthdayyear':
+            # (M)M*(D)D*(Y)Y(YY) -> YYYY-MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%m %d %Y')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}"
+
+        elif transform_format == 'datemonthdayyearen':
+            # Mon(th)*(D)D*(Y)Y(YY) -> YYYY-MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%b %d %Y') if len(seg[0]) <= 3 \
+                else strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%B %d %Y')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}"
+
+        elif transform_format == 'dateyearmonthday':
+            # (Y)Y(YY)*(M)M*(D)D -> YYYY-MM-DD
+            parsed_date = strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%Y %m %d')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}"
+
+    elif transform_format.startswith('num'):
+        if transform_format == 'numcommadecimal':
+            # nnn*nnn*nnn,n -> nnnnnnnnn.n
+            value = re.sub(r'(\s|-|\.)', '', value)
+            return value.replace(',', '.')
+        if transform_format == 'numdotdecimal':
+            # nnn*nnn*nnn.n -> nnnnnnnnn.n
+            return re.sub(r'(\s|-|,)', '', value)
+    else:
+        raise InstanceParseException('Unknown fact transformation {}'.format(format))
 
 
 def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema,
