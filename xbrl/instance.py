@@ -494,7 +494,8 @@ def _extract_ixbrl_value(fact_elem: ET.Element) -> float or str:
         elif value_format == 'numdotdecimal':
             raw_value = float(fact_elem.text.strip().replace(' ', '').replace(',', ''))
         elif value_format == 'datemonthdayen':
-            # Value is in the format Month(en) Day i.e: December 31 or Dec 31
+            # Value is in the format Month(en) Day i.e: December 31 or Dec 31 or December-31 or Dec-31
+            fact_elem.text = fact_elem.text.replace('-', ' ')
             # convert it into the default format also used by standard xbrl (--MM-DD)
             if len(fact_elem.text.split(' ')[0]) == 3:
                 # The month is in the abbreviated form (i.e: Dec)
