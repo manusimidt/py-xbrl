@@ -18,6 +18,7 @@ def transform_ixt(value: str, transform_format: str) -> str:
     - Numbers: float value with a dot (.) as fraction separator. All thousands separators will be removed
     - Full Date: YYYY-DD-MM
     - Month-Day: --MM-DD
+    - Year-Month: YYYY-MM
     - boolean: "true" or "false"
     :param value: the raw text value
     :param transform_format: the transformation format
@@ -93,6 +94,20 @@ def transform_ixt(value: str, transform_format: str) -> str:
             # (Y)Y(YY)*(M)M*(D)D -> YYYY-MM-DD
             parsed_date = strptime(f'{seg[0]} {seg[1]} {seg[2]}', '%Y %m %d')
             return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}-{str(parsed_date.tm_mday).zfill(2)}"
+
+        elif transform_format == 'datemonthyear':
+            # (M)M*(Y)Y(YY) -> YYYY-MM
+            return f"{seg[1]}-{seg[0].zfill(2)}"
+
+        elif transform_format == 'datemonthyearen':
+            # Mon(th)*(Y)Y(YY) -> YYYY-MM
+            parsed_date = strptime(f'{seg[0]} {seg[1]}', '%B %Y')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}"
+
+        elif transform_format == 'dateyearmonthen':
+            # (Y)Y(YY)*Mon(th) -> YYYY-MM
+            parsed_date = strptime(f'{seg[0]} {seg[1]}', '%Y %B')
+            return f"{parsed_date.tm_year}-{str(parsed_date.tm_mon).zfill(2)}"
 
     elif transform_format.startswith('num'):
         if transform_format == 'numcommadecimal':

@@ -39,6 +39,7 @@ class TransformationTest(unittest.TestCase):
 
             ['datemonthyear', '12 2021', '2021-12'],
             ['datemonthyearen', 'December 2021', '2021-12'],
+            ['dateyearmonthen', '2021 December', '2021-12'],
 
             ['nocontent', 'Bla bla', ''],
             ['numcommadecimal', '1.499,99', '1499.99'],
