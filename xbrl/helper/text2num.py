@@ -77,7 +77,9 @@ class NumberException(Exception):
         Exception.__init__(self, msg)
 
 
-def text2num(s):
+def text2num(s) -> int:
+    if s.isnumeric(): return s
+
     a = re.split(r"[\s-]+", s)
     n = 0
     g = 0
