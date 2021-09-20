@@ -1,3 +1,4 @@
+import logging
 import re
 from time import strptime
 from xbrl.helper.text2num import text2num
@@ -44,7 +45,7 @@ def transform_ixt(value: str, transform_format: str) -> str:
 
     elif transform_format.startswith('date'):
         # replace dashes, dots etc. (Dec. 2021 -> Dec  2021)
-        value = re.sub(r'[,\-\._]', ' ', value)
+        value = re.sub(r'[,\-\._/]', ' ', value)
         # remove unnecessary spaces (Dec  2021 -> Dec 2021)
         value = re.sub(r'\s{2,}', ' ', value)
         seg = value.split(' ')
@@ -124,6 +125,7 @@ def transform_ixt(value: str, transform_format: str) -> str:
 def transform_ixt_sec(value: str, transform_format: str) -> str:
     """
     Transforms the value according to the SEC Transformation rules
+    https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf
     :param value:
     :param transform_format:
     :return:
@@ -138,4 +140,6 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
             value = value.replace(' and ', ' ')
             return str(text2num(value))
 
-    raise TransformationException('Unknown fact transformation {}'.format(transform_format))
+    # raise TransformationException('Unknown fact transformation {}'.format(transform_format))
+    logging.warning(f"The transformation rule ixt-sec:{transform_format} is currently not supported by this parser. "
+                    f"The value for the fact will not be transformed")

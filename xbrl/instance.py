@@ -438,8 +438,6 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
-
-
 def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
     """
     This function parses a ix:nonNumeric fact as defined in:
@@ -453,7 +451,7 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
 
     # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)
     for children in fact_elem:
-        fact_value += _extract_non_numeric_value(children)
+        fact_value += _extract_text_value(children)
 
     fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
     if fact_format:
@@ -478,7 +476,7 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
     fact_value = '' if fact_elem.text is None else fact_elem.text
     # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)
     for children in fact_elem:
-        fact_value += _extract_non_numeric_value(children)
+        fact_value += _extract_text_value(children)
 
     fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
     value_scale: int = int(fact_elem.attrib['scale']) if 'scale' in fact_elem.attrib else 0
@@ -497,6 +495,13 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
         scaled_value = -scaled_value
 
     return scaled_value
+
+
+def _extract_text_value(element: ET.Element) -> str:
+    text = '' if element.text is None else element.text
+    for children in element:
+        text += _extract_text_value(children)
+    return text
 
 
 def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, taxonomy: TaxonomySchema,
