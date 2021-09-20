@@ -39,7 +39,5 @@ class InstanceTest(unittest.TestCase):
         self.assertEqual(len(inst.facts), 3)
 
 
-
-
 if __name__ == '__main__':
     unittest.main()

@@ -6,11 +6,9 @@ as well as the taxonomies and linkbases used by the instance files
 """
 import abc
 import logging
-import re
 from typing import List
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
-from time import strptime
 
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
@@ -469,9 +467,10 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
     :param fact_elem:
     :return:
     """
-    xsi_nil_attrib: str = '{' + fact_elem.attrib['ns_map']['xsi'] + '}nil'
-    if xsi_nil_attrib in fact_elem.attrib and fact_elem.attrib[xsi_nil_attrib] == 'true':
-        return None
+    if 'xsi' in fact_elem.attrib['ns_map']:
+        xsi_nil_attrib: str = '{' + fact_elem.attrib['ns_map']['xsi'] + '}nil'
+        if xsi_nil_attrib in fact_elem.attrib and fact_elem.attrib[xsi_nil_attrib] == 'true':
+            return None
 
     fact_value = '' if fact_elem.text is None else fact_elem.text
     # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)

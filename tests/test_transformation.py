@@ -8,10 +8,8 @@ The job of the uri resolver is to resolve those relative paths and urls and retu
 import logging
 import sys
 import unittest
-import os
 
 from xbrl.helper.transformation import transform_ixt, transform_ixt_sec
-from xbrl.helper.uri_helper import resolve_uri, compare_uri
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
