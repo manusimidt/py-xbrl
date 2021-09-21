@@ -1,7 +1,7 @@
 import logging
 import re
 from time import strptime
-from xbrl.helper.text2num import text2num
+from xbrl.helper.text2num import text2num, NumberException
 
 
 class TransformationException(Exception):
@@ -134,6 +134,11 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
 
     value = value.lower().strip().replace(u'\xa0', u' ')
 
+    # replace dashes, dots etc. (Dec. 2021 -> Dec  2021)
+    value = re.sub(r'[,\-\._/]', ' ', value)
+    # remove unnecessary spaces (Dec  2021 -> Dec 2021)
+    value = re.sub(r'\s{2,}', ' ', value)
+
     if transform_format == 'numwordsen':
         if value == 'no' or value == 'none':
             return '0'
@@ -145,7 +150,29 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
             return 'false'
         else:
             return 'true'
+    elif transform_format == 'durwordsen':
+        value = replace_text_numbers(value)
+        seg = [x for x in re.split(r'\D', value) if len(x) > 0]
+        return f'P{seg[0]}Y{seg[1]}M'
 
     # raise TransformationException('Unknown fact transformation {}'.format(transform_format))
     logging.warning(f"The transformation rule ixt-sec:{transform_format} is currently not supported by this parser. "
                     f"The value for the fact will not be transformed")
+    return value
+
+
+def replace_text_numbers(text: str) -> str:
+    """
+    Takes a string like "Five years two months" and replaces each number in the text with the corresponding numeral.
+    => "5 years 2 months
+    :param text:
+    :return:
+    """
+    text = text.lower().strip().replace(u'\xa0', u' ')
+    word_arr = text.split(' ')
+    for x in range(len(word_arr)):
+        try:
+            word_arr[x] = str(text2num(word_arr[x]))
+        except NumberException:
+            continue
+    return ' '.join(word_arr)

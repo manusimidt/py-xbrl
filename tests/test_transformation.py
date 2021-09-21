@@ -59,7 +59,14 @@ class TransformationTest(unittest.TestCase):
             ['numwordsen', 'no', '0'],
             ['numwordsen', 'None', '0'],
             ['numwordsen', 'nineteen hundred forty-four', '1944'],
-            ['numwordsen', 'Seventy Thousand and one', '70001']
+            ['numwordsen', 'Seventy Thousand and one', '70001'],
+
+            ['boolballotbox', '☐', 'false'],
+            ['boolballotbox', '☑', 'true'],
+            ['boolballotbox', '☒', 'true'],
+
+            ['durwordsen', 'Five years, two months', 'P5Y2M'],
+            ['durwordsen', '9 years, 2 months', 'P9Y2M'],
         ]
 
         for i, test_transform in enumerate(test_transforms):
