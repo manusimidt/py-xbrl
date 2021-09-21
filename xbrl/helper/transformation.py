@@ -152,12 +152,22 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
             return 'true'
     elif transform_format == 'durwordsen':
         value = replace_text_numbers(value)
-        seg = [x for x in re.split(r'\D', value) if len(x) > 0]
-        return f'P{seg[0]}Y{seg[1]}M'
+        years, months, days = 0, 0, 0
+        words: [str] = value.split(' ')
+        for x in range(len(words) - 1):
+            if not words[x].isnumeric():
+                continue
+            if 'year' in words[x + 1]:
+                years = int(words[x])
+            elif 'month' in words[x + 1]:
+                months = int(words[x])
+            elif 'day' in words[x + 1]:
+                days = int(words[x])
+        return f'P{years}Y{months}M{days}D'
 
     # raise TransformationException('Unknown fact transformation {}'.format(transform_format))
-    logging.warning(f"The transformation rule ixt-sec:{transform_format} is currently not supported by this parser. "
-                    f"The value for the fact will not be transformed")
+    logging.info(f"The transformation rule ixt-sec:{transform_format} is currently not supported by this parser. "
+                 f"The value for the fact will not be transformed")
     return value
 
 

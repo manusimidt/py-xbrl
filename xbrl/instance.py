@@ -453,10 +453,13 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
 
     fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
     if fact_format:
-        if fact_format.startswith('ixt:'):
-            fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
-        elif fact_format.startswith('ixt-sec'):
-            fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
+        try:
+            if fact_format.startswith('ixt:'):
+                fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
+            elif fact_format.startswith('ixt-sec'):
+                fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
+        except Exception:
+            logging.warning(f'Could not transform value "{fact_value}" with format f{fact_format}')
 
     return fact_value
 
@@ -482,10 +485,13 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
     value_sign: str or None = fact_elem.attrib['sign'] if 'sign' in fact_elem.attrib else None
 
     if fact_format:
-        if fact_format.startswith('ixt:'):
-            fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
-        elif fact_format.startswith('ixt-sec'):
-            fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
+        try:
+            if fact_format.startswith('ixt:'):
+                fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
+            elif fact_format.startswith('ixt-sec'):
+                fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
+        except Exception:
+            logging.warning(f'Could not transform value "{fact_value}" with format f{fact_format}')
 
     scaled_value = float(fact_value) * pow(10, value_scale)
     # Floating-point error mitigation

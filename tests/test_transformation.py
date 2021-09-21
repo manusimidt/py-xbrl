@@ -65,8 +65,9 @@ class TransformationTest(unittest.TestCase):
             ['boolballotbox', '☑', 'true'],
             ['boolballotbox', '☒', 'true'],
 
-            ['durwordsen', 'Five years, two months', 'P5Y2M'],
-            ['durwordsen', '9 years, 2 months', 'P9Y2M'],
+            ['durwordsen', 'Five years, two months', 'P5Y2M0D'],
+            ['durwordsen', '9 years, 2 months', 'P9Y2M0D'],
+            ['durwordsen', '12 days', 'P0Y0M12D']
         ]
 
         for i, test_transform in enumerate(test_transforms):
