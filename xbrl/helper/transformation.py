@@ -126,6 +126,7 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
     """
     Transforms the value according to the SEC Transformation rules
     https://www.sec.gov/info/edgar/edgarfm-vol2-v50.pdf
+    https://www.sec.gov/info/edgar/specifications/edgarfm-vol2-v51_d.pdf
     :param value:
     :param transform_format:
     :return:
@@ -139,6 +140,11 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
         else:
             value = value.replace(' and ', ' ')
             return str(text2num(value))
+    elif transform_format == 'boolballotbox':
+        if value == '☐':
+            return 'false'
+        else:
+            return 'true'
 
     # raise TransformationException('Unknown fact transformation {}'.format(transform_format))
     logging.warning(f"The transformation rule ixt-sec:{transform_format} is currently not supported by this parser. "
