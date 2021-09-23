@@ -52,10 +52,11 @@ class HttpCache:
                               logs: bool = True) -> None:
         """
         Sets the connection params for all following request
-        :param delay: int specifying milliseconds to wait between each successfull request
+        :param delay: int specifying milliseconds to wait between each successful request
         :param retries: int specifying how many times a request will be tried before assuming its failure.
         :param backoff_factor: Used to measure time to sleep between failed requests. The formula used is:
             {backoff factor} * (2 ** ({number of total retries} - 1))
+        :param logs: enables or disables download logs
         :return:
         """
         self.connection_manager._delay_ms = delay
@@ -143,7 +144,16 @@ class HttpCache:
         return submission_dir_path
 
     def find_entry_file(self, dir_path: str) -> str or None:
-        """ Find the most likely entry file in provided filling directory """
+        """
+        NOTE: This function only works for enclosed SEC submissions that where already downloaded!
+        Also this function does only return the most likely file path for the instance document.
+        If you want to be certain i would recommend to use the SEC Structured Disclosure RSS Feeds
+        https://www.sec.gov/structureddata/rss-feeds-submitted-filings
+        These rss feeds list all files per submission and gives you information about the filetype (instance document,
+        taxonomy schema, label linkbase, exhibit e.t.c)
+
+        Find the most likely entry file in provided filling directory
+        """
 
         # filter for files in interest
         valid_files = []
