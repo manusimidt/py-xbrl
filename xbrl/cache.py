@@ -4,6 +4,7 @@ Downloads files and stores them locally.
 import re
 import os
 import zipfile
+from pathlib import Path
 
 from xbrl.helper.connection_manager import ConnectionManager
 
@@ -34,7 +35,6 @@ class HttpCache:
         # check if the cache_dir ends with a /
         if not cache_dir.endswith('/'): cache_dir += '/'
         self.cache_dir: str = cache_dir
-        self.delay: int = delay
         self.headers: dict or None = None
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
@@ -58,10 +58,9 @@ class HttpCache:
             {backoff factor} * (2 ** ({number of total retries} - 1))
         :return:
         """
-        self.connection_manager._delay = delay
+        self.connection_manager._delay_ms = delay
         self.connection_manager._retries = retries
         self.connection_manager._backoff_factor = backoff_factor
-        self.connection_manager._delay = delay
         self.connection_manager.logs = logs
 
     def cache_file(self, file_url: str) -> str:
@@ -119,7 +118,7 @@ class HttpCache:
         """
         return self.cache_dir + re.sub("https?://", "", url)
 
-    def cache_edgar_enclosure(self, enclosure_url: str) -> None:
+    def cache_edgar_enclosure(self, enclosure_url: str) -> str:
         """
         The SEC provides zip folders that contain all xbrl related files for a given submission.
         These files are i.e: Instance Document, Extension Taxonomy, Linkbases.
@@ -130,7 +129,7 @@ class HttpCache:
         One way to get the zip enclosure url is through the Structured Disclosure RSS Feeds provided by the SEC:
         https://www.sec.gov/structureddata/rss-feeds-submitted-filings
         :param enclosure_url: url to the zip folder.
-        :return:
+        :return: relative path to extracted zip's content
         """
         if not enclosure_url.endswith('.zip'):
             raise Exception("This is not a valid zip folder")
@@ -141,3 +140,37 @@ class HttpCache:
         with zipfile.ZipFile(enclosure_path, "r") as zip_ref:
             zip_ref.extractall(submission_dir_path)
             zip_ref.close()
+        return submission_dir_path
+
+    def find_entry_file(self, dir: str) -> str:
+        """ Find the most likelly entry file in provided filling directory """
+
+        # filter for files in interest
+        valid_files = []
+        for ext in '.htm .xml .xsd'.split(): # valid extensions in priority
+            for f in os.listdir(dir):
+                f_full = os.path.join(dir,f)
+                if os.path.isfile(f_full) and f.lower().endswith(ext):
+                    valid_files.append(f_full)
+
+        # find first file which is not included by others
+        entryCandidates = []
+        for file1 in valid_files:
+            fdir, file_nm = os.path.split(file1)
+            # foreach file check all other for inclusion
+            foundInOther = False
+            for file2 in valid_files:
+                if file1!=file2:
+                    if file_nm in Path(file2).read_text():
+                        foundInOther = True
+                        break
+
+            if foundInOther == False:
+                entryCandidates.append((file1, os.path.getsize(file1)))
+
+        # if multiple choose biggest
+        entryCandidates.sort(key=lambda tup: tup[1], reverse=True)
+        if len(entryCandidates) > 0:
+            file_path, size = entryCandidates[0]
+            return file_path
+        return None

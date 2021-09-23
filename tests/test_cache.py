@@ -30,10 +30,10 @@ class CacheHelperTest(unittest.TestCase):
         if os.path.isfile(expected_path):
             os.remove(expected_path)
 
-        # on the first execution the file will be downloaded from the internet
+        # on the first execution the file will be downloaded from the internet, no delay for first download
         time_stamp: float = time.time()
         self.assertEqual(cache.cache_file(test_url), expected_path)
-        self.assertGreaterEqual(time.time() - time_stamp, delay / 1000)
+        self.assertLess(time.time() - time_stamp, delay / 1000)
 
         # on the second execution the file path will be returned
         time_stamp = time.time()
