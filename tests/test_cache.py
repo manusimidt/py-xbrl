@@ -33,12 +33,25 @@ class CacheHelperTest(unittest.TestCase):
         # on the first execution the file will be downloaded from the internet, no delay for first download
         time_stamp: float = time.time()
         self.assertEqual(cache.cache_file(test_url), expected_path)
-        self.assertLess(time.time() - time_stamp, delay / 1000)
+        time_delta = time.time() - time_stamp
+        self.assertLess(time_delta, delay / 1000)
+        logging.info(f"Time delta for first download: {time_delta}ms")
 
-        # on the second execution the file path will be returned
+        # delete the file and download it again to check if the delay for the second download is working
+        self.assertTrue(cache.purge_file(test_url))
+
+        time_stamp: float = time.time()
+        self.assertEqual(cache.cache_file(test_url), expected_path)
+        time_delta = time.time() - time_stamp
+        self.assertGreaterEqual(time_delta, delay / 1000)
+        logging.info(f"Time delta for second download: {time_delta}ms")
+
+        # now that the file is cached on the hard drive, the file path should be returned immediately
         time_stamp = time.time()
         self.assertEqual(cache.cache_file(test_url), expected_path)
-        self.assertLess(time.time() - time_stamp, delay / 1000)
+        time_delta = time.time() - time_stamp
+        self.assertLess(time_delta, delay / 1000)
+        logging.info(f"Time delta for third download: {time_delta}ms")
 
         # test if the file was downloaded
         self.assertTrue(os.path.isfile(expected_path))

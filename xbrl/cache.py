@@ -142,35 +142,35 @@ class HttpCache:
             zip_ref.close()
         return submission_dir_path
 
-    def find_entry_file(self, dir: str) -> str:
-        """ Find the most likelly entry file in provided filling directory """
+    def find_entry_file(self, dir_path: str) -> str or None:
+        """ Find the most likely entry file in provided filling directory """
 
         # filter for files in interest
         valid_files = []
-        for ext in '.htm .xml .xsd'.split(): # valid extensions in priority
-            for f in os.listdir(dir):
-                f_full = os.path.join(dir,f)
+        for ext in '.htm .xml .xsd'.split():  # valid extensions in priority
+            for f in os.listdir(dir_path):
+                f_full = os.path.join(dir_path, f)
                 if os.path.isfile(f_full) and f.lower().endswith(ext):
                     valid_files.append(f_full)
 
         # find first file which is not included by others
-        entryCandidates = []
+        entry_candidates = []
         for file1 in valid_files:
-            fdir, file_nm = os.path.split(file1)
+            f_dir, file_nm = os.path.split(file1)
             # foreach file check all other for inclusion
-            foundInOther = False
+            found_in_other = False
             for file2 in valid_files:
-                if file1!=file2:
+                if file1 != file2:
                     if file_nm in Path(file2).read_text():
-                        foundInOther = True
+                        found_in_other = True
                         break
 
-            if foundInOther == False:
-                entryCandidates.append((file1, os.path.getsize(file1)))
+            if not found_in_other:
+                entry_candidates.append((file1, os.path.getsize(file1)))
 
         # if multiple choose biggest
-        entryCandidates.sort(key=lambda tup: tup[1], reverse=True)
-        if len(entryCandidates) > 0:
-            file_path, size = entryCandidates[0]
+        entry_candidates.sort(key=lambda tup: tup[1], reverse=True)
+        if len(entry_candidates) > 0:
+            file_path, size = entry_candidates[0]
             return file_path
         return None
