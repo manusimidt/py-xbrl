@@ -532,14 +532,14 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
         if instant_date is not None:
             # the context is a instant context
             context = InstantContext(context_id, entity,
-                                     datetime.strptime(instant_date.text.strip(), '%Y-%m-%d').date())
+                                     datetime.strptime(instant_date.text.strip()[:10], '%Y-%m-%d').date())
         elif forever is not None:
             context = ForeverContext(context_id, entity)
         else:
             # the context is a time frame context
             context = TimeFrameContext(context_id, entity,
-                                       datetime.strptime(start_date.text.strip(), '%Y-%m-%d').date(),
-                                       datetime.strptime(end_date.text.strip(), '%Y-%m-%d').date())
+                                       datetime.strptime(start_date.text.strip()[:10], '%Y-%m-%d').date(),
+                                       datetime.strptime(end_date.text.strip()[:10], '%Y-%m-%d').date())
 
         # check if dimensional information exists on this context and parse it
         segment: ET.Element = context_elem.find('xbrli:entity/xbrli:segment', NAME_SPACES)
