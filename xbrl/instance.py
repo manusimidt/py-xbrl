@@ -331,12 +331,12 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
-        context: AbstractContext = context_dir[fact_elem.attrib['contextRef']]
+        context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
 
         if 'unitRef' in fact_elem.attrib:
             # the fact is a numerical fact
             # get the unit
-            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef']]
+            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
             decimals_text: str = str(fact_elem.attrib['decimals']).strip()
             decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
             fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals)
@@ -418,13 +418,13 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         if tax is None: tax = _load_common_taxonomy(cache, ns_map[taxonomy_prefix], taxonomy)
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
-        context: AbstractContext = context_dir[fact_elem.attrib['contextRef']]
+        context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
         # ixbrl values are not normalized! They are formatted (i.e. 123,000,000)
 
         if fact_elem.tag == '{' + ns_map['ix'] + '}nonFraction':
             fact_value: float or None = _extract_non_fraction_value(fact_elem)
 
-            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef']]
+            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
             decimals_text: str = str(fact_elem.attrib['decimals']).strip() if 'decimals' in fact_elem.attrib else '0'
             decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
 
