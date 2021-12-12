@@ -8,6 +8,8 @@ import logging
 import sys
 from xbrl.cache import HttpCache
 from xbrl.taxonomy import TaxonomySchema, parse_taxonomy_url
+from xbrl.helper.uri_helper import normalise_uri_dict, normalise_uri
+
 from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -28,7 +30,11 @@ class RemoteTaxonomyTest(unittest.TestCase):
         schema_url: str = 'https://www.sec.gov/Archives/edgar/data/320193/000032019321000010/aapl-20201226.xsd'
         tax: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
         self.assertEqual(len(tax.concepts), 65)
-        us_gaap_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/us-gaap/2020-01-31')
+        
+        ns_to_taxonomy_LUT: dict = tax.get_taxonomy_LUT(dict())
+        ns_to_taxonomy_LUT = normalise_uri_dict(ns_to_taxonomy_LUT)
+        us_gaap_tax: TaxonomySchema = ns_to_taxonomy_LUT.get(normalise_uri('http://fasb.org/us-gaap/2020-01-31'), None)
+
         self.assertEqual(len(us_gaap_tax.concepts), 17281)
         self.assertEqual(len(tax.concepts['aapl_MacMember'].labels), 3)
 
