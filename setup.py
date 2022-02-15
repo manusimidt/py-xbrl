@@ -26,7 +26,11 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=('tests', 'cache', 'workdir')),
 
-    install_requires=["requests", "urllib3"],
+    install_requires=[
+        "requests", # needed for fetching xml files from the internet
+        "urllib3", # needed for http retries
+        "lxml"  # needed for parsing xml efficiently
+    ],
 
     classifiers=[
         'Development Status :: 4 - Beta',

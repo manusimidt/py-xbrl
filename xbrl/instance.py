@@ -4,10 +4,11 @@ This module contains all classes and functions necessary for parsing a Instance 
 This module will also access other Modules i.e TaxonomySchema.py to parse the Instance file
 as well as the taxonomies and linkbases used by the instance files
 """
+import re
 import abc
 import logging
 from typing import List
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 from datetime import date, datetime
 
 from xbrl import TaxonomyNotFound, InstanceParseException
@@ -380,8 +381,17 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     to the .getRoot() is missing. This has the benefit, that we can search the document with absolute xpath expressions
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
-    root: ET = parse_file(instance_path)
-    ns_map: dict = root.getroot().attrib['ns_map']
+    # cleaner = Cleaner()
+    # cleaner.javascript = True  # activate the javascript filter
+    # clean_html: str = lxml.html.tostring(cleaner.clean_html(lxml.html.parse(path)))
+
+    instance_file = open(instance_path, "r")
+    contents = instance_file.read()
+    pattern = r'<[ ]*script.*?\/[ ]*script[ ]*>'
+    contents = re.sub(pattern, '', contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
+    root: ET.Element = ET.fromstring(contents)
+    # root: ET = parse_file(instance_path)
+    ns_map: dict = root.nsmap
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
