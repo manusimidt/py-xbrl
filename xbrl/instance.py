@@ -7,8 +7,9 @@ as well as the taxonomies and linkbases used by the instance files
 import re
 import abc
 import logging
+from io import StringIO, BytesIO
 from typing import List
-import lxml.etree as ET
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 
 from xbrl import TaxonomyNotFound, InstanceParseException
@@ -389,9 +390,9 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     contents = instance_file.read()
     pattern = r'<[ ]*script.*?\/[ ]*script[ ]*>'
     contents = re.sub(pattern, '', contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
-    root: ET.Element = ET.fromstring(contents)
-    # root: ET = parse_file(instance_path)
-    ns_map: dict = root.nsmap
+
+    root: ET.Element = parse_file(StringIO(contents))
+    ns_map: dict = root.getroot().attrib['ns_map']
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']

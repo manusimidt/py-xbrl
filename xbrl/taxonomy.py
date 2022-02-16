@@ -9,7 +9,7 @@ Taxonomy schemas can import multiple different taxonomy schemas.
 import logging
 import os
 from typing import List
-import lxml.etree as ET
+import xml.etree.ElementTree as ET
 from functools import lru_cache
 from urllib.parse import unquote
 
