@@ -308,7 +308,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # parse contexts and units
-    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy, cache)
+    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy,
+                                          cache)
     unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
 
     # parse facts
@@ -382,16 +383,13 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     to the .getRoot() is missing. This has the benefit, that we can search the document with absolute xpath expressions
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
-    # cleaner = Cleaner()
-    # cleaner.javascript = True  # activate the javascript filter
-    # clean_html: str = lxml.html.tostring(cleaner.clean_html(lxml.html.parse(path)))
 
     instance_file = open(instance_path, "r")
     contents = instance_file.read()
     pattern = r'<[ ]*script.*?\/[ ]*script[ ]*>'
     contents = re.sub(pattern, '', contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
 
-    root: ET.Element = parse_file(StringIO(contents))
+    root: ET.ElementTree = parse_file(StringIO(contents))
     ns_map: dict = root.getroot().attrib['ns_map']
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
@@ -419,7 +417,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
 
     # parse facts
     facts: List[AbstractFact] = []
-    fact_elements: List[ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric', ns_map)
+    fact_elements: List[ET.Element] = root.findall('.//ix:nonFraction', ns_map) + root.findall('.//ix:nonNumeric',
+                                                                                               ns_map)
     for fact_elem in fact_elements:
         # update the prefix map (sometimes the xmlns is defined at XML-Element level and not at the root element)
         _update_ns_map(ns_map, fact_elem.attrib['ns_map'])
@@ -470,12 +469,12 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
             elif fact_format.startswith('ixt-sec'):
                 fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
         except Exception:
-            logging.warning(f'Could not transform value "{fact_value}" with format f{fact_format}')
-
+            logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
+            return fact_value
     return fact_value
 
 
-def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
+def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None or str:
     """
     https://www.xbrl.org/Specification/inlineXBRL-part1/PWD-2013-02-13/inlineXBRL-part1-PWD-2013-02-13.html#d1e5045
     :param fact_elem:
@@ -502,7 +501,8 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None:
             elif fact_format.startswith('ixt-sec'):
                 fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
         except Exception:
-            logging.warning(f'Could not transform value "{fact_value}" with format f{fact_format}')
+            logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
+            # return fact_value
 
     scaled_value = float(fact_value) * pow(10, value_scale)
     # Floating-point error mitigation

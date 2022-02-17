@@ -4,9 +4,7 @@ from time import strptime
 from xbrl.helper.text2num import text2num, NumberException
 
 
-class TransformationException(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self, msg)
+
 
 
 def transform_ixt(value: str, transform_format: str) -> str:
@@ -26,6 +24,8 @@ def transform_ixt(value: str, transform_format: str) -> str:
     :return:
     """
     value = value.lower().strip().replace(u'\xa0', u' ')
+    # remove dashes in the transformation format (num-dot-decimal -> numdotdecimal)
+    transform_format = transform_format.replace('-', '')
 
     if transform_format == 'booleanfalse':
         # * -> false
@@ -171,18 +171,4 @@ def transform_ixt_sec(value: str, transform_format: str) -> str:
     return value
 
 
-def replace_text_numbers(text: str) -> str:
-    """
-    Takes a string like "Five years two months" and replaces each number in the text with the corresponding numeral.
-    => "5 years 2 months
-    :param text:
-    :return:
-    """
-    text = text.lower().strip().replace(u'\xa0', u' ')
-    word_arr = text.split(' ')
-    for x in range(len(word_arr)):
-        try:
-            word_arr[x] = str(text2num(word_arr[x]))
-        except NumberException:
-            continue
-    return ' '.join(word_arr)
+
