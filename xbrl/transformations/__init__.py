@@ -91,7 +91,7 @@ monthNorm = {
 
 def yearNorm(year: str) -> str:
     if len(year) == 4: return year
-    if len(year) == 2: return '19' if int(year) > 60 else '20' + year
+    if len(year) == 2: return '19' + year if int(year) > 55 else '20' + year
     raise TransformationException(f'Could not normalize "{year}" to a year')
 
 
@@ -115,7 +115,7 @@ def dateDayMonthEN(arg: str) -> str:
 def dateDayMonthYear(arg: str) -> str:
     # (D)D*(M)M*(Y)Y(YY) -> YYYY-MM-DD
     seg = re.split(r'[^\d]+', arg)  # split at any char sequence that is not a digit
-    return f"{seg[2].zfill(2)}-{seg[1].zfill(2)}-{seg[0].zfill(2)}"
+    return f"{yearNorm(seg[2])}-{seg[1].zfill(2)}-{seg[0].zfill(2)}"
 
 
 def dateDayMonthYearEN(arg: str) -> str:
@@ -151,7 +151,7 @@ def dateMonthDayYearEN(arg: str) -> str:
 def dateMonthYear(arg: str) -> str:
     # (M)M*(Y)Y(YY) -> YYYY-MM
     seg = re.split(r'[^\d]+', arg)  # split at any char sequence that is not a digit
-    return f"{seg[1].zfill(2)}-{seg[0].zfill(2)}"
+    return f"{yearNorm(seg[1])}-{seg[0].zfill(2)}"
 
 
 def dateMonthYearEN(arg: str) -> str:
@@ -180,7 +180,7 @@ def dateYearMonthEN(arg: str) -> str:
 
 def numCommaDecimal(arg: str) -> str:
     # nnn*nnn*nnn,n -> nnnnnnnnn.n
-    arg = re.sub(r'(\s|-|\.)', '', arg)
+    arg = re.sub(r'[^\d,]+', '', arg)  # remove all chars that are not a digit and not a comma
     return arg.replace(',', '.')
 
 
