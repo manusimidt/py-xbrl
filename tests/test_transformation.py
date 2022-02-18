@@ -9,8 +9,7 @@ import logging
 import sys
 import unittest
 
-from xbrl.helper.transformation import transform_ixt, transform_ixt_sec
-from xbrl.transformations import normalize
+from xbrl.transformations import normalize, TransformationException
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -21,9 +20,8 @@ testTransforms = {
 
         ['booleantrue', 'yeah', 'true'],
 
-        ['datedaymonth', '2.12', '--12-02'],
-        ['datedaymonth', '1.1', '--01-01'],
-        ['datedaymonth', '12.11', '--11-12'],
+        ['datedaymonth', '11.12', '--12-11'],
+        ['datedaymonth', '1.2', '--02-01'],
 
         ['datedaymonthen', '2. December', '--12-02'],
         ['datedaymonthen', '2 Sept.', '--09-02'],
@@ -177,8 +175,15 @@ class TransformationTest(unittest.TestCase):
         for namespace in testTransforms:
             for i, testCase in enumerate(testTransforms[namespace]):
                 formatCode, testInput, expected = testCase
-                testOutput = normalize(namespace, formatCode, testInput)
-                self.assertEqual(expected, testOutput, msg=f'Failed at test elem {i} of registry {namespace}')
+                if expected == 'exception':
+                    try:
+                        testOutput = normalize(namespace, formatCode, testInput)
+                        self.fail('Expected Transformation Exception, received ' + testOutput)
+                    except TransformationException:
+                        pass
+                else:
+                    testOutput = normalize(namespace, formatCode, testInput)
+                    self.assertEqual(expected, testOutput, msg=f'Failed at test elem {i} of registry {namespace}')
 
 
 if __name__ == '__main__':

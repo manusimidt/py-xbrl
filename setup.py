@@ -27,8 +27,8 @@ setup(
     packages=find_packages(exclude=('tests', 'cache', 'workdir')),
 
     install_requires=[
-        "requests", # needed for fetching xml files from the internet
-        "urllib3" # needed for http retries
+        "requests",  # needed for fetching xml files from the internet
+        "urllib3"  # needed for http retries
     ],
 
     classifiers=[

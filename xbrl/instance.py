@@ -14,10 +14,10 @@ from datetime import date, datetime
 
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
-from xbrl.helper import transformation
 from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
+from xbrl.transformations import normalize, TransformationException, TransformationNotImplemented
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -450,8 +450,6 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
     """
     This function parses a ix:nonNumeric fact as defined in:
     https://www.xbrl.org/Specification/inlineXBRL-part1/PWD-2013-02-13/inlineXBRL-part1-PWD-2013-02-13.html#d1e6391
-
-
     :param fact_elem:
     :return:
     """
@@ -463,12 +461,16 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
 
     fact_format = fact_elem.attrib['format'] if 'format' in fact_elem.attrib else None
     if fact_format:
+        # extract transformation registry namespace and transformation rule code
+        registryPrefix, formatCode = fact_format.split(':')
+        registryNS: str = fact_elem.attrib['ns_map'][registryPrefix]
         try:
-            if fact_format.startswith('ixt:'):
-                fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
-            elif fact_format.startswith('ixt-sec'):
-                fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
-        except Exception:
+            fact_value = normalize(registryNS, formatCode, fact_value)
+        except TransformationNotImplemented:
+            logging.info(f'Transformation rule {formatCode} of registry {registryPrefix} is not supported. '
+                         f'The parser will just parse the value as it is and not transform it according to the rule.')
+            return fact_value
+        except TransformationException:
             logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
             return fact_value
     return fact_value
@@ -495,14 +497,18 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None or str:
     value_sign: str or None = fact_elem.attrib['sign'] if 'sign' in fact_elem.attrib else None
 
     if fact_format:
+        # extract transformation registry namespace and transformation rule code
+        registryPrefix, formatCode = fact_format.split(':')
+        registryNS: str = fact_elem.attrib['ns_map'][registryPrefix]
         try:
-            if fact_format.startswith('ixt:'):
-                fact_value = transformation.transform_ixt(fact_value, fact_format.split(':')[1])
-            elif fact_format.startswith('ixt-sec'):
-                fact_value = transformation.transform_ixt_sec(fact_value, fact_format.split(':')[1])
-        except Exception:
+            fact_value = normalize(registryNS, formatCode, fact_value)
+        except TransformationNotImplemented:
+            logging.info(f'Transformation rule {formatCode} of registry {registryPrefix} is not supported. '
+                         f'The parser will just parse the value as it is and not transform it according to the rule.')
+            return fact_value
+        except TransformationException:
             logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
-            # return fact_value
+            return fact_value
 
     scaled_value = float(fact_value) * pow(10, value_scale)
     # Floating-point error mitigation
@@ -515,6 +521,7 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None or str:
 
 def _extract_text_value(element: ET.Element) -> str:
     text = '' if element.text is None else element.text
+    if element.tail: text += element.tail
     for children in element:
         text += _extract_text_value(children)
     return text
