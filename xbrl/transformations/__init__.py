@@ -88,6 +88,32 @@ monthNorm = {
     'december': '12'
 }
 
+# exchange maps (https://www.sec.gov/info/edgar/specifications/edgarfm-vol2-v59.pdf page 203)
+exchangeNorm = {
+    'new york stock exchange': 'NYSE',
+    'nasdaq global select market': 'NASDAQ',
+    'nasdaq stock market': 'NASDAQ',
+    'box exchange': 'BOX',
+    'nasdaq bx': 'BX',
+    'cboe c2 exchange': 'C2',
+    'cboe exchange': 'CBOE',
+    'chicago stock exchange': 'CHX',
+    'cboe byx exchange': 'CboeBYX',
+    'cboe bzx exchange': 'CboeBZX',
+    'cboe edga exchange': 'CboeEDGA',
+    'cboe edgx exchange': 'CboeEDGX',
+    'nasdaq gemx': 'GEMX',
+    'investors exchange': 'IEX',
+    'nasdaq ise': 'ISE',
+    'miami international securities exchange': 'MIAX',
+    'nasdaq mrx': 'MRX',
+    'nyse american': 'NYSEAMER',
+    'nyse arca': 'NYSEArca',
+    'nyse national': 'NYSENAT',
+    'miax pearl': 'PEARL',
+    'nasdaq phlx': 'Phlx',
+}
+
 
 def yearNorm(year: str) -> str:
     if len(year) == 4: return year
@@ -224,6 +250,20 @@ def ballotBox(arg: str) -> str:
         return 'true'
     else:
         raise TransformationException("Invalid input for ballotBox transformation rule")
+
+
+def exchnameen(arg: str) -> str:
+    name = arg.lower().strip()
+    # remove any commas, points, e.t.c and "inc" or "llc"
+    name = re.sub(r'[^\w\s\d]|inc|llc|the', '', name.strip().lower())
+    # remove multiple spaces ("  ")
+    name = re.sub('r {2,}', ' ', name.strip())
+    if name.upper() in exchangeNorm.values():
+        return name.upper()
+    try:
+        return exchangeNorm[name]
+    except KeyError:
+        raise TransformationException(f'Unknown exchange "{name}"')
 
 
 # endregion ixt-sec mappings
@@ -370,7 +410,7 @@ ixt_sec = {
     'numwordsen': numWordSen,
     'datequarterend': notImplemented,
     'boolballotbox': ballotBox,
-    'exchnameen': notImplemented,
+    'exchnameen': exchnameen,
     'stateprovnameen': notImplemented,
     'countrynameen': notImplemented,
     'edgarprovcountryen': notImplemented,

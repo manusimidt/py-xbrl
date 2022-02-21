@@ -162,6 +162,30 @@ testTransforms = {
         ['boolballotbox', '☒', 'true'],
         ['boolballotbox', '&#9746;', 'true'],
 
+        ['exchnameen', 'The New York Stock Exchange', 'NYSE'],
+        ['exchnameen', 'New York Stock Exchange LLC', 'NYSE'],
+        ['exchnameen', 'NASDAQ Global Select Market', 'NASDAQ'],
+        ['exchnameen', 'The Nasdaq Stock Market LLC', 'NASDAQ'],
+        ['exchnameen', 'BOX Exchange LLC', 'BOX'],
+        ['exchnameen', 'Nasdaq BX, Inc.', 'BX'],
+        ['exchnameen', 'Cboe C2 Exchange, Inc.', 'C2'],
+        ['exchnameen', 'Cboe Exchange, Inc.', 'CBOE'],
+        ['exchnameen', 'Chicago Stock Exchange, Inc.', 'CHX'],
+        ['exchnameen', 'Cboe BYX Exchange, Inc.', 'CboeBYX'],
+        ['exchnameen', 'Cboe BZX Exchange, Inc.', 'CboeBZX'],
+        ['exchnameen', 'Cboe EDGA Exchange, Inc.', 'CboeEDGA'],
+        ['exchnameen', 'Cboe EDGX Exchange, Inc.', 'CboeEDGX'],
+        ['exchnameen', 'Nasdaq GEMX, LLC', 'GEMX'],
+        ['exchnameen', 'Investors Exchange LLC', 'IEX'],
+        ['exchnameen', 'Nasdaq ISE, LLC', 'ISE'],
+        ['exchnameen', 'Miami International Securities Exchange', 'MIAX'],
+        ['exchnameen', 'Nasdaq MRX, LLC', 'MRX'],
+        ['exchnameen', 'NYSE American LLC', 'NYSEAMER'],
+        ['exchnameen', 'NYSE Arca, Inc.', 'NYSEArca'],
+        ['exchnameen', 'NYSE National, Inc.', 'NYSENAT'],
+        ['exchnameen', 'MIAX PEARL, LLC', 'PEARL'],
+        ['exchnameen', 'Nasdaq PHLX LLC', 'Phlx'],
+
     ]
 }
 
