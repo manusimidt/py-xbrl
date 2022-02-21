@@ -353,6 +353,18 @@ def stateNameEN(arg: str) -> str:
         raise TransformationException(f'Unknown US State "{arg}"')
 
 
+def entityFilerCategoryEN(arg: str) -> str:
+    # large accelerated filer -> Large Accelerated Filer
+    arg = arg.lower().strip()
+    if arg == 'large accelerated filer':
+        return 'Large Accelerated Filer'
+    elif arg == 'accelerated filer':
+        return 'Accelerated Filer'
+    elif arg == 'non-accelerated filer':
+        return 'Non-accelerated Filer'
+    raise TransformationException(f'Unknown filer category')
+
+
 # endregion ixt-sec mappings
 
 ixt3 = {
@@ -501,7 +513,7 @@ ixt_sec = {
     'stateprovnameen': stateNameEN,
     'countrynameen': notImplemented,
     'edgarprovcountryen': notImplemented,
-    'entityfilercategoryen': notImplemented,
+    'entityfilercategoryen': entityFilerCategoryEN,
 }
 
 
