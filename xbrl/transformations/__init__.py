@@ -285,6 +285,15 @@ def durYear(arg: str) -> str:
     return f"{'P' if pos else '-P'}{fullYears}Y{fullMonths}M{remainingDays}D"
 
 
+def durMonth(arg: str) -> str:
+    # 22.3456 -> P22M10D (Period: 22 Months, 10 Days)
+    pos: bool = float(arg) >= 0
+    monthDec: float = abs(float(arg))
+    fullMonths: int = floor(abs(monthDec))
+    remainingDays: int = round((monthDec - fullMonths) * 30)
+    return f"{'P' if pos else '-P'}{fullMonths}M{remainingDays}D"
+
+
 def durWordSen(arg: str) -> str:
     value = replace_text_numbers(arg)
     years, months, days = 0, 0, 0
@@ -480,7 +489,7 @@ ixt4 = {
 # As defined in https://www.sec.gov/info/edgar/specifications/edgarfm-vol2-v59.pdf
 ixt_sec = {
     'duryear': durYear,
-    'durmonth': notImplemented,
+    'durmonth': durMonth,
     'durweek': notImplemented,
     'durday': notImplemented,
     'durhour': notImplemented,
