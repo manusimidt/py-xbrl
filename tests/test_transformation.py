@@ -145,6 +145,10 @@ testTransforms = {
     ],
     "http://www.sec.gov/inlineXBRL/transformation/2015-08-31": [
         # [format,value,expected]
+        ['duryear', '-22.3456', '-P22Y4M4D'],
+        ['duryear', '21.84480', 'P21Y10M5D'],
+        ['duryear', '+0.3456', 'P0Y4M4D'],
+
         ['durwordsen', 'Five years, two months', 'P5Y2M0D'],
         ['durwordsen', '9 years, 2 months', 'P9Y2M0D'],
         ['durwordsen', '12 days', 'P0Y0M12D'],
@@ -237,7 +241,6 @@ testTransforms = {
         ['stateprovnameen', 'West Virginia', 'WV'],
         ['stateprovnameen', 'Wisconsin', 'WI'],
         ['stateprovnameen', 'Wyoming', 'WY'],
-
     ]
 }
 

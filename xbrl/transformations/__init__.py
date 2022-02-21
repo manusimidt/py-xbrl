@@ -23,6 +23,7 @@ Prefix: ixt-sec
 Namespace: http://www.sec.gov/inlineXBRL/transformation/2015-08-31
 """
 import re
+from math import floor
 
 from xbrl.transformations.text2num import text2num, replace_text_numbers
 
@@ -273,6 +274,17 @@ def numDotDecimal(arg: str) -> str:
 
 # region ixt-sec mappings
 
+def durYear(arg: str) -> str:
+    # -22.3456 -> -P22Y4M4D (Period: 22 Years, 4 Months, 4 Days)
+    pos: bool = float(arg) >= 0
+    yearDec: float = abs(float(arg))
+    fullYears: int = floor(abs(yearDec))
+    fullDays: int = round((yearDec - fullYears) * 365.25)
+    fullMonths: int = floor(fullDays / 30.437)
+    remainingDays: int = round(fullDays - fullMonths * 30.437)
+    return f"{'P' if pos else '-P'}{fullYears}Y{fullMonths}M{remainingDays}D"
+
+
 def durWordSen(arg: str) -> str:
     value = replace_text_numbers(arg)
     years, months, days = 0, 0, 0
@@ -306,7 +318,7 @@ def ballotBox(arg: str) -> str:
         raise TransformationException("Invalid input for ballotBox transformation rule")
 
 
-def exchnameen(arg: str) -> str:
+def exchNameEN(arg: str) -> str:
     # "The New York Stock Exchange " -> "NYSE"
     name = arg.lower().strip()
     # remove any commas, points, e.t.c and "inc" or "llc"
@@ -321,7 +333,7 @@ def exchnameen(arg: str) -> str:
         raise TransformationException(f'Unknown exchange "{arg}"')
 
 
-def stateprovnameen(arg: str) -> str:
+def stateNameEN(arg: str) -> str:
     # "Kentucky" -> "KY"
     name = arg.lower().strip()
     # remove any commas, points e.t.c
@@ -467,7 +479,7 @@ ixt4 = {
 
 # As defined in https://www.sec.gov/info/edgar/specifications/edgarfm-vol2-v59.pdf
 ixt_sec = {
-    'duryear': notImplemented,
+    'duryear': durYear,
     'durmonth': notImplemented,
     'durweek': notImplemented,
     'durday': notImplemented,
@@ -476,8 +488,8 @@ ixt_sec = {
     'numwordsen': numWordSen,
     'datequarterend': notImplemented,
     'boolballotbox': ballotBox,
-    'exchnameen': exchnameen,
-    'stateprovnameen': stateprovnameen,
+    'exchnameen': exchNameEN,
+    'stateprovnameen': stateNameEN,
     'countrynameen': notImplemented,
     'edgarprovcountryen': notImplemented,
     'entityfilercategoryen': notImplemented,
