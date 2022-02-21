@@ -114,6 +114,60 @@ exchangeNorm = {
     'nasdaq phlx': 'Phlx',
 }
 
+stateNormUS = {
+    'alabama': 'AL',
+    'alaska': 'AK',
+    'arizona': 'AZ',
+    'arkansas': 'AR',
+    'california': 'CA',
+    'colorado': 'CO',
+    'connecticut': 'CT',
+    'delaware': 'DE',
+    'florida': 'FL',
+    'georgia': 'GA',
+    'hawaii': 'HI',
+    'idaho': 'ID',
+    'illinois': 'IL',
+    'indiana': 'IN',
+    'iowa': 'IA',
+    'kansas': 'KS',
+    'kentucky': 'KY',
+    'louisiana': 'LA',
+    'maine': 'ME',
+    'maryland': 'MD',
+    'massachusetts': 'MA',
+    'michigan': 'MI',
+    'minnesota': 'MN',
+    'mississippi': 'MS',
+    'missouri': 'MO',
+    'montana': 'MT',
+    'nebraska': 'NE',
+    'nevada': 'NV',
+    'new hampshire': 'NH',
+    'new jersey': 'NJ',
+    'new mexico': 'NM',
+    'new york': 'NY',
+    'north carolina': 'NC',
+    'north dakota': 'ND',
+    'ohio': 'OH',
+    'oklahoma': 'OK',
+    'oregon': 'OR',
+    'pennsylvania': 'PA',
+    'rhode island': 'RI',
+    'south carolina': 'SC',
+    'south dakota': 'SD',
+    'tennessee': 'TN',
+    'texas': 'TX',
+    'utah': 'UT',
+    'vermont': 'VT',
+    'virginia': 'VA',
+    'washington': 'WA',
+    'washington dc': 'DC',
+    'west virginia': 'WV',
+    'wisconsin': 'WI',
+    'wyoming': 'WY',
+}
+
 
 def yearNorm(year: str) -> str:
     if len(year) == 4: return year
@@ -253,9 +307,10 @@ def ballotBox(arg: str) -> str:
 
 
 def exchnameen(arg: str) -> str:
+    # "The New York Stock Exchange " -> "NYSE"
     name = arg.lower().strip()
     # remove any commas, points, e.t.c and "inc" or "llc"
-    name = re.sub(r'[^\w\s\d]|inc|llc|the', '', name.strip().lower())
+    name = re.sub(r'[^\w\s\d]|inc|llc|the', '', name)
     # remove multiple spaces ("  ")
     name = re.sub('r {2,}', ' ', name.strip())
     if name.upper() in exchangeNorm.values():
@@ -263,7 +318,18 @@ def exchnameen(arg: str) -> str:
     try:
         return exchangeNorm[name]
     except KeyError:
-        raise TransformationException(f'Unknown exchange "{name}"')
+        raise TransformationException(f'Unknown exchange "{arg}"')
+
+
+def stateprovnameen(arg: str) -> str:
+    # "Kentucky" -> "KY"
+    name = arg.lower().strip()
+    # remove any commas, points e.t.c
+    name = re.sub(r'[^\w\s\d]', '', name.strip().lower())
+    try:
+        return stateNormUS[name]
+    except KeyError:
+        raise TransformationException(f'Unknown US State "{arg}"')
 
 
 # endregion ixt-sec mappings
@@ -411,7 +477,7 @@ ixt_sec = {
     'datequarterend': notImplemented,
     'boolballotbox': ballotBox,
     'exchnameen': exchnameen,
-    'stateprovnameen': notImplemented,
+    'stateprovnameen': stateprovnameen,
     'countrynameen': notImplemented,
     'edgarprovcountryen': notImplemented,
     'entityfilercategoryen': notImplemented,
