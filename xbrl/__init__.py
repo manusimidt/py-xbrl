@@ -76,7 +76,7 @@ class ContextParseException(InstanceParseException):
     pass
 
 
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 __author__ = 'Manuel Schmidt <hello@schmidt-manuel.de>'
 __all__ = [
     XbrlParseException,
