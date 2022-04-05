@@ -366,12 +366,13 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     return parse_ixbrl(instance_path, cache, instance_url)
 
 
-def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
+def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
     :param instance_path: path to the submission you want to parse
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
+    :param encoding: optionally specify a file encoding
     This function will check, if the instance file is already in the cache and load it from there based on the
     instance_url.
     For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
@@ -384,7 +385,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
 
-    instance_file = open(instance_path, "r")
+    instance_file = open(instance_path, "r", encoding=encoding)
     contents = instance_file.read()
     pattern = r'<[ ]*script.*?\/[ ]*script[ ]*>'
     contents = re.sub(pattern, '', contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))

@@ -362,7 +362,7 @@ def entityFilerCategoryEN(arg: str) -> str:
         return 'Accelerated Filer'
     elif arg == 'non-accelerated filer':
         return 'Non-accelerated Filer'
-    raise TransformationException(f'Unknown filer category')
+    raise TransformationException(f'Unknown filer category "{arg}"')
 
 
 # endregion ixt-sec mappings
