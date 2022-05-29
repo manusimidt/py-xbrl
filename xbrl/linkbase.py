@@ -8,7 +8,7 @@ reference linkbase: ref
 """
 import abc
 import os
-from io import StringIO
+from io import StringIO, IOBase
 from typing import List
 import xml.etree.ElementTree as ET
 from abc import ABC
