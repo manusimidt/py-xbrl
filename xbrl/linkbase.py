@@ -8,6 +8,7 @@ reference linkbase: ref
 """
 import abc
 import os
+from io import StringIO, IOBase
 from typing import List
 import xml.etree.ElementTree as ET
 from abc import ABC
@@ -428,7 +429,7 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
     return parse_linkbase(linkbase_path, linkbase_type, linkbase_url)
 
 
-def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url: str or None = None) -> Linkbase:
+def parse_linkbase(linkbase_path: str or IOBase or StringIO, linkbase_type: LinkbaseType, linkbase_url: str or None = None) -> Linkbase:
     """
     Parses a linkbase and returns a Linkbase object containing all
     locators, arcs and links of the linkbase in a hierarchical order (a Tree)
@@ -440,10 +441,11 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     the url has to be set so that the parser can connect the locator with concept from the taxonomy
     :return:
     """
-    if linkbase_path.startswith('http'): raise XbrlParseException(
-        'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
-    if not os.path.exists(linkbase_path):
-        raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_path}")
+    if isinstance(linkbase_path, str):
+        if linkbase_path.startswith('http'): raise XbrlParseException(
+            'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
+        if not os.path.exists(linkbase_path):
+            raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_path}")
 
     root: ET.Element = ET.parse(linkbase_path).getroot()
     # store the role refs in a dictionary, with the role uri as key.
@@ -490,7 +492,8 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
             if not locator_href.startswith('http'):
                 # resolve the path
                 # todo, try to get the URL here, instead of the path!!!
-                locator_href = resolve_uri(linkbase_url if linkbase_url else linkbase_path, locator_href)
+                if linkbase_url or isinstance(linkbase_path, str):
+                    locator_href = resolve_uri(linkbase_url if linkbase_url else linkbase_path, locator_href)
             locator_map[loc_label] = Locator(locator_href, loc_label)
 
         # Performance: extract the labels in advance. The label name (xlink:label) is the key and the value is

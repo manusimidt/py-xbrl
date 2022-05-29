@@ -7,7 +7,7 @@ as well as the taxonomies and linkbases used by the instance files
 import re
 import abc
 import logging
-from io import StringIO, BytesIO
+from io import StringIO, BytesIO, IOBase
 from typing import List
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
@@ -246,8 +246,7 @@ class XbrlInstance(abc.ABC):
     """
     Class representing a xbrl instance file
     """
-
-    def __init__(self, url: str, taxonomy: TaxonomySchema, facts: List[AbstractFact], context_map: dict,
+    def __init__(self, url: str or IOBase or StringIO, taxonomy: TaxonomySchema, facts: List[AbstractFact], context_map: dict,
                  unit_map: dict) -> None:
         """
         :param taxonomy: taxonomy file that the instance file references (via link:schemaRef)
@@ -255,12 +254,15 @@ class XbrlInstance(abc.ABC):
         """
         self.taxonomy: TaxonomySchema = taxonomy
         self.facts: List[AbstractFact] = facts
-        self.instance_url: str = url
+        self.instance_url: str or IOBase or StringIO = url
         self.context_map: dict = context_map
         self.unit_map: dict = unit_map
 
     def __str__(self) -> str:
-        file_name: str = self.instance_url.split('/')[-1]
+        if isinstance(self.instance_url, str):
+            file_name: str = self.instance_url.split('/')[-1]
+        elif isinstance(self.instance_url, IOBase):
+            file_name: str = self.instance_url.__str__()
         return "{} with {} facts".format(file_name, len(self.facts))
 
 
@@ -279,7 +281,7 @@ def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     return parse_xbrl(instance_path, cache, instance_url)
 
 
-def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
+def parse_xbrl(instance_path: str or IOBase or StringIO, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
     :param instance_path: url to the instance file (on the internet)
@@ -293,6 +295,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
+
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
     if schema_uri.startswith('http'):
@@ -302,10 +305,12 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
-    else:
+    elif isinstance(instance_path, str):
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
+    elif isinstance(instance_path, IOBase):
+        taxonomy: TaxonomySchema = parse_taxonomy(instance_path, cache)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy,
@@ -331,22 +336,24 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         taxonomy_ns = taxonomy_ns.replace('{', '')
         # get the concept object from the taxonomy
         tax = taxonomy.get_taxonomy(taxonomy_ns)
-        if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
+        if tax is None:
+            tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
 
-        concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
-        context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
+        if concept_name in tax.name_id_map:
+            concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+            context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
 
-        if 'unitRef' in fact_elem.attrib:
-            # the fact is a numerical fact
-            # get the unit
-            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
-            decimals_text: str = str(fact_elem.attrib['decimals']).strip()
-            decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
-            fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals)
-        else:
-            # the fact is probably a text fact
-            fact = TextFact(concept, context, fact_elem.text.strip())
-        facts.append(fact)
+            if 'unitRef' in fact_elem.attrib:
+                # the fact is a numerical fact
+                # get the unit
+                unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
+                decimals_text: str = str(fact_elem.attrib['decimals']).strip()
+                decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
+                fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals)
+            else:
+                # the fact is probably a text fact
+                fact = TextFact(concept, context, fact_elem.text.strip())
+            facts.append(fact)
 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
@@ -366,7 +373,7 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     return parse_ixbrl(instance_path, cache, instance_url)
 
 
-def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
+def parse_ixbrl(instance_path: str or IOBase or StringIO, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
     :param instance_path: path to the submission you want to parse
@@ -385,7 +392,10 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
 
-    instance_file = open(instance_path, "r", encoding=encoding)
+    if isinstance(instance_path, str):
+        instance_file = open(instance_path, "r", encoding=encoding)
+    elif isinstance(instance_path, IOBase):
+        instance_file = instance_path
     contents = instance_file.read()
     pattern = r'<[ ]*script.*?\/[ ]*script[ ]*>'
     contents = re.sub(pattern, '', contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
@@ -395,6 +405,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find('.//{}schemaRef'.format(LINK_NS))
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
+
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
     if schema_uri.startswith('http'):
@@ -404,10 +415,12 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
-    else:
+    elif isinstance(instance_path, str):
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
+    elif isinstance(instance_path, IOBase):
+        taxonomy: TaxonomySchema = parse_taxonomy(instance_path, cache)
 
     # get all contexts and units
     xbrl_resources: ET.Element = root.find('.//ix:resources', ns_map)
@@ -581,11 +594,12 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
                 if member_tax is None:
                     # try to subsequently load the taxonomy
                     member_tax = _load_common_taxonomy(cache, ns_map[member_prefix], taxonomy)
-                dimension_concept: Concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
-                member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
+                if dimension_concept_name in dimension_tax.name_id_map and member_concept_name in member_tax.name_id_map:
+                    dimension_concept: Concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
+                    member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
 
-                # add the explicit member to the context
-                context.segments.append(ExplicitMember(dimension_concept, member_concept))
+                    # add the explicit member to the context
+                    context.segments.append(ExplicitMember(dimension_concept, member_concept))
 
         context_dict[context_id] = context
     return context_dict
@@ -676,9 +690,15 @@ class XbrlParser:
         instance document was downloaded, the parser can fetch relative imports using this base url
         :return:
         """
+
         if path.split('.')[-1] == 'xml' or path.split('.')[-1] == 'xbrl':
             return parse_xbrl(path, self.cache, instance_url)
         return parse_ixbrl(path, self.cache, instance_url)
+
+    def parse_file_obj(self, file_obj, instance_url: str or None = None, is_xbrl: bool = True):
+        if is_xbrl is True:
+            return parse_xbrl(file_obj, self.cache, instance_url)
+        return parse_ixbrl(file_obj, self.cache, instance_url)
 
     def __str__(self) -> str:
         return 'XbrlParser with cache dir at {}'.format(self.cache.cache_dir)

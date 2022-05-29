@@ -8,14 +8,17 @@ Taxonomy schemas can import multiple different taxonomy schemas.
 """
 import logging
 import os
+from io import StringIO, IOBase
 from typing import List
 import xml.etree.ElementTree as ET
+
 from functools import lru_cache
 from urllib.parse import unquote
 
 from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri, compare_uri
+from xbrl.helper.xml_parser import parse_file
 from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
 
 logger = logging.getLogger(__name__)
@@ -432,7 +435,7 @@ class TaxonomySchema:
     This parser will not parse all Schemas and imports, only what is necessary.
     """
 
-    def __init__(self, schema_url: str, namespace: str):
+    def __init__(self, schema_url: str or IOBase or StringIO, namespace: str):
         """
         The imports array stores an array of all Schemas that are imported.
         The current Taxonomy Schema can override the extended schemas in the following way:
@@ -472,7 +475,7 @@ class TaxonomySchema:
         :return either a TaxonomySchema obj or None
         :return:
         """
-        if compare_uri(self.namespace, url) or compare_uri(self.schema_url, url):
+        if (self.namespace is not None and compare_uri(self.namespace, url)) or (isinstance(self.schema_url, str) and compare_uri(self.schema_url, url)):
             return self
 
         for imported_tax in self.imports:
@@ -513,7 +516,7 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     return parse_taxonomy(schema_path, cache, schema_url)
 
 
-def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
+def parse_taxonomy(schema_path: str or IOBase or StringIO, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
     :param schema_path: url to the schema (on the internet)
@@ -522,15 +525,28 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
     imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
     :return:
     """
-    if schema_path.startswith('http'): raise XbrlParseException(
-        'This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas')
-    if not os.path.exists(schema_path):
-        raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")
+
+    if isinstance(schema_path, str):
+        if schema_path.startswith('http'): raise XbrlParseException(
+            'This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas')
+        if not os.path.exists(schema_path):
+            raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")
 
     # Get the local absolute path to the schema file (and download it if it is not yet cached)
-    root: ET.Element = ET.parse(schema_path).getroot()
+    if isinstance(schema_path, str):
+        root: ET.Element = ET.parse(schema_path).getroot()
+    elif isinstance(schema_path, IOBase):
+        root: ET.Element = parse_file(schema_path).getroot()
     # get the target namespace of the taxonomy
-    target_ns = root.attrib['targetNamespace']
+
+    if 'targetNamespace' in root.attrib:
+        target_ns = root.attrib['targetNamespace']
+    else:
+        schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
+        schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
+        ticker = schema_uri.split("-")[0]
+        target_ns = root.attrib['ns_map'][ticker]
+
     taxonomy: TaxonomySchema = TaxonomySchema(schema_url if schema_url else schema_path, target_ns)
 
     import_elements: List[ET.Element] = root.findall('xsd:import', NAME_SPACES)
@@ -546,10 +562,12 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
             # fetch the schema file from remote by reconstructing the full url
             import_url = resolve_uri(schema_url, import_uri)
             taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
-        else:
+        elif isinstance(schema_path, str):
             # We have to try to fetch the linkbase locally because no full url can be constructed
             import_path = resolve_uri(schema_path, import_uri)
             taxonomy.imports.append(parse_taxonomy(import_path, cache))
+        elif isinstance(schema_path, IOBase):
+            taxonomy.imports.append(parse_taxonomy(schema_path, cache))
 
     role_type_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's
@@ -597,10 +615,12 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
             # fetch the linkbase from remote by reconstructing the full URL
             linkbase_url = resolve_uri(schema_url, linkbase_uri)
             linkbase: Linkbase = parse_linkbase_url(linkbase_url, linkbase_type, cache)
-        else:
+        elif isinstance(schema_path, str):
             # We have to try to fetch the linkbase locally because no full url can be constructed
             linkbase_path = resolve_uri(schema_path, linkbase_uri)
             linkbase: Linkbase = parse_linkbase(linkbase_path, linkbase_type)
+        elif isinstance(schema_path, IOBase):
+            linkbase: Linkbase = parse_linkbase(schema_path, linkbase_type)
 
         # add the linkbase to the taxonomy
         if linkbase_type == LinkbaseType.DEFINITION:
