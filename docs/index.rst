@@ -5,11 +5,24 @@
 
 Welcome to py-xbrl's documentation!
 ===================================
+py-xbrl is an open source XBRL-parser. It can parse both
+xbrl and inline-xbrl files.
+
+.. note::
+
+   This documentation is currently under development!!
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+
+Contents
+--------
+
+.. toctree::
+
+   usage
 
 
 Indices and tables
