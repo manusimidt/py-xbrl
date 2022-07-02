@@ -23,6 +23,9 @@ Contents
 .. toctree::
 
    usage
+   instance
+   linkbase
+   taxonomy
 
 
 Indices and tables
