@@ -8,9 +8,9 @@ Taxonomy schemas can import multiple different taxonomy schemas.
 """
 import logging
 import os
-from typing import List
 import xml.etree.ElementTree as ET
 from functools import lru_cache
+from typing import List
 from urllib.parse import unquote
 
 from xbrl import XbrlParseException, TaxonomyNotFound
@@ -327,7 +327,8 @@ ns_schema_map: dict = {
     "http://xbrl.sec.gov/sic/2021": "https://xbrl.sec.gov/sic/2021/sic-2021.xsd",
     "http://xbrl.sec.gov/stpr/2011-01-31": "https://xbrl.sec.gov/stpr/2011/stpr-2011-01-31.xsd",
     "http://xbrl.sec.gov/stpr/2018-01-31": "https://xbrl.sec.gov/stpr/2018/stpr-2018-01-31.xsd",
-    "http://xbrl.sec.gov/stpr/2021": "https://xbrl.sec.gov/stpr/2021/stpr-2021.xsd", # Replace draft taxonomy with official STPR 2021 one once it is released
+    "http://xbrl.sec.gov/stpr/2021": "https://xbrl.sec.gov/stpr/2021/stpr-2021.xsd",
+    # Replace draft taxonomy with official STPR 2021 one once it is released
     "http://xbrl.us/ar/2008-03-31": "http://xbrl.us/us-gaap/1.0/non-gaap/ar-2008-03-31.xsd",
     "http://xbrl.us/ar/2009-01-31": "http://taxonomies.xbrl.us/us-gaap/2009/non-gaap/ar-2009-01-31.xsd",
     "http://xbrl.us/country/2008-03-31": "http://xbrl.us/us-gaap/1.0/non-gaap/country-2008-03-31.xsd",
@@ -444,6 +445,9 @@ class TaxonomySchema:
             All Linkbases of this taxonomy can override i.e the order of concepts in a definition linkbase
         4. Overriding of resources:
             The Label Linkbase of this taxonomy can override the labels of the base taxonomy!
+
+        :param schema_url:
+        :param namespace:
         """
         self.imports: List[TaxonomySchema] = []
         self.link_roles: List[ExtendedLinkRole] = []

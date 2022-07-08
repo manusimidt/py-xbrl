@@ -394,8 +394,7 @@ class Linkbase:
     def __init__(self, extended_links, linkbase_type: LinkbaseType) -> None:
         """
         @param extended_links: All standard extended links that are defined in the linkbase
-        @type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or
-                                [ExtendedLabelArc]
+        @type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or [ExtendedLabelArc]
         """
         self.extended_links: List[ExtendedLink] = extended_links
         self.type = linkbase_type

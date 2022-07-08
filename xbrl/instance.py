@@ -653,6 +653,7 @@ class XbrlParser:
     def parse_instance(self, url: str) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
+
         :param url: url to the instance file.
             i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm
         :return:
@@ -664,7 +665,9 @@ class XbrlParser:
     def parse_instance_locally(self, path: str, instance_url: str or None = None) -> XbrlInstance:
         """
         Parses a locally stored xbrl instance (either xbrl or ixbrl)
-        NOTE:
+
+        .. warning::
+
             If the instance document or extension taxonomy have relative imports the parser will also search for those
             files locally!
             Example: your instance document is located at './data/aapl/2020/aapl-20200926.html' and the instance document
@@ -673,7 +676,7 @@ class XbrlParser:
 
         :param path: the path to the instance document you want to parse
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
-        instance document was downloaded, the parser can fetch relative imports using this base url
+            instance document was downloaded, the parser can fetch relative imports using this base url
         :return:
         """
         if path.split('.')[-1] == 'xml' or path.split('.')[-1] == 'xbrl':
