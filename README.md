@@ -30,7 +30,7 @@ The XBRL Parser consists of three modules:
 - instance: This module parses the instance document itself
 
 This quick readme will only explain how to parse an instance document since this is probably the most common use case.
-
+You can check out the full documentation at https://py-xbrl.readthedocs.io/
 ### Http Cache
 
 This parser requires a place to store files that are related with the xbrl instance document. This folder has to be
