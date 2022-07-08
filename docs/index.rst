@@ -23,9 +23,14 @@ Contents
 .. toctree::
 
    usage
-   instance
-   linkbase
-   taxonomy
+
+.. toctree::
+   :caption: Modules
+
+   modules/instance
+   modules/linkbase
+   modules/taxonomy
+   modules/cache
 
 
 Indices and tables

@@ -41,8 +41,9 @@ class HttpCache:
     def set_headers(self, headers: dict) -> None:
         """
         Sets the header for all following request
+
         :param headers: python dictionary with string key and value
-                i.e.: {"From": "pete.smith@example.com", "User-Agent" : "ExampleBot/1.0 (https.example.com/exampleBot)"}
+            i.e.: {"From": "pete.smith@example.com", "User-Agent" : "ExampleBot/1.0 (https.example.com/exampleBot)"}
         :return:
         """
         self.headers = headers
@@ -52,6 +53,7 @@ class HttpCache:
                               logs: bool = True) -> None:
         """
         Sets the connection params for all following request
+
         :param delay: int specifying milliseconds to wait between each successful request
         :param retries: int specifying how many times a request will be tried before assuming its failure.
         :param backoff_factor: Used to measure time to sleep between failed requests. The formula used is:
@@ -68,9 +70,9 @@ class HttpCache:
         """
         Caches a file in the http cache.
 
-        @param file_url: absolute url to the file to be cached.
-                    i.e: http://xbrl.fasb.org/us-gaap/2017/elts/us-gaap-2017-01-31.xsd
-        @return: returns the absolute path to the cached file
+        :param file_url: absolute url to the file to be cached.
+            i.e: http://xbrl.fasb.org/us-gaap/2017/elts/us-gaap-2017-01-31.xsd
+        :return: returns the absolute path to the cached file
         """
         file_path: str = self.url_to_path(file_url)
         # first check if the files
@@ -100,6 +102,7 @@ class HttpCache:
     def purge_file(self, file_url: str) -> bool:
         """
         Removes a file from the cache
+
         :param file_url: url to the file
             i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019318000100/aapl-20180630.xml
         :return: true if the file was deleted, false if it could not be found
@@ -113,6 +116,7 @@ class HttpCache:
     def url_to_path(self, url: str) -> str:
         """
         Takes a url and converts it to the ABSOLUTE local cache path
+
         i.e https://xbrl.sec.gov/dei/2018/dei-2018-01-31.xsd -> /xbrl.sec.gov/dei/2018/dei-2018-01-31.xsd
         @param url:
         @return:
