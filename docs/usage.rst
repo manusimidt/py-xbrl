@@ -44,3 +44,67 @@ the instance file!
     submission online by just providing the link (https://www.sec.gov/Archives/edgar/data/320193/000032019321000105/aapl-20210925.htm)
     `py-xbrl` will automatically download the taxonomy extension schema
     and the linkbases.
+
+
+Online
+------
+Here is an example how to parse an XBRL Instance Document
+directly from SEC EDGAR. Please set the HTTP headers to your
+email as it is required by the SEC!
+
+
+.. code-block:: python
+
+    import logging
+    from xbrl.cache import HttpCache
+    from xbrl.instance import XbrlParser, XbrlInstance
+
+    logging.basicConfig(level=logging.INFO)
+
+    cache: HttpCache = HttpCache('./cache')
+    cache.set_headers({'From': 'YOUR.NAME@COMPANY.com', 'User-Agent': 'py-xbrl/2.1.1'})
+    parser = XbrlParser(cache)
+
+    schema_url = "https://www.sec.gov/Archives/edgar/data/320193/000032019321000105/aapl-20210925.htm"
+    inst: XbrlInstance = parser.parse_instance(schema_url)
+    print(inst)
+
+Locally
+-------
+When parsing locally it is really important that you have all
+submission files stored locally, not only the Instance Document.
+Submissions (10-K, 10-Q) from SEC EDGAR for example come with
+their own taxonomy extension. To parse the following example your
+folder would need to contain the following files:
+
+::
+
+    aapl-20210925
+    ├── aapl-20210925.htm
+    ├── aapl-20210925.xsd
+    ├── aapl-20210925_cal.xml
+    ├── aapl-20210925_def.xml
+    ├── aapl-20210925_lab.xml
+    └── aapl-20210925_pre.xml
+
+If you have all submission files stored locally in the same folder
+you can parse the submission py providing py-xbrl with the path
+to the instance document.
+
+.. code-block:: python
+
+    import logging
+    from xbrl.cache import HttpCache
+    from xbrl.instance import XbrlParser, XbrlInstance
+
+    logging.basicConfig(level=logging.INFO)
+
+    cache: HttpCache = HttpCache('./cache')
+    parser = XbrlParser(cache)
+
+    schema_path = "./cache/aapl-20210925/aapl-20210925.htm"
+    inst: XbrlInstance = parser.parse_instance_locally(schema_path)
+    print(inst)
+
+
+
