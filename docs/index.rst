@@ -28,8 +28,8 @@ Contents
    :caption: Modules
 
    modules/instance
-   modules/linkbase
    modules/taxonomy
+   modules/linkbase
    modules/cache
 
 

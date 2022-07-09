@@ -1,8 +1,8 @@
 """
 Downloads files and stores them locally.
 """
-import re
 import os
+import re
 import zipfile
 from pathlib import Path
 
@@ -11,26 +11,15 @@ from xbrl.helper.connection_manager import ConnectionManager
 
 class HttpCache:
     """
-    This class handles a simple disk cache. It will download requested files and store them in folder specified by
-    the user. If the file is requested a second time this class will serve the file directly from the file system.
-    The path for caching is created out of the url of the file.
-    For example, the file with the URL
-    "https://www.sec.gov/Archives/edgar/data/320193/000032019318000100/aapl-20180630.xml"
-    will be stored in the disk cache in
-    „D:/cache/www.sec.gov/Archives/edgar/data/320193/000032019318000100/aapl-20180630.xml“
-    where "D:/cache" is the caching directory specified by the user.
-
-    The http cache can also delay requests. This is highly recommended if you download xbrl submissions in batch!
-
-    The SEC also emphasizes that you should try to keep the required server load on the EDGAR system as small as possible!
-    https://www.sec.gov/privacy.htm#security
-
+    Simple persistent HTTP cache. Requests files over http and stores them into the cache. Just returns
+    the file path if the same file is requested twice. Also automatically handles retries when request fails.
     """
 
     def __init__(self, cache_dir: str, delay: int = 500, verify_https: bool = True):
         """
         :param cache_dir: Root directory of the disk cache (all requested files will be cached in this directory)
-        :param delay: How many milliseconds should the cache wait, before requesting another file from the same server
+        :param delay: Minimum time in milliseconds between two requests
+        :param verify_https: Disable SSL certificate validation for speed up (see https://github.com/manusimidt/py-xbrl/pull/57)
         """
         # check if the cache_dir ends with a /
         if not cache_dir.endswith('/'): cache_dir += '/'
@@ -43,8 +32,14 @@ class HttpCache:
         Sets the header for all following request
 
         :param headers: python dictionary with string key and value
-            i.e.: {"From": "pete.smith@example.com", "User-Agent" : "ExampleBot/1.0 (https.example.com/exampleBot)"}
-        :return:
+        Example header:
+
+        .. code-block:: json
+
+            {
+                "From": "pete.smith@example.com",
+                "User-Agent" : "ExampleBot/1.0 (https.example.com/exampleBot)"
+            }
         """
         self.headers = headers
         self.connection_manager._headers = headers
@@ -54,12 +49,11 @@ class HttpCache:
         """
         Sets the connection params for all following request
 
-        :param delay: int specifying milliseconds to wait between each successful request
+        :param delay: Minimum time in milliseconds between two requests
         :param retries: int specifying how many times a request will be tried before assuming its failure.
         :param backoff_factor: Used to measure time to sleep between failed requests. The formula used is:
             {backoff factor} * (2 ** ({number of total retries} - 1))
         :param logs: enables or disables download logs
-        :return:
         """
         self.connection_manager._delay_ms = delay
         self.connection_manager._retries = retries
@@ -70,8 +64,7 @@ class HttpCache:
         """
         Caches a file in the http cache.
 
-        :param file_url: absolute url to the file to be cached.
-            i.e: http://xbrl.fasb.org/us-gaap/2017/elts/us-gaap-2017-01-31.xsd
+        :param file_url: url (https link) to the file to be cached.
         :return: returns the absolute path to the cached file
         """
         file_path: str = self.url_to_path(file_url)
@@ -88,7 +81,8 @@ class HttpCache:
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
-                raise Exception("Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
+                raise Exception(
+                    "Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
             else:
                 raise Exception(
                     "Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))
@@ -103,8 +97,7 @@ class HttpCache:
         """
         Removes a file from the cache
 
-        :param file_url: url to the file
-            i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019318000100/aapl-20180630.xml
+        :param file_url: url (https link) to the file to be deleted.
         :return: true if the file was deleted, false if it could not be found
         """
         try:
@@ -115,27 +108,21 @@ class HttpCache:
 
     def url_to_path(self, url: str) -> str:
         """
-        Takes a url and converts it to the ABSOLUTE local cache path
+        Takes a url and converts it to the absolute local cache path
 
-        i.e https://xbrl.sec.gov/dei/2018/dei-2018-01-31.xsd -> /xbrl.sec.gov/dei/2018/dei-2018-01-31.xsd
-        @param url:
-        @return:
+        :param url: url of the file you want to know the cache path
+        :return: absolute local cache path
         """
         return self.cache_dir + re.sub("https?://", "", url)
 
     def cache_edgar_enclosure(self, enclosure_url: str) -> str:
         """
-        The SEC provides zip folders that contain all xbrl related files for a given submission.
-        These files are i.e: Instance Document, Extension Taxonomy, Linkbases.
-        Due to the fact that the zip compression is very effective on xbrl submissions that naturally contain
-        repeating test, it is way more efficient to download the zip folder and extract it.
-        So if you want to do the SEC servers and your downloading time a favour, use this method for downloading
-        the submission :).
-        One way to get the zip enclosure url is through the Structured Disclosure RSS Feeds provided by the SEC:
-        https://www.sec.gov/structureddata/rss-feeds-submitted-filings
+        Downloads the ZIP folder, extracts it and stores the files in the cache.
+
         :param enclosure_url: url to the zip folder.
         :return: relative path to extracted zip's content
         """
+        # todo: why is it called "cache_edgar_enclosure" you could theoretically cache any zip enclosure.
         if not enclosure_url.endswith('.zip'):
             raise Exception("This is not a valid zip folder")
         # download the zip folder and store it into the default http cache
@@ -147,6 +134,7 @@ class HttpCache:
             zip_ref.close()
         return submission_dir_path
 
+    @DeprecationWarning
     def find_entry_file(self, dir_path: str) -> str or None:
         """
         NOTE: This function only works for enclosed SEC submissions that where already downloaded!

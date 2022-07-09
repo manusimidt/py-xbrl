@@ -23,7 +23,7 @@ class ConnectionManager:
                  verify_https: bool = True):
         """
 
-        @param from_locator: Specifies sleeping time after the request is successfull.
+        @param delay: Specifies sleeping time after the request is successful.
         @param retries: How many times a request will be tried before assuming its failure.
         @param backoff_factor: Used to measure time to sleep between failed requests.
             The formula used is {backoff factor} * (2 ** ({number of total retries} - 1))
