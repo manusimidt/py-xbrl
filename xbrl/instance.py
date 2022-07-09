@@ -266,14 +266,15 @@ class XbrlInstance(abc.ABC):
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
-    Parses a instance file with it's taxonomy
+    Parses a instance file with it's taxonomy. This function will check, if the instance file is already
+    in the cache and load it from there based on the instance_url.
+    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
+    i.e. Use CacheHelper.extract_edgar_enclosure()
+
     :param instance_url: url to the instance file (on the internet)
     :param cache: HttpCache instance
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
     return parse_xbrl(instance_path, cache, instance_url)
@@ -282,12 +283,13 @@ def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
 def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
+
     :param instance_path: url to the instance file (on the internet)
     :param cache: HttpCache instance
     :param instance_url: optional url to the instance file. Is sometimes necessary if the xbrl filings have their own
-    extension taxonomy. If i.e. a submission from the sec is parsed, the instance file might reference the taxonomy schema
-    with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
-    :return:
+        extension taxonomy. If i.e. a submission from the sec is parsed, the instance file might reference the taxonomy schema
+        with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     root: ET.Element = parse_file(instance_path).getroot()
     # get the link to the taxonomy schema and parse it
@@ -354,13 +356,10 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
 def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
     return parse_ixbrl(instance_path, cache, instance_url)
@@ -369,15 +368,12 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
 def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+
     :param instance_path: path to the submission you want to parse
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     :param encoding: optionally specify a file encoding
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     """
     In contrary to the XBRL-parse method we use here the actual root instead of the root element!!!

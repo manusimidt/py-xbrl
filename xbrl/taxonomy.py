@@ -1,10 +1,5 @@
 """
 This module contains all classes and functions necessary for parsing Taxonomy schema files.
-
-A Taxonomy schema defines the reportable concepts and links the linkbases to
-describe the relationships between the concepts.
-Taxonomy schemas can import multiple different taxonomy schemas.
-
 """
 import logging
 import os
@@ -436,15 +431,7 @@ class TaxonomySchema:
     def __init__(self, schema_url: str, namespace: str):
         """
         The imports array stores an array of all Schemas that are imported.
-        The current Taxonomy Schema can override the extended schemas in the following way:
-        1. Addition of new concepts:
-            New concepts are added in this TaxonomySchema to extend the concepts declared in the base Taxonomy schemas
-        2. Addition of resources:
-            The Label Linkbase of this taxonomy can add new labels to existing concepts from the base taxonomy
-        3. Overriding of relationships:
-            All Linkbases of this taxonomy can override i.e the order of concepts in a definition linkbase
-        4. Overriding of resources:
-            The Label Linkbase of this taxonomy can override the labels of the base taxonomy!
+
 
         :param schema_url:
         :param namespace:
@@ -506,9 +493,10 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
 def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     """
     Parses a taxonomy schema file from the internet
-    :param schema_url:
-    :param cache:
-    :return:
+
+    :param schema_url: full link to the taxonomy schema
+    :param cache: :class:`xbrl.cache.HttpCache` instance
+    :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
     if not schema_url.startswith('http'): raise XbrlParseException(
         'This function only parses remotely saved taxonomies. Please use parse_taxonomy to parse local taxonomy schemas')
@@ -520,11 +508,12 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
 def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
+
     :param schema_path: url to the schema (on the internet)
-    :param cache: HttpCache instance
+    :param cache: :class:`xbrl.cache.HttpCache` instance
     :param schema_url: if this url is set, the script will try to fetch additionally imported files such as linkbases or
-    imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
-    :return:
+        imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
+    :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
     if schema_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas')

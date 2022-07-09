@@ -413,8 +413,8 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
 
     :param linkbase_url: full link to the linkbase
     :param linkbase_type: type of the linkbase (calculation-, label-, presentation-, ...)
-    :param cache: http cache instance
-    :return: parsed Linkbase object
+    :param cache: :class:`xbrl.cache.HttpCache` instance
+    :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
     if not linkbase_url.startswith('http'): raise XbrlParseException(
         'This function only parses remotely saved linkbases. Please use parse_linkbase to parse local linkbases')
@@ -435,7 +435,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     :param linkbase_url: if the locator of the linkbase contain relative references to concepts
         (i.e.: './../schema.xsd#Assets') the url has to be set so that the parser can connect
         the locator with concept from the taxonomy
-    :return: parsed Linkbase object
+    :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
     if linkbase_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
