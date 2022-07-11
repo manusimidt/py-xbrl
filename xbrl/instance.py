@@ -4,19 +4,19 @@ This module contains all classes and functions necessary for parsing a Instance 
 This module will also access other Modules i.e TaxonomySchema.py to parse the Instance file
 as well as the taxonomies and linkbases used by the instance files
 """
-import re
 import abc
 import logging
-from io import StringIO, BytesIO
-from typing import List
+import re
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
+from io import StringIO
+from typing import List
 
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
-from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
+from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.transformations import normalize, TransformationException, TransformationNotImplemented
 
 logger = logging.getLogger(__name__)
@@ -335,7 +335,12 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         tax = taxonomy.get_taxonomy(taxonomy_ns)
         if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
 
-        concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        try:
+            concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        except KeyError:
+            logger.warning(f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} "
+                           f"won't be parsed!")
+            continue
         context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
 
         if 'unitRef' in fact_elem.attrib:

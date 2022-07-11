@@ -460,8 +460,7 @@ class TaxonomySchema:
         Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
         If the taxonomy cannot be found, the function will return None
         :param url: can either be the namespace or the schema url
-        :return either a TaxonomySchema obj or None
-        :return:
+        :return: either a TaxonomySchema obj or None
         """
         if compare_uri(self.namespace, url) or compare_uri(self.schema_url, url):
             return self
