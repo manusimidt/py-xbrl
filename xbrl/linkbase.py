@@ -1,17 +1,9 @@
-"""
-Module for parsing Linkbases
-
-There are three types of Linkbase:
-relation linkbases: calculation, definition and presentation
-label linkbase: lab
-reference linkbase: ref
-"""
 import abc
 import os
-from typing import List
 import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
+from typing import List
 
 from xbrl import XbrlParseException, LinkbaseNotFoundException
 from xbrl.cache import HttpCache
@@ -388,14 +380,14 @@ class ExtendedLink:
 
 class Linkbase:
     """
-    Represents the complete Linkbase
+    Represents a complete Linkbase (non-generic).
     """
 
-    def __init__(self, extended_links, linkbase_type: LinkbaseType) -> None:
+    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType) -> None:
         """
-        @param extended_links: All standard extended links that are defined in the linkbase
-        @type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or
-                                [ExtendedLabelArc]
+        :param extended_links: All standard extended links that are defined in the linkbase
+        :type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or [ExtendedLabelArc]
+        :param linkbase_type: Type of the linkbase
         """
         self.extended_links: List[ExtendedLink] = extended_links
         self.type = linkbase_type
@@ -403,7 +395,6 @@ class Linkbase:
     def to_dict(self) -> dict:
         """
         Converts the Linkbase object with in a dictionary representing the Hierarchy of the locators
-        @return:
         """
         return {"standardExtendedLinkElements": [el.to_dict() for el in self.extended_links]}
 
@@ -412,7 +403,6 @@ class Linkbase:
         Does the same as to_dict() but ignores the ArcElements.
         So it basically returns the hierarchy, without the information in which type of relationship
         parent and children are
-        @return:
         """
         return {"standardExtendedLinkElements": [el.to_simple_dict() for el in self.extended_links]}
 
@@ -420,6 +410,11 @@ class Linkbase:
 def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: HttpCache) -> Linkbase:
     """
     Parses a linkbase given given a url
+
+    :param linkbase_url: full link to the linkbase
+    :param linkbase_type: type of the linkbase (calculation-, label-, presentation-, ...)
+    :param cache: :class:`xbrl.cache.HttpCache` instance
+    :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
     if not linkbase_url.startswith('http'): raise XbrlParseException(
         'This function only parses remotely saved linkbases. Please use parse_linkbase to parse local linkbases')
@@ -433,12 +428,14 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     Parses a linkbase and returns a Linkbase object containing all
     locators, arcs and links of the linkbase in a hierarchical order (a Tree)
     A Linkbase usually does not import any additional files.
-    Thus we do not need a cache instance
+    Thus no cache instance is needed
+
     :param linkbase_path: path to the linkbase
     :param linkbase_type: Type of the linkbase
-    :param linkbase_url: if the locator of the linkbase contain relative references to concepts (i.e.: './../schema.xsd#Assets'
-    the url has to be set so that the parser can connect the locator with concept from the taxonomy
-    :return:
+    :param linkbase_url: if the locator of the linkbase contain relative references to concepts
+        (i.e.: './../schema.xsd#Assets') the url has to be set so that the parser can connect
+        the locator with concept from the taxonomy
+    :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
     if linkbase_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')

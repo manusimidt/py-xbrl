@@ -4,19 +4,19 @@ This module contains all classes and functions necessary for parsing a Instance 
 This module will also access other Modules i.e TaxonomySchema.py to parse the Instance file
 as well as the taxonomies and linkbases used by the instance files
 """
-import re
 import abc
 import logging
-from io import StringIO, BytesIO
-from typing import List
+import re
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
+from io import StringIO
+from typing import List
 
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
-from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
+from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.transformations import normalize, TransformationException, TransformationNotImplemented
 
 logger = logging.getLogger(__name__)
@@ -266,14 +266,15 @@ class XbrlInstance(abc.ABC):
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
-    Parses a instance file with it's taxonomy
+    Parses a instance file with it's taxonomy. This function will check, if the instance file is already
+    in the cache and load it from there based on the instance_url.
+    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
+    i.e. Use CacheHelper.extract_edgar_enclosure()
+
     :param instance_url: url to the instance file (on the internet)
     :param cache: HttpCache instance
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
     return parse_xbrl(instance_path, cache, instance_url)
@@ -282,12 +283,13 @@ def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
 def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
+
     :param instance_path: url to the instance file (on the internet)
     :param cache: HttpCache instance
     :param instance_url: optional url to the instance file. Is sometimes necessary if the xbrl filings have their own
-    extension taxonomy. If i.e. a submission from the sec is parsed, the instance file might reference the taxonomy schema
-    with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
-    :return:
+        extension taxonomy. If i.e. a submission from the sec is parsed, the instance file might reference the taxonomy schema
+        with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     root: ET.Element = parse_file(instance_path).getroot()
     # get the link to the taxonomy schema and parse it
@@ -333,7 +335,12 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         tax = taxonomy.get_taxonomy(taxonomy_ns)
         if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
 
-        concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        try:
+            concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        except KeyError:
+            logger.warning(f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} "
+                           f"won't be parsed!")
+            continue
         context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
 
         if 'unitRef' in fact_elem.attrib:
@@ -354,13 +361,10 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
 def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
     return parse_ixbrl(instance_path, cache, instance_url)
@@ -369,15 +373,12 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
 def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
+
     :param instance_path: path to the submission you want to parse
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     :param encoding: optionally specify a file encoding
-    This function will check, if the instance file is already in the cache and load it from there based on the
-    instance_url.
-    For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-        i.e. Use CacheHelper.extract_edgar_enclosure()
-    :return:
+    :return: parsed XbrlInstance object containing all facts with additional information
     """
     """
     In contrary to the XBRL-parse method we use here the actual root instead of the root element!!!
@@ -653,6 +654,7 @@ class XbrlParser:
     def parse_instance(self, url: str) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
+
         :param url: url to the instance file.
             i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm
         :return:
@@ -664,7 +666,9 @@ class XbrlParser:
     def parse_instance_locally(self, path: str, instance_url: str or None = None) -> XbrlInstance:
         """
         Parses a locally stored xbrl instance (either xbrl or ixbrl)
-        NOTE:
+
+        .. warning::
+
             If the instance document or extension taxonomy have relative imports the parser will also search for those
             files locally!
             Example: your instance document is located at './data/aapl/2020/aapl-20200926.html' and the instance document
@@ -673,7 +677,7 @@ class XbrlParser:
 
         :param path: the path to the instance document you want to parse
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
-        instance document was downloaded, the parser can fetch relative imports using this base url
+            instance document was downloaded, the parser can fetch relative imports using this base url
         :return:
         """
         if path.split('.')[-1] == 'xml' or path.split('.')[-1] == 'xbrl':
