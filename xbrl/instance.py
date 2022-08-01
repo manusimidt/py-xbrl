@@ -5,6 +5,7 @@ This module will also access other Modules i.e TaxonomySchema.py to parse the In
 as well as the taxonomies and linkbases used by the instance files
 """
 import abc
+import json
 import logging
 import re
 import xml.etree.ElementTree as ET
@@ -186,6 +187,29 @@ class AbstractFact(abc.ABC):
     def __str__(self) -> str:
         return "{}: {}".format(self.concept.name, str(self.value))
 
+    def json(self, **kwargs) -> dict:
+        if isinstance(self.context, TimeFrameContext):
+            start_date = self.context.start_date
+            end_date = self.context.end_date
+        elif isinstance(self.context, InstantContext):
+            start_date = self.context.instant_date
+            end_date = self.context.instant_date
+        else:
+            start_date = '',
+            end_date = ''
+
+        kwargs['value'] = self.value
+        kwargs['start_date'] = str(start_date)
+        kwargs['end_date'] = str(end_date)
+        kwargs["taxonomy"] = self.concept.schema_url
+        kwargs['concept'] = self.concept.name
+        kwargs["entity"] = self.context.entity
+        if len(self.context.segments) != 0:
+            kwargs['dimensions'] = []
+            for segment in self.context.segments:
+                kwargs['dimensions'].append({"axis": segment.dimension.name, "member": segment.member.name})
+        return kwargs
+
 
 class NumericFact(AbstractFact):
     """
@@ -208,6 +232,9 @@ class NumericFact(AbstractFact):
         super().__init__(concept, context, value)
         self.unit: AbstractUnit = unit
         self.decimals: int or None = decimals
+
+    def json(self) -> dict:
+        return super().json(unit=str(self.unit))
 
 
 class TextFact(AbstractFact):
@@ -262,6 +289,32 @@ class XbrlInstance(abc.ABC):
     def __str__(self) -> str:
         file_name: str = self.instance_url.split('/')[-1]
         return "{} with {} facts".format(file_name, len(self.facts))
+
+    def json(self, file_path: str = None) -> str or None:
+        """
+        Converts the instance document into json format
+        :param file_path: if a path is given the function will store the json there
+        :return: string (serialized json) or None (if file_path was given)
+
+        https://www.xbrl.org/Specification/xbrl-json/CR-2017-05-02/xbrl-json-CR-2017-05-02.html
+        https://www.xbrl.org/Specification/xbrl-json/CR-2021-07-07/xbrl-json-CR-2021-07-07.html
+        These two xbrl-json specification drafts are very different.
+        The latter uses fact_id as keys in the fact dictionary. However many older reports have no fact id's.
+        Additionally fact ids of iXBRL documents can be really really ugly (Hashes concatenated with UUIDs).
+        Therefore i will design my own JSON structure until the Specification is finalized by XBRL International.
+        """
+        json_dict: dict = {
+            "instance_url": self.instance_url,
+            "taxonomy_urls": self.taxonomy.get_schema_urls(),
+            "facts": []
+        }
+        for fact in self.facts:
+            json_dict['facts'].append(fact.json())
+        if file_path:
+            with open('data.json', 'w') as f:
+                return json.dump(json_dict, f)
+        else:
+            return json.dumps(json_dict)
 
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:

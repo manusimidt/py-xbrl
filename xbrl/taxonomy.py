@@ -471,6 +471,17 @@ class TaxonomySchema:
                 return result
         return None
 
+    def get_schema_urls(self) -> []:
+        """
+        Returns an array of all taxonomy urls that are used by this taxonomy
+        Also includes the schema url of this taxonomy
+        :return:
+        """
+        urls: [] = [self.schema_url]
+        for imported_tax in self.imports:
+            urls += imported_tax.get_schema_urls()
+        return list(set(urls))
+
 
 def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or None:
     """
