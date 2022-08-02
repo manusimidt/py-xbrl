@@ -173,15 +173,17 @@ class AbstractFact(abc.ABC):
     A Fact combines a Value with a Concept and a Context
     """
 
-    def __init__(self, concept: Concept, context: AbstractContext, value: any) -> None:
+    def __init__(self, concept: Concept, context: AbstractContext, value: any, xml_id: str or None) -> None:
         """
         :param concept: concept from the taxonomy, that the fact is referencing
         :param context: context of the fact
         :param value: value of the fact (can be number or text)
+        :param xml_id: id value of the fact
         """
         self.concept: Concept = concept
         self.context: AbstractContext = context
         self.value: any = value
+        self.xml_id = xml_id
         self.footnote: Footnote or None = None
 
     def __str__(self) -> str:
@@ -220,7 +222,7 @@ class NumericFact(AbstractFact):
     """
 
     def __init__(self, concept: Concept, context: AbstractContext, value: float or None, unit: AbstractUnit,
-                 decimals: int or None) -> None:
+                 decimals: int or None, xml_id: str or None) -> None:
         """
         :param concept: see Abstract Fact
         :param context: see Abstract Fact
@@ -229,7 +231,7 @@ class NumericFact(AbstractFact):
         :param decimals: how accurate the number is. If decimals is none, the value of the fact is considered as
         accurate, without rounding errors
         """
-        super().__init__(concept, context, value)
+        super().__init__(concept, context, value, xml_id)
         self.unit: AbstractUnit = unit
         self.decimals: int or None = decimals
 
@@ -245,8 +247,8 @@ class TextFact(AbstractFact):
     @warning The content of a Text fact can be huge. Especially for Text Blocks, those can also contain HTML code
     """
 
-    def __init__(self, concept: Concept, context: AbstractContext, value: str) -> None:
-        super().__init__(concept, context, value)
+    def __init__(self, concept: Concept, context: AbstractContext, value: str, xml_id: str or None) -> None:
+        super().__init__(concept, context, value, xml_id)
 
 
 class Footnote:
@@ -381,6 +383,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         if fact_elem.text is None or len(str(fact_elem.text).strip()) == 0:
             continue
 
+        xml_id: str or None = fact_elem.attrib['id'] if 'id' in fact_elem.attrib else None
+
         # find the taxonomy where the tag is coming from
         taxonomy_ns, concept_name = fact_elem.tag.split('}')
         taxonomy_ns = taxonomy_ns.replace('{', '')
@@ -402,10 +406,10 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
             unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
             decimals_text: str = str(fact_elem.attrib['decimals']).strip()
             decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
-            fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals)
+            fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals, xml_id)
         else:
             # the fact is probably a text fact
-            fact = TextFact(concept, context, fact_elem.text.strip())
+            fact = TextFact(concept, context, fact_elem.text.strip(), xml_id)
         facts.append(fact)
 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
@@ -482,6 +486,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         tax = taxonomy.get_taxonomy(ns_map[taxonomy_prefix])
         if tax is None: tax = _load_common_taxonomy(cache, ns_map[taxonomy_prefix], taxonomy)
 
+        xml_id: str or None = fact_elem.attrib['id'] if 'id' in fact_elem.attrib else None
+
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
         # ixbrl values are not normalized! They are formatted (i.e. 123,000,000)
@@ -493,10 +499,10 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
             decimals_text: str = str(fact_elem.attrib['decimals']).strip() if 'decimals' in fact_elem.attrib else '0'
             decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
 
-            facts.append(NumericFact(concept, context, fact_value, unit, decimals))
+            facts.append(NumericFact(concept, context, fact_value, unit, decimals, xml_id))
         elif fact_elem.tag == '{' + ns_map['ix'] + '}nonNumeric':
             fact_value: str = _extract_non_numeric_value(fact_elem)
-            facts.append(TextFact(concept, context, str(fact_value)))
+            facts.append(TextFact(concept, context, str(fact_value), xml_id))
 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
@@ -698,44 +704,29 @@ def _load_common_taxonomy(cache: HttpCache, namespace: str, taxonomy: TaxonomySc
 class XbrlParser:
     """
     XbrlParser to make interaction easier.
-
     """
 
     def __init__(self, cache: HttpCache):
         self.cache = cache
 
-    def parse_instance(self, url: str) -> XbrlInstance:
+    def parse_instance(self, uri: str, instance_url: str or None = None) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
-
-        :param url: url to the instance file.
-            i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.htm
-        :return:
-        """
-        if url.split('.')[-1] == 'xml' or url.split('.')[-1] == 'xbrl':
-            return parse_xbrl_url(url, self.cache)
-        return parse_ixbrl_url(url, self.cache)
-
-    def parse_instance_locally(self, path: str, instance_url: str or None = None) -> XbrlInstance:
-        """
-        Parses a locally stored xbrl instance (either xbrl or ixbrl)
 
         .. warning::
 
             If the instance document or extension taxonomy have relative imports the parser will also search for those
             files locally!
-            Example: your instance document is located at './data/aapl/2020/aapl-20200926.html' and the instance document
-            imports the taxonomy using a relative path '<schemaRef href="./aapl-20200926.xsd"/>' the parser will search
-            the document at "./data/aapl/2020/aapl-20200926.xsd".
 
-        :param path: the path to the instance document you want to parse
+        :param uri: url to the instance file.
+            i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
             instance document was downloaded, the parser can fetch relative imports using this base url
         :return:
         """
-        if path.split('.')[-1] == 'xml' or path.split('.')[-1] == 'xbrl':
-            return parse_xbrl(path, self.cache, instance_url)
-        return parse_ixbrl(path, self.cache, instance_url)
+        if uri.split('.')[-1] == 'xml' or uri.split('.')[-1] == 'xbrl':
+            return parse_xbrl_url(uri, self.cache) if uri.startswith('http') else parse_xbrl(uri, self.cache, instance_url)
+        return parse_ixbrl_url(uri, self.cache) if uri.startswith('http') else parse_ixbrl(uri, self.cache, instance_url)
 
     def __str__(self) -> str:
         return 'XbrlParser with cache dir at {}'.format(self.cache.cache_dir)

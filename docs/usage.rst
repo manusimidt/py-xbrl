@@ -14,7 +14,7 @@ To use py-xbrl, first install it using pip:
 Caching
 -------
 Each instance document imports a Taxonomy. These Taxonomies can also inherit other taxonomies.
-When `py-xbrl` parses an instance document it will automatically download all imported and
+When `py-xbrl` parses an instance document it will **automatically download** all imported and
 inherited taxonomies. This can lead to many files being downloaded! Submissions from the same
 datasource usually use the same taxonomies. Therefore `py-xbrl` utilizes an HttpCache. **You must
 specify a cache location** where all the xml files are stored before parsing them. Downloading and
@@ -28,29 +28,51 @@ parsing is automatically done by `py-xbrl` but cleaning the cache not.
     cache: HttpCache = HttpCache('./cache')
 
 
+Online
+-------
+Parsing submissions stored on a webserver is pretty easy. Just provide `py-xbrl` with the url
+and `py-xbrl` will download all necessary files for you and store them into the cache.
+Make sure to set the http headers correctly (Services like SEC EDGAR require it!).
 
-Locally vs Online
------------------
-`py-xbrl` is able to both parse both locally stored xbrl submissions
-and xbrl submissions stored on a server. However if the submission
-comes with a taxonomy extension it must be at the same location as
-the instance file!
+.. code-block:: python
+
+    import logging
+    from xbrl.cache import HttpCache
+    from xbrl.instance import XbrlParser, XbrlInstance
+    # just to see which files are downloaded
+    logging.basicConfig(level=logging.INFO)
+
+    cache: HttpCache = HttpCache('./cache')
+    cache.set_headers({'From': 'YOUR@EMAIL.com', 'User-Agent': 'py-xbrl/2.1.0'})
+    parser = XbrlParser(cache)
+
+    schema_url = "https://www.sec.gov/Archives/edgar/data/0000320193/000032019321000105/aapl-20210925.htm"
+    inst: XbrlInstance = parser.parse_instance(schema_url)
+
+
+Offline
+-------------------------------------------------
+If you want to parse submissions directly from your hard drive it is important you make sure
+you also download any supporting xml-files! Often the instance file will reference them
+by relative imports. If you parse a locally saved file, `py-xbrl` will search for this file
+relative to the current directory where the instance document is stored. Alternatively you
+can set the `instance_url` parameter.
 
     Example:
     If you download the instance document `aapl-20210925.htm` from
-    SEC EDGAR and parse it locally you must also download the
-    taxonomy extension `aapl-20210925.xsd` and the linkbases
-    `aapl-20210925_lab.xml` `aapl-20210925_pre.xml`. If you parse the
-    submission online by just providing the link (https://www.sec.gov/Archives/edgar/data/320193/000032019321000105/aapl-20210925.htm)
-    `py-xbrl` will automatically download the taxonomy extension schema
-    and the linkbases.
+    SEC EDGAR and want to parse it locally you must also download the
+    taxonomy extension `aapl-20210925.xsd` and the linkbases.
+    Your folder structure should then look like the following:
 
+    ::
 
-Online
-------
-Here is an example how to parse an XBRL Instance Document
-directly from SEC EDGAR. Please set the HTTP headers to your
-email as it is required by the SEC!
+        aapl-20210925
+        ├── aapl-20210925.htm
+        ├── aapl-20210925.xsd
+        ├── aapl-20210925_cal.xml
+        ├── aapl-20210925_def.xml
+        ├── aapl-20210925_lab.xml
+        └── aapl-20210925_pre.xml
 
 
 .. code-block:: python
@@ -58,53 +80,27 @@ email as it is required by the SEC!
     import logging
     from xbrl.cache import HttpCache
     from xbrl.instance import XbrlParser, XbrlInstance
-
+    # just to see which files are downloaded
     logging.basicConfig(level=logging.INFO)
 
     cache: HttpCache = HttpCache('./cache')
-    cache.set_headers({'From': 'YOUR.NAME@COMPANY.com', 'User-Agent': 'py-xbrl/2.1.1'})
     parser = XbrlParser(cache)
 
-    schema_url = "https://www.sec.gov/Archives/edgar/data/320193/000032019321000105/aapl-20210925.htm"
-    inst: XbrlInstance = parser.parse_instance(schema_url)
-    print(inst)
+    schema_path = "./cache/aapl-20210925/aapl-20210925.html"
+    inst: XbrlInstance = parser.parse_instance(schema_path)
 
-Locally
--------
-When parsing locally it is really important that you have all
-submission files stored locally, not only the Instance Document.
-Submissions (10-K, 10-Q) from SEC EDGAR for example come with
-their own taxonomy extension. To parse the following example your
-folder would need to contain the following files:
+Json
+----
 
-::
+You can convert the XBRL report directly to json by calling `.json()` on the `XbrlInstance`.
+The json representation follows the
+`2021 recommendation from XBRL international <https://www.xbrl.org/Specification/xbrl-json/REC-2021-10-13/xbrl-json-REC-2021-10-13.html>`_.
 
-    aapl-20210925
-    ├── aapl-20210925.htm
-    ├── aapl-20210925.xsd
-    ├── aapl-20210925_cal.xml
-    ├── aapl-20210925_def.xml
-    ├── aapl-20210925_lab.xml
-    └── aapl-20210925_pre.xml
-
-If you have all submission files stored locally in the same folder
-you can parse the submission py providing py-xbrl with the path
-to the instance document.
 
 .. code-block:: python
 
-    import logging
-    from xbrl.cache import HttpCache
-    from xbrl.instance import XbrlParser, XbrlInstance
+   # print json to console
+   print(inst.json())
 
-    logging.basicConfig(level=logging.INFO)
-
-    cache: HttpCache = HttpCache('./cache')
-    parser = XbrlParser(cache)
-
-    schema_path = "./cache/aapl-20210925/aapl-20210925.htm"
-    inst: XbrlInstance = parser.parse_instance_locally(schema_path)
-    print(inst)
-
-
-
+   # save to file
+   inst.json('./test.json')
