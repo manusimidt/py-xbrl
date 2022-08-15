@@ -95,12 +95,41 @@ Json
 You can convert the XBRL report directly to json by calling `.json()` on the `XbrlInstance`.
 The json representation follows the
 `2021 recommendation from XBRL international <https://www.xbrl.org/Specification/xbrl-json/REC-2021-10-13/xbrl-json-REC-2021-10-13.html>`_.
-
+Use the flag `override_fact_ids` in order to eliminate really ugly fact ids.
 
 .. code-block:: python
 
    # print json to console
-   print(inst.json())
+   print(inst.json(), override_fact_ids=True)
 
    # save to file
    inst.json('./test.json')
+
+
+Here is an example of what the json representation will look like:
+
+.. code-block:: json
+
+    {
+      "documentInfo": {
+        "documentType": "https://xbrl.org/2021/xbrl-json",
+        "taxonomy": [
+          "https://xbrl.fasb.org/srt/2021/elts/srt-types-2021-01-31.xsd",
+          "http://www.xbrl.org/2003/xlink-2003-12-31.xsd",
+          "https://xbrl.sec.gov/dei/2021/dei-2021.xsd"
+        ],
+        "baseUrl": "https://www.sec.gov/Archives/edgar/data/320193/000032019322000059/aapl-20220326.htm"
+      },
+      "facts": {
+        "f818": {
+          "value": "Revenue",
+          "dimensions": {
+            "concept": "RevenueFromContractWithCustomerTextBlock",
+            "entity": "0000320193",
+            "period": "2021-09-26/2022-03-26"
+          }
+        }
+      }
+    }
+
+
