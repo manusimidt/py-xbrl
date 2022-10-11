@@ -532,6 +532,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
+    schema_path = str(schema_path)
     if schema_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas')
     if not os.path.exists(schema_path):

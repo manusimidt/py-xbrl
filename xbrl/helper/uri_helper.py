@@ -24,7 +24,8 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     # remove redundant characters in the relative uri
     if relative_uri.startswith('/'): relative_uri = relative_uri[1:]
     if relative_uri.startswith('./'): relative_uri = relative_uri[2:]
-
+    
+    dir_uri = str(dir_uri)
     if not dir_uri.startswith('http'):
         # check if the dir_uri was really a path to a directory or a file
         if '.' in dir_uri.split(os.sep)[-1]:

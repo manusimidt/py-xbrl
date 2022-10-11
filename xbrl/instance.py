@@ -421,7 +421,7 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     return parse_ixbrl(instance_path, cache, instance_url)
 
 
-def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None) -> XbrlInstance:
+def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None, schema_root=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
 
@@ -458,7 +458,8 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
-        schema_path = resolve_uri(instance_path, schema_uri)
+        from pathlib import Path
+        schema_path = next(Path(schema_root).glob(f'**/{schema_uri}')) if schema_root else resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # get all contexts and units
