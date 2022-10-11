@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
 from typing import List
-
+from pathlib import Path
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri
@@ -307,7 +307,7 @@ class XbrlInstance(abc.ABC):
             fact_id = fact.xml_id if fact.xml_id and not override_fact_ids else f'f{i}'
             json_dict['facts'][fact_id] = fact.json()
         if file_path:
-            with open(file_path, 'w') as f:
+            with open(file_path, 'w', encoding='utf8') as f:
                 return json.dump(json_dict, f)
         else:
             return json.dumps(json_dict)
@@ -429,6 +429,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     :param encoding: optionally specify a file encoding
+    :param schema_root: path to the directory where the taxonomy schema is stored (Only works for relative imports)
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     """
@@ -452,14 +453,17 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     if schema_uri.startswith('http'):
         # fetch the taxonomy extension schema from remote
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+    elif schema_root:
+        # take the given schema_root path as directory for searching for the taxonomy schema
+        schema_path = str(next(Path(schema_root).glob(f'**/{schema_uri}')))
+        taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
     elif instance_url:
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
-        from pathlib import Path
-        schema_path = next(Path(schema_root).glob(f'**/{schema_uri}')) if schema_root else resolve_uri(instance_path, schema_uri)
+        schema_path = resolve_uri(instance_path, schema_uri)
         taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
 
     # get all contexts and units
