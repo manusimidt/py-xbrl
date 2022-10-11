@@ -307,7 +307,7 @@ class XbrlInstance(abc.ABC):
             fact_id = fact.xml_id if fact.xml_id and not override_fact_ids else f'f{i}'
             json_dict['facts'][fact_id] = fact.json()
         if file_path:
-            with open('data.json', 'w') as f:
+            with open(file_path, 'w') as f:
                 return json.dump(json_dict, f)
         else:
             return json.dumps(json_dict)
