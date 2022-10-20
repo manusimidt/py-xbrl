@@ -422,6 +422,12 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     return parse_ixbrl(instance_path, cache, instance_url)
 
 @cache.memoize()
+def parse_ixbrl_diskcache_version(instance_path: str, instance_url: str or None = None, encoding=None, schema_root=None) -> XbrlInstance:
+    cache = HttpCache(str(Path.home() / 'cache'))
+    cache.set_headers({'From': 'hook', 'User-Agent': 'Tool/Version (Website)'})
+    return parse_ixbrl(instance_path, cache, instance_url, encoding, schema_root)
+ 
+
 def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None, schema_root=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
