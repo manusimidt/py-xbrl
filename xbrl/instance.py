@@ -13,12 +13,14 @@ from datetime import date, datetime
 from io import StringIO
 from typing import List
 from pathlib import Path
+from diskcache import Cache
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
 from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
 from xbrl.transformations import normalize, TransformationException, TransformationNotImplemented
+cache = Cache(Path.home() / 'cache' / 'xbrlinstance')
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -408,7 +410,6 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
-
 def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -420,7 +421,7 @@ def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     instance_path: str = cache.cache_file(instance_url)
     return parse_ixbrl(instance_path, cache, instance_url)
 
-
+@cache.memoize()
 def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None, schema_root=None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
