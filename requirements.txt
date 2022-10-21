@@ -1,3 +1,4 @@
 setuptools==63.2.0
 requests~=2.28.1
 urllib3~=1.26.11
+diskcache~=5.4.0
