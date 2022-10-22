@@ -9,6 +9,8 @@ import json
 import logging
 import re
 import xml.etree.ElementTree as ET
+import pandas as pd
+import numpy as np
 from datetime import date, datetime
 from io import StringIO
 from typing import List
@@ -192,13 +194,7 @@ class AbstractFact(abc.ABC):
         return "{}: {}".format(self.concept.name, str(self.value))
 
     def json(self, **kwargs) -> dict:
-        if isinstance(self.context, TimeFrameContext):
-            period: str = f"{self.context.start_date}/{self.context.end_date}"
-        elif isinstance(self.context, InstantContext):
-            period: str = str(self.context.instant_date)
-        else:
-            period: str = ''  # Forever context not specified in REC-2021-10-13
-
+        period = self.get_period()
         kwargs['value'] = self.value
         if 'dimensions' not in kwargs: kwargs['dimensions'] = {}
         kwargs['dimensions']['concept'] = self.concept.name
@@ -208,6 +204,27 @@ class AbstractFact(abc.ABC):
             kwargs['dimensions'][segment.dimension.name] = segment.member.name
         return kwargs
 
+    def get_period(self) -> str:
+        if isinstance(self.context, TimeFrameContext):
+            period: str = f"{self.context.start_date}/{self.context.end_date}"
+        elif isinstance(self.context, InstantContext):
+            period: str = str(self.context.instant_date)
+        else:
+            period: str = ''  # Forever context not specified in REC-2021-10-13
+        return period
+
+    def to_record(self) -> dict:
+        r = {}
+        r['entity'] = self.context.entity
+        r['concept'] = self.concept.xml_id
+        r['balance'] = self.concept.balance
+        r['labels'] = [l.text for l in self.concept.labels if l.language=='zh-tw']
+        r['labels'] = r['labels'][0] if r['labels'] else ''
+        r['period_type'] = self.concept.period_type
+        r['period'] = self.get_period()
+        r['segments'] = self.context.segments
+        r['value'] = self.value
+        return r
 
 class NumericFact(AbstractFact):
     """
@@ -314,6 +331,27 @@ class XbrlInstance(abc.ABC):
         else:
             return json.dumps(json_dict)
 
+    def instant_facts(self):
+        df = pd.DataFrame([f.to_record() for f in self.facts
+                             if f.concept.period_type == 'instant'
+                            ])
+        cs = df.groupby(['concept']).period.count().reset_index()
+        cs = cs.query('period==3')
+        cs = cs.concept.to_list()
+        df = df.query('concept in @cs')
+        df = df.groupby(['concept', 'balance', 'labels', 'period']).value.sum().to_frame()
+        df = df.unstack('period')
+        df.columns = ('last_year', 'last_quarter', 'this_quarter')
+        df['year_diff'] = df.this_quarter - df.last_year
+        df['quarter_diff'] = df.this_quarter - df.last_quarter 
+        df['year_diff_rate'] = df.apply(
+                lambda r: r.year_diff / r.last_year if r.last_year else np.nan, axis=1)
+        df['quarter_diff_rate'] = df.apply(
+                lambda r: r.quarter_diff / r.last_quarter if r.last_quarter else np.nan, axis=1)
+        assets = df.query('concept=="ifrs-full_Assets"').this_quarter.iloc[0]
+        df['portion_of_assets'] = df.this_quarter / assets
+        df = df.reset_index()
+        return df
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
     """
