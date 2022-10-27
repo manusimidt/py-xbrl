@@ -67,6 +67,7 @@ class HttpCache:
         :param file_url: url (https link) to the file to be cached.
         :return: returns the absolute path to the cached file
         """
+        file_url = file_url.strip()
         file_path: str = self.url_to_path(file_url)
         # first check if the files
         if os.path.exists(file_path):
@@ -113,7 +114,7 @@ class HttpCache:
         :param url: url of the file you want to know the cache path
         :return: absolute local cache path
         """
-        return self.cache_dir + re.sub("https?://", "", url)
+        return self.cache_dir + re.sub("https?://", "", url.strip())
 
     def cache_edgar_enclosure(self, enclosure_url: str) -> str:
         """
