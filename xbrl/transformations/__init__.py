@@ -364,6 +364,66 @@ def entityFilerCategoryEN(arg: str) -> str:
         return 'Non-accelerated Filer'
     raise TransformationException(f'Unknown filer category "{arg}"')
 
+# Inline XBRL Part 1: Specification 1.0 Transformation Rules (Sec. 14)
+# From http://www.xbrl.org/Specification/inlineXBRL-part1/PR-2010-02-10/inlineXBRL-part1-PR-2010-02-10.html
+# Missing:
+#   -   numdotcomma
+#   -   numspacecomma
+ixt = {
+    'datedoteu': dateDayMonthYear,
+    'datedotus': dateMonthDayYear,
+    'datelonguk': dateDayMonthYearEN,
+    'datelongus': dateMonthDayYearEN,
+    'dateshortuk': dateDayMonthYearEN,
+    'dateshortus': dateMonthDayYearEN,
+    'dateslasheu': dateDayMonthYear,
+    'dateslashus': dateMonthDayYear,
+    'datelongdaymonthuk': dateDayMonthEN,
+    'datelongmonthdayus': dateMonthDayEN,
+    'dateshortdaymonthuk': dateDayMonthEN,
+    'dateshortmonthdayus': dateMonthDayEN,
+    'dateslashdaymontheu': dateDayMonth,
+    'dateslashmonthdayus': dateMonthDay,
+    'datelongyearmonth': dateYearMonthEN,
+    'dateshortyearmonth': dateYearMonthEN,
+    'datelongmonthyear': dateMonthYearEN,
+    'dateshortmonthyear': dateMonthYearEN,
+    'numcomma': numCommaDecimal, #  I think this is right? 
+    'numcommadot': numDotDecimal,
+    'numdash': lambda arg: '0',
+    'numdotcomma': numCommaDecimal,
+    'numspacecomma': numCommaDecimal,
+    'numspacedot': numDotDecimal
+
+}
+
+# XII Transformation Registry 2
+# From http://www.xbrl.org/specification/inlinexbrl-transformationregistry/rec-2011-07-31/inlinexbrl-transformationregistry-rec-2011-07-31.html
+# Missing:
+#   -   dateerayearmonthdayjp
+#   -   dateerayearmonthjp
+#   -   dateyearmonthdaycjk
+#   -   dateyearmonthcjk
+#   -   nocontent
+#   -   numunitdecimal
+#   -   zerodash
+ixt2 = {
+    'booleanfalse': lambda arg: 'false',
+    'booleantrue': lambda arg: 'true',
+    'datedaymonth': dateDayMonth,
+    'datedaymonthen': dateDayMonthEN,
+    'datedaymonthyear': dateDayMonthYearEN,
+    'datedaymonthyearen': dateDayMonthYearEN,
+    'datemonthday': dateMonthDay,
+    'datemonthdayen': dateMonthDayEN,
+    'datemonthdayyear': dateMonthDayYear,
+    'datemonthdayyearen': dateMonthDayYearEN,
+    'datemonthyearen': dateMonthYearEN,
+    'dateyearmonthen': dateYearMonthEN,
+    'numcommadecimal': numCommaDecimal,
+    'numdotdecimal': numDotDecimal,
+    'zerodash': lambda arg: '0'
+}
 
 # endregion ixt-sec mappings
 
@@ -527,6 +587,10 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
             return ixt4[formatCode](value)
         elif namespace == 'http://www.sec.gov/inlineXBRL/transformation/2015-08-31':
             return ixt_sec[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2011-07-31':
+            return ixt2[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
+            return ixt[formatCode](value)
         else:
             raise RegistryNotSupported(namespace)
     except KeyError:
