@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
 from typing import List
+from treelib import Tree
 
 from xbrl import XbrlParseException, LinkbaseNotFoundException
 from xbrl.cache import HttpCache
@@ -204,8 +205,9 @@ class PresentationArc(RelationArc):
                 "preferredLabel": self.preferred_label, "locator": self.to_locator.to_dict()}
 
     def __str__(self) -> str:
-        return "{} {}".format(self.arcrole.split('/')[-1], self.to_locator.concept_id)
+        return "order is {} {} {}".format(self.order, self.arcrole.split('/')[-1], self.to_locator.concept_id)
 
+    def __repr__(self): return self.__str__()
 
 class Label:
     """
@@ -250,7 +252,6 @@ class Label:
     def __str__(self) -> str:
         return self.text
 
-
 class LabelArc(AbstractArcElement):
     """
     Represents a label arc (link:labelArc)
@@ -259,7 +260,6 @@ class LabelArc(AbstractArcElement):
     attribute of a label arc points to multiple label elements
 
     """
-
     def __init__(self, from_locator, order: int, labels: List[Label]) -> None:
         """
         @type from_locator: Locator
@@ -311,7 +311,11 @@ class Locator:
         self.children: List[AbstractArcElement] = []
 
     def __str__(self) -> str:
-        return "{} with {} children".format(self.name, len(self.children))
+        msg = f"{self.name} with {len(self.children)} children"
+        msg += self.children.__str__()
+        return msg
+
+    def __repr__(self): return self.__str__()
 
     def to_dict(self) -> dict:
         """
@@ -374,9 +378,22 @@ class ExtendedLink:
         """
         return {"role": self.role, "children": [loc.to_simple_dict() for loc in self.root_locators]}
 
-    def __str__(self) -> str:
-        return self.elr_id
-
+    def to_tree(self):
+        t = Tree()
+        t.create_node(self.role, self.role)
+        def make_tree(tree, parent):
+            match tree:
+                case PresentationArc():
+                    t.create_node(tree.to_locator.name, tree.to_locator.href, parent)
+                    for c in tree.to_locator.children:
+                        make_tree(c, tree.to_locator.href)
+                case Locator():
+                    t.create_node(tree.name, tree.href, parent)
+                    for c in tree.children:
+                        make_tree(c, tree.href)
+        for loc in self.root_locators:
+            make_tree(loc, self.role)
+        return t
 
 class Linkbase:
     """
@@ -406,6 +423,27 @@ class Linkbase:
         """
         return {"standardExtendedLinkElements": [el.to_simple_dict() for el in self.extended_links]}
 
+    def treeview(self) -> str:
+        from treelib import Tree
+        from treelib.exceptions import DuplicatedNodeIdError
+        t = Tree()
+        r = t.create_node(str(self.type), str(self.type))
+        def make_tree(tree, parent):
+            match tree:
+                case PresentationArc():
+                    t.create_node(tree.to_locator.name, tree.to_locator.href, parent)
+                    for c in tree.to_locator.children:
+                        make_tree(c, tree.to_locator.href)
+                case Locator():
+                    t.create_node(tree.name, tree.href, parent)
+                    for c in tree.children:
+                        make_tree(c, tree.href)
+
+        for link in self.extended_links:
+            t.create_node(link.role, link.role, r.identifier)
+            for loc in link.root_locators:
+                make_tree(loc, link.role)
+        return t.show()
 
 def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: HttpCache) -> Linkbase:
     """

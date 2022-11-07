@@ -13,6 +13,17 @@ from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri, compare_uri
 from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
 
+from pathlib import Path
+from diskcache import Cache
+
+disk = Path('d:\\')
+
+cache = Cache(disk / 'cache' / Path(__file__).name
+             ,size_limit=int(1e13)
+             ,cull_limit=int(1e7)
+             ,eviction_policy='none'
+             )
+
 logger = logging.getLogger(__name__)
 
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -460,7 +471,16 @@ class TaxonomySchema:
         self.name_id_map: dict = {}
 
     def __str__(self) -> str:
-        return self.namespace
+        msg = self.namespace.__str__()
+        # msg += '<-'
+        # msg += ','.join(map(str, self.imports))
+        # msg += str(self.)
+        msg = 'pre linkbases'
+        msg += self.pre_linkbases[0].__str__()
+        return msg
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_taxonomy(self, url: str):
         """
@@ -505,7 +525,6 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
         return parse_taxonomy_url(ns_schema_map[namespace], cache)
     return None
 
-
 @lru_cache(maxsize=60)
 def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     """
@@ -522,7 +541,8 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     return parse_taxonomy(schema_path, cache, schema_url)
 
 
-def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
+@cache.memoize()
+def parse_taxonomy(schema_path: str, cache=None, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
 
@@ -532,6 +552,9 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
+    if not cache:
+        cache_dir = r'd:\\cache'
+        cache = HttpCache(cache_dir)
     schema_path = str(schema_path)
     if schema_path.startswith('http'): raise XbrlParseException(
         'This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas')
