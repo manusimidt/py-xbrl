@@ -88,6 +88,52 @@ testTransforms = {
 
         ['numspacedot', '123 123 123.12', '123123123.12']
     ],
+    "http://www.xbrl.org/inlineXBRL/transformation/2011-07-31": [
+        # [format,value,expected]
+        ['booleanfalse', 'any string', 'false'],
+
+        ['booleantrue', 'any string', 'true'],
+
+        ['datedaymonth', '2.1', '--01-02'],
+        ['datedaymonth', '02*01', '--01-02'],
+
+        ['datedaymonthen', '2. January', '--01-02'],
+        ['datedaymonthen', '02*Jan', '--01-02'],
+
+        ['datedaymonthyear', '2*1*22', '2022-01-02'],
+        ['datedaymonthyear', '02 01 2022', '2022-01-02'],
+
+        ['datedaymonthyearen', '2*Jan*22', '2022-01-02'],
+        ['datedaymonthyearen', '02 January 2022', '2022-01-02'],
+
+        ['datemonthday', '2 1', '--02-01'],
+        ['datemonthday', '02-01', '--02-01'],
+
+        ['datemonthdayen', 'Feb. 1', '--02-01'],
+        ['datemonthdayen', 'February 1', '--02-01'],
+
+        ['datemonthdayyear', '12.01.99', '1999-12-01'],
+        ['datemonthdayyear', '12.01.1999', '1999-12-01'],
+
+        ['datemonthdayyearen', 'Dec. 1 99', '1999-12-01'],
+        ['datemonthdayyearen', 'December 01 99', '1999-12-01'],
+
+        ['datemonthyearen', 'Dec. 99', '1999-12'],
+        ['datemonthyearen', 'December 1999', '1999-12'],
+
+        ['dateyearmonthen', '99 Dec.', '1999-12'],
+        ['dateyearmonthen', '1999 December', '1999-12'],
+
+        ['nocontent', 'any string', ''],
+
+        ['numcommadecimal', '123 123 123,12', '123123123.123'],
+        ['numcommadecimal', '123.123.123,12', '123123123.123'],
+
+        ['numdotdecimal', '123 123 123.12', '123123123.123'],
+        ['numdotdecimal', '123.123.123.12', '123123123.123'],
+
+        ['zerodash', '-', '0'],
+    ],
     "http://www.xbrl.org/inlineXBRL/transformation/2015-02-26": [
         # [format,value,expected]
         ['booleanfalse', 'nope', 'false'],

@@ -396,14 +396,7 @@ ixt = {
 
 # XII Transformation Registry 2
 # From http://www.xbrl.org/specification/inlinexbrl-transformationregistry/rec-2011-07-31/inlinexbrl-transformationregistry-rec-2011-07-31.html
-# Missing:
-#   -   dateerayearmonthdayjp
-#   -   dateerayearmonthjp
-#   -   dateyearmonthdaycjk
-#   -   dateyearmonthcjk
-#   -   nocontent
-#   -   numunitdecimal
-#   -   zerodash
+
 ixt2 = {
     'booleanfalse': lambda arg: 'false',
     'booleantrue': lambda arg: 'true',
@@ -411,14 +404,20 @@ ixt2 = {
     'datedaymonthen': dateDayMonthEN,
     'datedaymonthyear': dateDayMonthYearEN,
     'datedaymonthyearen': dateDayMonthYearEN,
+    'dateerayearmonthdayjp': notImplemented,
+    'dateerayearmonthjp': notImplemented,
     'datemonthday': dateMonthDay,
     'datemonthdayen': dateMonthDayEN,
     'datemonthdayyear': dateMonthDayYear,
     'datemonthdayyearen': dateMonthDayYearEN,
     'datemonthyearen': dateMonthYearEN,
+    'dateyearmonthdaycjk': notImplemented,
     'dateyearmonthen': dateYearMonthEN,
+    'dateyearmonthcjk': notImplemented,
+    'nocontent': lambda arg: '',
     'numcommadecimal': numCommaDecimal,
     'numdotdecimal': numDotDecimal,
+    'numunitdecimal': notImplemented,
     'zerodash': lambda arg: '0'
 }
 
