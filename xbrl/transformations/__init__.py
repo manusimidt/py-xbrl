@@ -364,11 +364,9 @@ def entityFilerCategoryEN(arg: str) -> str:
         return 'Non-accelerated Filer'
     raise TransformationException(f'Unknown filer category "{arg}"')
 
+
 # Inline XBRL Part 1: Specification 1.0 Transformation Rules (Sec. 14)
 # From http://www.xbrl.org/Specification/inlineXBRL-part1/PR-2010-02-10/inlineXBRL-part1-PR-2010-02-10.html
-# Missing:
-#   -   numdotcomma
-#   -   numspacecomma
 ixt = {
     'datedoteu': dateDayMonthYear,
     'datedotus': dateMonthDayYear,
@@ -394,7 +392,6 @@ ixt = {
     'numdotcomma': numCommaDecimal,
     'numspacecomma': numCommaDecimal,
     'numspacedot': numDotDecimal
-
 }
 
 # XII Transformation Registry 2
@@ -581,16 +578,16 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
     value = value.strip().lower()
 
     try:
-        if namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2015-02-26':
+        if namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
+            return ixt[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2011-07-31':
+            return ixt2[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2015-02-26':
             return ixt3[formatCode](value)
         elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2020-02-12':
             return ixt4[formatCode](value)
         elif namespace == 'http://www.sec.gov/inlineXBRL/transformation/2015-08-31':
             return ixt_sec[formatCode](value)
-        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2011-07-31':
-            return ixt2[formatCode](value)
-        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
-            return ixt[formatCode](value)
         else:
             raise RegistryNotSupported(namespace)
     except KeyError:

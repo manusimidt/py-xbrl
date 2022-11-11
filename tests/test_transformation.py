@@ -14,6 +14,80 @@ from xbrl.transformations import normalize, TransformationException
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 testTransforms = {
+    "http://www.xbrl.org/inlineXBRL/transformation/2010-04-20": [
+        # [format,value,expected]
+        ['datedoteu', '17.07.22', '2022-07-17'],
+        ['datedoteu', '17.07.2022', '2022-07-17'],
+
+        ['datedotus', '07.17.22', '2022-07-17'],
+        ['datedotus', '07.17.2022', '2022-07-17'],
+
+        ['datelonguk', '17 July 2022', '2022-07-17'],
+        ['datelonguk', '17 July 22', '2022-07-17'],
+        ['datelonguk', '7 February 2022', '2022-02-07'],
+
+        ['datelongus', 'July 17, 2022', '2022-07-17'],
+        ['datelongus', 'July 17, 22', '2022-07-17'],
+        ['datelongus', 'February 7, 2022', '2022-02-07'],
+
+        ['dateshortuk', '17 Jul. 2022', '2022-07-17'],
+        ['dateshortuk', '17 Jul. 22', '2022-07-17'],
+        ['dateshortuk', '7 Feb. 2022', '2022-02-07'],
+
+        ['dateshortus', 'Jul. 17, 2022', '2022-07-17'],
+        ['dateshortus', 'Jul. 17, 22', '2022-07-17'],
+        ['dateshortus', 'Feb. 7, 2022', '2022-02-07'],
+
+        ['dateslasheu', '17/07/2022', '2022-07-17'],
+        ['dateslasheu', '17/07/22', '2022-07-17'],
+
+        ['dateslashus', '07/17/2022', '2022-07-17'],
+        ['dateslashus', '07/17/22', '2022-07-17'],
+
+        ['datelongdaymonthuk', '17 July', '--07-17'],
+        ['datelongdaymonthuk', '7 February', '--02-07'],
+
+        ['datelongmonthdayus', 'July 17', '--07-17'],
+        ['datelongmonthdayus', 'February 7', '--02-07'],
+
+        ['dateshortdaymonthuk', '17 Jul.', '--07-17'],
+        ['dateshortdaymonthuk', '7 Feb', '--02-07'],
+
+        ['dateshortmonthdayus', 'Jul. 17', '--07-17'],
+        ['dateshortmonthdayus', 'Feb 7', '--02-07'],
+
+        ['dateslashdaymontheu', '7/2', '--02-07'],
+        ['dateslashdaymontheu', '07/02', '--02-07'],
+
+        ['dateslashmonthdayus', '2/7', '--02-07'],
+        ['dateslashmonthdayus', '02/07', '--02-07'],
+
+        ['datelongyearmonth', '22 February', '2022-02'],
+        ['datelongyearmonth', '2022 February', '2022-02'],
+
+        ['dateshortyearmonth', '22 Feb.', '2022-02'],
+        ['dateshortyearmonth', '2022 Feb', '2022-02'],
+
+        ['datelongmonthyear', 'February 22', '2022-02'],
+        ['datelongmonthyear', 'February 2022', '2022-02'],
+
+        ['dateshortmonthyear', 'Feb. 22', '2022-02'],
+        ['dateshortmonthyear', 'Feb 2022', '2022-02'],
+
+        ['numcomma', '1400,40', '1400.40'],
+        ['numcomma', '1,40', '1.40'],
+
+        ['numcomma', '1,400,40', '1400.40'],
+        ['numcomma', '1,000,400,40', '1000400.40'],
+
+        ['numdash', 'any value', '0'],
+
+        ['numdotcomma', '123.123.123,12', '123123123.12'],
+
+        ['numspacecomma', '123 123 123,12', '123123123.12'],
+
+        ['numspacedot', '123 123 123.12', '123123123.12']
+    ],
     "http://www.xbrl.org/inlineXBRL/transformation/2015-02-26": [
         # [format,value,expected]
         ['booleanfalse', 'nope', 'false'],
