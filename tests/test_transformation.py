@@ -77,8 +77,8 @@ testTransforms = {
         ['numcomma', '1400,40', '1400.40'],
         ['numcomma', '1,40', '1.40'],
 
-        ['numcomma', '1,400,40', '1400.40'],
-        ['numcomma', '1,000,400,40', '1000400.40'],
+        ['numcommadot', '1,400.40', '1400.40'],
+        ['numcommadot', '1,000,400.40', '1000400.40'],
 
         ['numdash', 'any value', '0'],
 
@@ -126,11 +126,11 @@ testTransforms = {
 
         ['nocontent', 'any string', ''],
 
-        ['numcommadecimal', '123 123 123,12', '123123123.123'],
-        ['numcommadecimal', '123.123.123,12', '123123123.123'],
+        ['numcommadecimal', '123 123 123,123', '123123123.123'],
+        ['numcommadecimal', '123.123.123,123', '123123123.123'],
 
-        ['numdotdecimal', '123 123 123.12', '123123123.123'],
-        ['numdotdecimal', '123.123.123.12', '123123123.123'],
+        ['numdotdecimal', '123 123 123.123', '123123123.123'],
+        ['numdotdecimal', '123,123,123.123', '123123123.123'],
 
         ['zerodash', '-', '0'],
     ],
@@ -387,7 +387,7 @@ class TransformationTest(unittest.TestCase):
                         pass
                 else:
                     testOutput = normalize(namespace, formatCode, testInput)
-                    self.assertEqual(expected, testOutput, msg=f'Failed at test elem {i} of registry {namespace}')
+                    self.assertEqual(expected, testOutput, msg=f'Failed at test case {testCase} of registry {namespace}')
 
 
 if __name__ == '__main__':

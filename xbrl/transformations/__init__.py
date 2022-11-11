@@ -402,7 +402,7 @@ ixt2 = {
     'booleantrue': lambda arg: 'true',
     'datedaymonth': dateDayMonth,
     'datedaymonthen': dateDayMonthEN,
-    'datedaymonthyear': dateDayMonthYearEN,
+    'datedaymonthyear': dateDayMonthYear,
     'datedaymonthyearen': dateDayMonthYearEN,
     'dateerayearmonthdayjp': notImplemented,
     'dateerayearmonthjp': notImplemented,
