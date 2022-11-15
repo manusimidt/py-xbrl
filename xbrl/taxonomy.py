@@ -19,7 +19,7 @@ from diskcache import Cache
 disk = Path('d:\\')
 
 cache = Cache(disk / 'cache' / Path(__file__).name
-             ,size_limit=int(1e13)
+             ,size_limit=int(1e10)
              ,cull_limit=int(1e7)
              ,eviction_policy='none'
              )
@@ -470,18 +470,6 @@ class TaxonomySchema:
         # based on the name
         self.name_id_map: dict = {}
 
-    def __str__(self) -> str:
-        msg = self.namespace.__str__()
-        # msg += '<-'
-        # msg += ','.join(map(str, self.imports))
-        # msg += str(self.)
-        msg = 'pre linkbases'
-        msg += self.pre_linkbases[0].__str__()
-        return msg
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
     def get_taxonomy(self, url: str):
         """
         Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
@@ -539,7 +527,6 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
 
     schema_path: str = cache.cache_file(schema_url)
     return parse_taxonomy(schema_path, cache, schema_url)
-
 
 @cache.memoize()
 def parse_taxonomy(schema_path: str, cache=None, schema_url: str or None = None) -> TaxonomySchema:

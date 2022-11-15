@@ -431,9 +431,11 @@ class Linkbase:
         def make_tree(tree, parent):
             match tree:
                 case PresentationArc():
-                    t.create_node(tree.to_locator.name, tree.to_locator.href, parent)
-                    for c in tree.to_locator.children:
-                        make_tree(c, tree.to_locator.href)
+                    try:
+                        t.create_node(tree.to_locator.name, tree.to_locator.href, parent)
+                        for c in tree.to_locator.children:
+                            make_tree(c, tree.to_locator.href)
+                    except:pass
                 case Locator():
                     t.create_node(tree.name, tree.href, parent)
                     for c in tree.children:

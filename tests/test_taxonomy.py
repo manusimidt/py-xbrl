@@ -12,6 +12,7 @@ class TaxonomySchemaTest(unittest.TestCase):
     Unit test for taxonomy.test_parse_taxonomy()
     """
 
+    @unittest.skip('跳過') 
     def test_parse_taxonomy(self):
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         from pathlib import Path
@@ -26,11 +27,12 @@ class TaxonomySchemaTest(unittest.TestCase):
         self.assertEqual(len(tax.concepts['example_Assets'].labels), 2)
 
     def test_parse_tifrs_taxonomy(self):
-        print('test tifrs')
-        extension_schema_path = r'D:\tifrs\tifrs-20200630\XBRL_TW_Entry_Points\CI\CR\tifrs-ci-cr-2020-06-30.xsd'
-        tax = parse_taxonomy(extension_schema_path)
-        
-        print(tax)
+        extension_schema_path = r'D:\tifrs\tifrs-20200630\BSCI\tifrs-bsci-bd-2020-06-30.xsd'
+        t = parse_taxonomy(extension_schema_path)
+        print(t.namespace)
+        for p in t.pre_linkbases:
+            print(p.treeview())
+        # print(t.imports)    
 
 if __name__ == '__main__':
     unittest.main()
