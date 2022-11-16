@@ -610,8 +610,9 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float or None or str:
         except TransformationException:
             logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
             return fact_value
-
-    scaled_value = float(fact_value) * pow(10, value_scale)
+    try:
+        scaled_value = float(fact_value) * pow(10, value_scale)
+    except: scaled_value = 0
     # Floating-point error mitigation
     if abs(scaled_value) > 1e6: scaled_value = float(round(scaled_value))
     if value_sign == '-':
