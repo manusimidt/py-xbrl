@@ -286,11 +286,12 @@ class XbrlInstance(abc.ABC):
         file_name: str = self.instance_url.split('/')[-1]
         return "{} with {} facts".format(file_name, len(self.facts))
 
-    def json(self, file_path: str = None, override_fact_ids: bool = True) -> str or None:
+    def json(self, file_path: str = None, override_fact_ids: bool = True, **kwargs) -> str or None:
         """
         Converts the instance document into json format
         :param file_path: if a path is given the function will store the json there
         :param override_fact_ids:
+        :param kwargs: additional arguments for the json parser
         :return: string (serialized json) or None (if file_path was given)
 
         https://www.xbrl.org/Specification/xbrl-json/REC-2021-10-13/xbrl-json-REC-2021-10-13.html
@@ -308,9 +309,9 @@ class XbrlInstance(abc.ABC):
             json_dict['facts'][fact_id] = fact.json()
         if file_path:
             with open(file_path, 'w', encoding='utf8') as f:
-                return json.dump(json_dict, f)
+                return json.dump(json_dict, f, **kwargs)
         else:
-            return json.dumps(json_dict)
+            return json.dumps(json_dict, **kwargs)
 
 
 def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
