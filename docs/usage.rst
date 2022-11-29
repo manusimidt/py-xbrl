@@ -100,7 +100,7 @@ Use the flag `override_fact_ids` in order to eliminate really ugly fact ids.
 .. code-block:: python
 
    # print json to console
-   print(inst.json(), override_fact_ids=True)
+   print(inst.json(override_fact_ids=True))
 
    # save to file
    inst.json('./test.json')
