@@ -383,14 +383,16 @@ class Linkbase:
     Represents a complete Linkbase (non-generic).
     """
 
-    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType) -> None:
+    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType, linkbase_uri: None or str = None) -> None:
         """
         :param extended_links: All standard extended links that are defined in the linkbase
         :type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or [ExtendedLabelArc]
         :param linkbase_type: Type of the linkbase
+        :param linkbase_uri: Either the path or the url to the linkbase (depends from where the parser loaded it for parsing)
         """
         self.extended_links: List[ExtendedLink] = extended_links
         self.type = linkbase_type
+        self.linkbase_uri = linkbase_uri
 
     def to_dict(self) -> dict:
         """
@@ -564,4 +566,4 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
                 ExtendedLink(extended_link_role, role_refs[extended_link_role], root_locators))
         elif linkbase_type == LinkbaseType.LABEL:
             extended_links.append(ExtendedLink(extended_link_role, None, root_locators))
-    return Linkbase(extended_links, linkbase_type)
+    return Linkbase(extended_links, linkbase_type, linkbase_url if linkbase_url else linkbase_path)
