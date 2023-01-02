@@ -543,7 +543,7 @@ def parse_ixbrl(instance_path: str, cache=None , instance_url: str or None = Non
         elif fact_elem.tag == '{' + ns_map['ix'] + '}nonNumeric':
             fact_value: str = _extract_non_numeric_value(fact_elem)
             facts.append(TextFact(concept, context, str(fact_value), xml_id))
-
+    instance_file.close()
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 

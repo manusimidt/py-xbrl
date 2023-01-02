@@ -4,7 +4,7 @@ This module contains all classes and functions necessary for parsing Taxonomy sc
 import logging
 import os
 import xml.etree.ElementTree as ET
-from functools import lru_cache
+import functools
 from typing import List
 from urllib.parse import unquote
 
@@ -12,17 +12,7 @@ from xbrl import XbrlParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri, compare_uri
 from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
-
 from pathlib import Path
-from diskcache import Cache
-
-disk = Path('d:\\')
-
-cache = Cache(disk / 'cache' / Path(__file__).name
-             ,size_limit=int(1e10)
-             ,cull_limit=int(1e7)
-             ,eviction_policy='none'
-             )
 
 logger = logging.getLogger(__name__)
 
@@ -513,7 +503,7 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
         return parse_taxonomy_url(ns_schema_map[namespace], cache)
     return None
 
-@lru_cache(maxsize=60)
+@functools.cache
 def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     """
     Parses a taxonomy schema file from the internet
@@ -528,7 +518,7 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
     schema_path: str = cache.cache_file(schema_url)
     return parse_taxonomy(schema_path, cache, schema_url)
 
-@cache.memoize()
+@functools.cache
 def parse_taxonomy(schema_path: str, cache=None, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
