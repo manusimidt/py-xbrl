@@ -410,16 +410,17 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
-def parse_ixbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
+def parse_ixbrl_url(instance_url: str, cache: HttpCache, encoding: str or None = None) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
 
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
+    :param encoding: specifies the encoding of the file
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
-    return parse_ixbrl(instance_path, cache, instance_url)
+    return parse_ixbrl(instance_path, cache, instance_url, encoding)
 
 
 def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None = None, encoding=None, schema_root=None) -> XbrlInstance:
@@ -709,7 +710,7 @@ class XbrlParser:
     def __init__(self, cache: HttpCache):
         self.cache = cache
 
-    def parse_instance(self, uri: str, instance_url: str or None = None) -> XbrlInstance:
+    def parse_instance(self, uri: str, instance_url: str or None = None, encoding: str or None = None) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
 
@@ -722,11 +723,14 @@ class XbrlParser:
             i.e: https://www.sec.gov/Archives/edgar/data/320193/000032019320000096/aapl-20200926.
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
             instance document was downloaded, the parser can fetch relative imports using this base url
+        :param encoding: specifies the encoding of the file
         :return:
         """
         if uri.split('.')[-1] == 'xml' or uri.split('.')[-1] == 'xbrl':
-            return parse_xbrl_url(uri, self.cache) if uri.startswith('http') else parse_xbrl(uri, self.cache, instance_url)
-        return parse_ixbrl_url(uri, self.cache) if uri.startswith('http') else parse_ixbrl(uri, self.cache, instance_url)
+            return parse_xbrl_url(uri, self.cache) if uri.startswith('http') \
+                else parse_xbrl(uri, self.cache, instance_url)
+        return parse_ixbrl_url(uri, self.cache) if uri.startswith('http') \
+            else parse_ixbrl(uri, self.cache, instance_url, encoding)
 
     def __str__(self) -> str:
         return 'XbrlParser with cache dir at {}'.format(self.cache.cache_dir)
