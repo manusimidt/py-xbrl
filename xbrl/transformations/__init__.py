@@ -579,6 +579,8 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
     try:
         if namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
             return ixt[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/2008/inlineXBRL/transformation':
+            return ixt[formatCode](value)
         elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2011-07-31':
             return ixt2[formatCode](value)
         elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2015-02-26':
