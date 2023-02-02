@@ -577,7 +577,11 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
     value = value.strip().lower()
 
     try:
-        if namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
+        if namespace == 'http://www.xbrl.org/2008/inlineXBRL/transformation':
+            # WARNING: I could not find a specification for this ancient transformation registry..
+            # however the transformations will probably be the same as defined in the 2010 version
+            return ixt[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2010-04-20':
             return ixt[formatCode](value)
         elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2011-07-31':
             return ixt2[formatCode](value)
