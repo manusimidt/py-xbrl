@@ -593,6 +593,8 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
             return ixt_sec[formatCode](value)
         else:
             raise RegistryNotSupported(namespace)
+    except IndexError:
+        raise TransformationException("Error with date format")
     except KeyError:
         raise InvalidTransformation(namespace, formatCode)
     except TransformationNotImplemented:
