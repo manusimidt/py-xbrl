@@ -11,7 +11,7 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
-from typing import List
+from typing import List, Tuple, Dict
 from pathlib import Path
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
@@ -408,6 +408,101 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         facts.append(fact)
 
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
+
+
+def get_document_meta_data(meta_data_text: str) -> Dict[str, str]:
+    return {k.lower():  v for k, v in [tuple(s.split('>')) for s in meta_data_text.replace('<', '').split('\n') if s]}
+
+
+def get_meta_data_and_documents(complete_submission_text_file: str) -> List[Tuple[Dict, str]]:
+    meta_data_and_documents = [
+        d.strip()[:-len('</DOCUMENT>')] for d in complete_submission_text_file.split('<DOCUMENT>')
+    ]
+    meta_data_and_documents = [
+        (get_document_meta_data(m), t.strip()[:-len('</TEXT>')]) for m, t in
+        [tuple(d.split('<TEXT>', 1)) for d in meta_data_and_documents[1:]]
+    ]
+    return meta_data_and_documents
+
+
+def parse_extracted_xbrl_instance(complete_submission_text_file: str) -> XbrlInstance:
+    """
+    Parses the extracted xbrl instance of a complete submission text file.
+    No need for a cache as all necessary info is contained in the file.
+
+    :param complete_submission_text_file: string containing the contents of the complete submission text file
+    :return: parsed XbrlInstance object containing all facts with additional information
+    """
+    # split file into documents
+    meta_data_and_documents = get_meta_data_and_documents(complete_submission_text_file)
+
+    # get main document name
+    main_document_meta_data, _ = list(filter(lambda x: x[0]['sequence'] == '1', meta_data_and_documents))[0]
+    main_document_name = main_document_meta_data['filename']
+
+    # get extracted xbrl instance
+    extracted_xbrl_instance_name = '{}.xml'.format(main_document_name.replace('.', '_'))
+    _, extracted_xbrl_instance = list(filter(
+        lambda x: x[0]['filename'] == extracted_xbrl_instance_name, meta_data_and_documents
+    ))[0]
+
+    root: ET.Element = parse_file(StringIO(extracted_xbrl_instance)).getroot()
+    # get the taxonomy schema and parse it
+    schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
+    schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
+
+    # fetch the taxonomy extension schema from remote
+    taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+
+    # parse contexts and units
+    context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy,
+                                          cache)
+    unit_dir = _parse_unit_elements(root.findall('xbrli:unit', NAME_SPACES))
+
+    # parse facts
+    facts: List[AbstractFact] = []
+    for fact_elem in root:
+        # skip contexts and units
+        if 'context' in fact_elem.tag or 'unit' in fact_elem.tag or 'schemaRef' in fact_elem.tag:
+            continue
+        # check if the element has the required attributes
+        if 'contextRef' not in fact_elem.attrib:
+            continue
+
+        # check if the fact has a value (some facts are like <us-gaap:Assets ... \>
+        if fact_elem.text is None or len(str(fact_elem.text).strip()) == 0:
+            continue
+
+        xml_id: str or None = fact_elem.attrib['id'] if 'id' in fact_elem.attrib else None
+
+        # find the taxonomy where the tag is coming from
+        taxonomy_ns, concept_name = fact_elem.tag.split('}')
+        taxonomy_ns = taxonomy_ns.replace('{', '')
+        # get the concept object from the taxonomy
+        tax = taxonomy.get_taxonomy(taxonomy_ns)
+        if tax is None: tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
+
+        try:
+            concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        except KeyError:
+            logger.warning(f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} "
+                           f"won't be parsed!")
+            continue
+        context: AbstractContext = context_dir[fact_elem.attrib['contextRef'].strip()]
+
+        if 'unitRef' in fact_elem.attrib:
+            # the fact is a numerical fact
+            # get the unit
+            unit: AbstractUnit = unit_dir[fact_elem.attrib['unitRef'].strip()]
+            decimals_text: str = str(fact_elem.attrib['decimals']).strip()
+            decimals: int = None if decimals_text.lower() == 'inf' else int(decimals_text)
+            fact = NumericFact(concept, context, float(fact_elem.text), unit, decimals, xml_id)
+        else:
+            # the fact is probably a text fact
+            fact = TextFact(concept, context, fact_elem.text.strip(), xml_id)
+        facts.append(fact)
+
+    return XbrlInstance('', taxonomy, facts, context_dir, unit_dir)
 
 
 def parse_ixbrl_url(instance_url: str, cache: HttpCache, encoding: str or None = None) -> XbrlInstance:
