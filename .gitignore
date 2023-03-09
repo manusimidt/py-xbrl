@@ -231,3 +231,5 @@ dmypy.json
 .prof
 
 cache
+
+test.py

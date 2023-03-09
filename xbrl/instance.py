@@ -11,13 +11,16 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
-from typing import List, Tuple, Dict
+from typing import List
 from pathlib import Path
+
+from utils import Document
 from xbrl import TaxonomyNotFound, InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri
 from xbrl.helper.xml_parser import parse_file
-from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url
+from xbrl.taxonomy import Concept, TaxonomySchema, parse_taxonomy, parse_common_taxonomy, parse_taxonomy_url, \
+    parse_taxonomy_with_documents
 from xbrl.transformations import normalize, TransformationException, TransformationNotImplemented
 
 logger = logging.getLogger(__name__)
@@ -410,49 +413,40 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
-def get_document_meta_data(meta_data_text: str) -> Dict[str, str]:
-    return {k.lower():  v for k, v in [tuple(s.split('>')) for s in meta_data_text.replace('<', '').split('\n') if s]}
-
-
-def get_meta_data_and_documents(complete_submission_text_file: str) -> List[Tuple[Dict, str]]:
-    meta_data_and_documents = [
-        d.strip()[:-len('</DOCUMENT>')] for d in complete_submission_text_file.split('<DOCUMENT>')
-    ]
-    meta_data_and_documents = [
-        (get_document_meta_data(m), t.strip()[:-len('</TEXT>')]) for m, t in
-        [tuple(d.split('<TEXT>', 1)) for d in meta_data_and_documents[1:]]
-    ]
-    return meta_data_and_documents
-
-
-def parse_extracted_xbrl_instance(complete_submission_text_file: str) -> XbrlInstance:
+def parse_extracted_xbrl_instance(complete_submission_text_file: str, cache: HttpCache) -> XbrlInstance:
     """
     Parses the extracted xbrl instance of a complete submission text file.
     No need for a cache as all necessary info is contained in the file.
 
     :param complete_submission_text_file: string containing the contents of the complete submission text file
+    :param cache: HttpCache instance
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     # split file into documents
-    meta_data_and_documents = get_meta_data_and_documents(complete_submission_text_file)
+    documents = Document.get_documents_from_submission_file(complete_submission_text_file)
 
     # get main document name
-    main_document_meta_data, _ = list(filter(lambda x: x[0]['sequence'] == '1', meta_data_and_documents))[0]
-    main_document_name = main_document_meta_data['filename']
+    main_document_name = list(filter(lambda x: x.sequence == '1', documents))[0].file_name
 
     # get extracted xbrl instance
-    extracted_xbrl_instance_name = '{}.xml'.format(main_document_name.replace('.', '_'))
-    _, extracted_xbrl_instance = list(filter(
-        lambda x: x[0]['filename'] == extracted_xbrl_instance_name, meta_data_and_documents
-    ))[0]
+    xbrl_instance_name = '{}.xml'.format(main_document_name.replace('.', '_'))
+    try:
+        xbrl_instance = list(filter(lambda x: x.file_name == xbrl_instance_name, documents))[0]
+    except IndexError:
+        # print(xbrl_instance_name)
+        # print([d.file_name for d in documents])
+        # print(complete_submission_text_file)
+        # print('No xbrl available!')
+        return None
+    xbrl_instance = xbrl_instance.get_contents_without_tag('XML')
 
-    root: ET.Element = parse_file(StringIO(extracted_xbrl_instance)).getroot()
+    root: ET.Element = parse_file(StringIO(xbrl_instance)).getroot()
     # get the taxonomy schema and parse it
     schema_ref: ET.Element = root.find(LINK_NS + 'schemaRef')
-    schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
+    schema_file_name: str = schema_ref.attrib[XLINK_NS + 'href']
 
     # fetch the taxonomy extension schema from remote
-    taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+    taxonomy: TaxonomySchema = parse_taxonomy_with_documents(schema_file_name, documents, cache)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy,

@@ -5,6 +5,7 @@ from abc import ABC
 from enum import Enum
 from typing import List
 
+from utils import Document
 from xbrl import XbrlParseException, LinkbaseNotFoundException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import resolve_uri
@@ -567,3 +568,140 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
         elif linkbase_type == LinkbaseType.LABEL:
             extended_links.append(ExtendedLink(extended_link_role, None, root_locators))
     return Linkbase(extended_links, linkbase_type, linkbase_url if linkbase_url else linkbase_path)
+
+
+def parse_linkbase_with_documents(linkbase_file_name: str, documents: List[Document], linkbase_type: LinkbaseType) -> Linkbase:
+    """
+    Parses a linkbase and returns a Linkbase object containing all
+    locators, arcs and links of the linkbase in a hierarchical order (a Tree)
+    A Linkbase usually does not import any additional files.
+    Thus no cache instance is needed
+
+    :param linkbase_file_name: file name of the linkbase
+    :param documents: metadata and documents parsed from the complete submission text file
+    :param linkbase_type: Type of the linkbase
+    :return: parsed :class:`xbrl.linkbase.Linkbase` object
+    """
+
+    # TODO: catch xml.etree.ElementTree.ParseError?
+    root: ET.Element = ET.fromstring(
+        list(filter(lambda x: x.file_name == linkbase_file_name, documents))[0].get_contents_without_tag('XBRL')
+    )
+    # store the role refs in a dictionary, with the role uri as key.
+    # Role Refs are xlink's that connect the extended Links to the ELR defined in the schema
+    role_refs: dict = {}
+    for role_ref in root.findall(LINK_NS + 'roleRef'):
+        role_refs[role_ref.attrib['roleURI']] = role_ref.attrib[XLINK_NS + 'href']
+
+    # Loop over all definition/calculation/presentation/label links.
+    # Each extended link contains the locators and the definition arc's
+    extended_links: List[ExtendedLink] = []
+
+    # figure out if we want to search for definitionLink, calculationLink, presentationLink or labelLink
+    # figure out for what type of arcs we are searching; definitionArc, calculationArc, presentationArc or labelArc
+    extended_link_tag: str
+    arc_type: str
+    if linkbase_type == LinkbaseType.DEFINITION:
+        extended_link_tag = "definitionLink"
+        arc_type = "definitionArc"
+    elif linkbase_type == LinkbaseType.CALCULATION:
+        extended_link_tag = "calculationLink"
+        arc_type = "calculationArc"
+    elif linkbase_type == LinkbaseType.PRESENTATION:
+        extended_link_tag = "presentationLink"
+        arc_type = "presentationArc"
+    else:
+        extended_link_tag = "labelLink"
+        arc_type = "labelArc"
+
+    # loop over all extended links. Extended links can be: link:definitionLink, link:calculationLink e.t.c
+    # Note that label linkbases only have one extended link
+    for extended_link in root.findall(LINK_NS + extended_link_tag):
+        extended_link_role: str = extended_link.attrib[XLINK_NS + 'role']
+        # find all locators (link:loc) and arcs (i.e link:definitionArc or link:calculationArc)
+        locators = extended_link.findall(LINK_NS + 'loc')
+        arc_elements = extended_link.findall(LINK_NS + arc_type)
+
+        # store the locators in a dictionary. The label attribute is the key. This way we can access them in O(1)
+        locator_map = {}
+        for loc in locators:
+            loc_label: str = loc.attrib[XLINK_NS + 'label']
+            # check if the locator href is absolute
+            locator_href = loc.attrib[XLINK_NS + 'href']
+            locator_map[loc_label] = Locator(locator_href, loc_label)
+
+        # Performance: extract the labels in advance. The label name (xlink:label) is the key and the value is
+        # an array of all labels that have this name. This can be multiple labels (label, terseLabel, documentation...)
+        label_map = {}
+        if linkbase_type == LinkbaseType.LABEL:
+            for label_element in extended_link.findall(LINK_NS + 'label'):
+                label_name: str = label_element.attrib[XLINK_NS + 'label']
+                label_role: str = label_element.attrib[XLINK_NS + 'role']
+                label_lang: str = label_element.attrib[XML_NS + 'lang']
+                label_obj = Label(label_name, label_role, label_lang, label_element.text)
+                if label_name in label_map:
+                    label_map[label_name].append(label_obj)
+                else:
+                    label_map[label_name] = [label_obj]
+
+        for arc_element in arc_elements:
+            # if the use of the element referenced by the arc is prohibited, just ignore it
+            if 'use' in arc_element.attrib and arc_element.attrib['use'] == 'prohibited': continue
+            # extract the attributes if the arc. The arc always connects two locators through the from and to attributes
+            # additionally it defines the relationship between these two locators (arcrole)
+            arc_from: str = arc_element.attrib[XLINK_NS + 'from']
+            arc_to: str = arc_element.attrib[XLINK_NS + 'to']
+            arc_role: str = arc_element.attrib[XLINK_NS + 'arcrole']
+            arc_order: int = arc_element.attrib['order'] if 'order' in arc_element.attrib else None
+
+            # the following attributes are linkbase specific, so we have to check if they exist!
+            # Needed for (sometimes) definitionArc
+            arc_closed: bool = bool(arc_element.attrib[XBRLDT_NS + "closed"]) \
+                if (XBRLDT_NS + "weight") in arc_element.attrib else None
+            arc_context_element: str = arc_element.attrib[XBRLDT_NS + "contextElement"] if \
+                (XBRLDT_NS + "contextElement") in arc_element.attrib else None
+            # Needed for calculationArc
+            arc_weight: float = float(arc_element.attrib["weight"]) if "weight" in arc_element.attrib else None
+            # Needed for presentationArc
+            arc_priority: int = int(arc_element.attrib["priority"]) if "priority" in arc_element.attrib else None
+            arc_preferred_label: str = arc_element.attrib[
+                "preferredLabel"] if "preferredLabel" in arc_element.attrib else None
+
+            # Create the arc object based on the current linkbase type
+            arc_object: AbstractArcElement
+            if linkbase_type == LinkbaseType.DEFINITION:
+                arc_object = DefinitionArc(
+                    locator_map[arc_from], locator_map[arc_to], arc_role, arc_order, arc_closed,
+                    arc_context_element)
+            elif linkbase_type == LinkbaseType.CALCULATION:
+                arc_object = CalculationArc(locator_map[arc_from], locator_map[arc_to], arc_order, arc_weight)
+            elif linkbase_type == LinkbaseType.PRESENTATION:
+                arc_object = PresentationArc(locator_map[arc_from], locator_map[arc_to], arc_order, arc_priority,
+                                             arc_preferred_label)
+            else:
+                # find all labels that are referenced by this arc.
+                # These where preprocessed previously, so we can just take them
+                arc_object = LabelArc(locator_map[arc_from], arc_order, label_map[arc_to])
+
+            # Build the hierarchy for the Locators.
+            if linkbase_type != LinkbaseType.LABEL:
+                # This does not work for label linkbase, since link:labelArcs only link to link:labels
+                # and not to other locators!!
+                locator_map[arc_to].parents.append(locator_map[arc_from])
+            locator_map[arc_from].children.append(arc_object)
+
+        # find the top elements of the three (all elements that have no parents)
+        root_locators = []
+        for locator in locator_map.values():
+            if len(locator.parents) == 0:
+                root_locators.append(locator)
+
+        # only add the extended link to the linkbase if the link references a role
+        # (some filers have empty links in which we are not interested:
+        # <definitionLink xlink:type="extended" xlink:role="http://www.xbrl.org/2003/role/link"/>)
+        if extended_link_role in role_refs:
+            extended_links.append(
+                ExtendedLink(extended_link_role, role_refs[extended_link_role], root_locators))
+        elif linkbase_type == LinkbaseType.LABEL:
+            extended_links.append(ExtendedLink(extended_link_role, None, root_locators))
+    return Linkbase(extended_links, linkbase_type, None)
