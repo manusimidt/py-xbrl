@@ -625,7 +625,11 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
     import_elements: List[ET.Element] = root.findall('xsd:import', NAME_SPACES)
 
     for import_element in import_elements:
-        import_uri = import_element.attrib['schemaLocation']
+        import_uri = import_element.attrib['schemaLocation'].strip()
+
+        # Skip empty imports
+        if import_uri == "":
+            continue
 
         # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"
         if import_uri.startswith('http'):
