@@ -347,7 +347,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
-    if schema_uri.startswith('http'):
+    if schema_uri.startswith('http://') or schema_uri.startswith("https://"):
         # fetch the taxonomy extension schema from remote
         taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
     elif instance_url:
@@ -727,9 +727,9 @@ class XbrlParser:
         :return:
         """
         if uri.split('.')[-1] == 'xml' or uri.split('.')[-1] == 'xbrl':
-            return parse_xbrl_url(uri, self.cache) if uri.startswith('http') \
+            return parse_xbrl_url(uri, self.cache) if uri.startswith('http://') or uri.startswith('https://') \
                 else parse_xbrl(uri, self.cache, instance_url)
-        return parse_ixbrl_url(uri, self.cache) if uri.startswith('http') \
+        return parse_ixbrl_url(uri, self.cache) if uri.startswith('http://') or uri.startswith('https://') \
             else parse_ixbrl(uri, self.cache, instance_url, encoding)
 
     def __str__(self) -> str:

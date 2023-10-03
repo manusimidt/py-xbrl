@@ -18,15 +18,15 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     @param relative_uri:
     @return:
     """
-    if relative_uri.startswith('http'):
+    if relative_uri.startswith('http://') or relative_uri.startswith('https://'):
         return relative_uri
 
     # remove redundant characters in the relative uri
     if relative_uri.startswith('/'): relative_uri = relative_uri[1:]
     if relative_uri.startswith('./'): relative_uri = relative_uri[2:]
-    
+
     dir_uri = str(dir_uri)
-    if not dir_uri.startswith('http'):
+    if not dir_uri.startswith('http://') and not dir_uri.startswith('https://'):
         # check if the dir_uri was really a path to a directory or a file
         if '.' in dir_uri.split(os.sep)[-1]:
             return os.path.normpath(os.path.dirname(dir_uri) + os.sep + relative_uri)
@@ -40,7 +40,7 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
         dir_uri += '/'
 
     absolute_uri = dir_uri + relative_uri
-    if not dir_uri.startswith('http'):
+    if not dir_uri.startswith('http://') and not dir_uri.startswith('https://'):
         # make sure the path is correct
         absolute_uri = os.path.normpath(absolute_uri)
 
