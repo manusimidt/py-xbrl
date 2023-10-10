@@ -18,15 +18,14 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     @param relative_uri:
     @return:
     """
-    if relative_uri.startswith('http://') or relative_uri.startswith('https://'):
-        return relative_uri
+    if is_url(relative_uri): return relative_uri
 
     # remove redundant characters in the relative uri
     if relative_uri.startswith('/'): relative_uri = relative_uri[1:]
     if relative_uri.startswith('./'): relative_uri = relative_uri[2:]
 
     dir_uri = str(dir_uri)
-    if not dir_uri.startswith('http://') and not dir_uri.startswith('https://'):
+    if not is_url(dir_uri):
         # check if the dir_uri was really a path to a directory or a file
         if '.' in dir_uri.split(os.sep)[-1]:
             return os.path.normpath(os.path.dirname(dir_uri) + os.sep + relative_uri)
@@ -40,7 +39,7 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
         dir_uri += '/'
 
     absolute_uri = dir_uri + relative_uri
-    if not dir_uri.startswith('http://') and not dir_uri.startswith('https://'):
+    if not is_url(dir_uri):
         # make sure the path is correct
         absolute_uri = os.path.normpath(absolute_uri)
 
@@ -74,3 +73,7 @@ def compare_uri(uri1: str, uri2: str) -> bool:
     uri1_segments: [str] = re.findall(r"[\w']+", uri1)
     uri2_segments: [str] = re.findall(r"[\w']+", uri2)
     return uri1_segments == uri2_segments
+
+
+def is_url(candidate: str) -> bool:
+    return candidate.lower().startswith('http://') or candidate.lower().startswith('https://')

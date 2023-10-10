@@ -7,7 +7,7 @@ from typing import List
 
 from xbrl import XbrlParseException, LinkbaseNotFoundException
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_helper import resolve_uri
+from xbrl.helper.uri_helper import resolve_uri, is_url
 
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
 XLINK_NS: str = "{http://www.w3.org/1999/xlink}"
@@ -383,7 +383,8 @@ class Linkbase:
     Represents a complete Linkbase (non-generic).
     """
 
-    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType, linkbase_uri: None or str = None) -> None:
+    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType,
+                 linkbase_uri: None or str = None) -> None:
         """
         :param extended_links: All standard extended links that are defined in the linkbase
         :type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or [ExtendedLabelArc]
@@ -418,8 +419,8 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
     :param cache: :class:`xbrl.cache.HttpCache` instance
     :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
-    if not linkbase_url.startswith('http'): raise XbrlParseException(
-        'This function only parses remotely saved linkbases. Please use parse_linkbase to parse local linkbases')
+    if not is_url(linkbase_url): raise XbrlParseException('This function only parses remotely saved linkbases. '
+                                                          'Please use parse_linkbase to parse local linkbases')
 
     linkbase_path: str = cache.cache_file(linkbase_url)
     return parse_linkbase(linkbase_path, linkbase_type, linkbase_url)
@@ -439,8 +440,8 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
         the locator with concept from the taxonomy
     :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
-    if linkbase_path.startswith('http'): raise XbrlParseException(
-        'This function only parses locally saved linkbases. Please use parse_linkbase_url to parse remote linkbases')
+    if is_url(linkbase_path): raise XbrlParseException('This function only parses locally saved linkbases. '
+                                                       'Please use parse_linkbase_url to parse remote linkbases')
     if not os.path.exists(linkbase_path):
         raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_path}")
 
@@ -486,7 +487,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
             loc_label: str = loc.attrib[XLINK_NS + 'label']
             # check if the locator href is absolute
             locator_href = loc.attrib[XLINK_NS + 'href']
-            if not locator_href.startswith('http'):
+            if not is_url(locator_href):
                 # resolve the path
                 # todo, try to get the URL here, instead of the path!!!
                 locator_href = resolve_uri(linkbase_url if linkbase_url else linkbase_path, locator_href)
