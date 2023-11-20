@@ -249,6 +249,7 @@ ns_schema_map: dict = {
     "http://xbrl.ifrs.org/taxonomy/2018-03-16/ifrs-full": "http://xbrl.ifrs.org/taxonomy/2018-03-16/full_ifrs/full_ifrs-cor_2018-03-16.xsd",
     "http://xbrl.ifrs.org/taxonomy/2019-03-27/ifrs-full": "http://xbrl.ifrs.org/taxonomy/2019-03-27/full_ifrs/full_ifrs-cor_2019-03-27.xsd",
     "http://xbrl.ifrs.org/taxonomy/2020-03-16/ifrs-full": "http://xbrl.ifrs.org/taxonomy/2020-03-16/full_ifrs/full_ifrs-cor_2020-03-16.xsd",
+    "http://xbrl.ifrs.org/taxonomy/2021-03-24/ifrs-full": "http://xbrl.ifrs.org/taxonomy/2021-03-24/full_ifrs/full_ifrs-cor_2021-03-24.xsd",
     "http://xbrl.org/2005/xbrldt": "http://www.xbrl.org/2005/xbrldt-2005.xsd",
     "http://xbrl.org/2006/xbrldi": "http://www.xbrl.org/2006/xbrldi-2006.xsd",
     "http://xbrl.org/2023/calculation-1.1": "https://www.xbrl.org/2023/calculation-1.1.xsd",
