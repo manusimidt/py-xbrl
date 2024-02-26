@@ -368,7 +368,8 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     facts: List[AbstractFact] = []
     for fact_elem in root:
         # skip contexts and units
-        if 'context' in fact_elem.tag or 'unit' in fact_elem.tag or 'schemaRef' in fact_elem.tag:
+        taxonomy_ns, concept_name = fact_elem.tag.split('}')
+        if 'context' in concept_name or 'unit' in concept_name or 'schemaRef' in concept_name:
             continue
         # check if the element has the required attributes
         if 'contextRef' not in fact_elem.attrib:
@@ -381,7 +382,6 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
         xml_id: str or None = fact_elem.attrib['id'] if 'id' in fact_elem.attrib else None
 
         # find the taxonomy where the tag is coming from
-        taxonomy_ns, concept_name = fact_elem.tag.split('}')
         taxonomy_ns = taxonomy_ns.replace('{', '')
         # get the concept object from the taxonomy
         tax = taxonomy.get_taxonomy(taxonomy_ns)
