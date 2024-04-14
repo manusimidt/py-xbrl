@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from datetime import date
 
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
@@ -19,7 +20,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'py-xbrl'
-copyright = '2022, Manuel Schmidt'
+copyright = f'{date.today().year}, Manuel Schmidt'
 author = 'Manuel Schmidt'
 
 # The full version, including alpha/beta/rc tags
