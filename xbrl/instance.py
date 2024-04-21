@@ -347,17 +347,21 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     schema_uri: str = schema_ref.attrib[XLINK_NS + 'href']
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
+    
+    # initalise a set that will store cached taxonomy schemas uris to avoid recursive loops
+    imported_schema_uris = set()
+
     if is_url(schema_uri):
         # fetch the taxonomy extension schema from remote
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache, imported_schema_uris)
     elif instance_url:
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache, imported_schema_uris)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache)
+        taxonomy: TaxonomySchema = parse_taxonomy(schema_path, cache, imported_schema_uris)
 
     # parse contexts and units
     context_dir = _parse_context_elements(root.findall('xbrli:context', NAME_SPACES), root.attrib['ns_map'], taxonomy,
