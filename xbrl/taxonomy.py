@@ -588,7 +588,7 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
 
 
 @lru_cache(maxsize=60)
-def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris : set) -> TaxonomySchema:
+def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris: set = set()) -> TaxonomySchema:
     """
     Parses a taxonomy schema file from the internet
 
@@ -643,17 +643,16 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
         if is_url(import_uri):
             # fetch the schema file from remote
             taxonomy.imports.append(parse_taxonomy_url(import_uri, cache))
-            imported_schema_uris.add(import_uri)
         elif schema_url:
             # fetch the schema file from remote by reconstructing the full url
             import_url = resolve_uri(schema_url, import_uri)
-            taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
             imported_schema_uris.add(import_uri)
+            taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
         else:
             # We have to try to fetch the linkbase locally because no full url can be constructed
             import_path = resolve_uri(schema_path, import_uri)
-            taxonomy.imports.append(parse_taxonomy(import_path, cache))
-            imported_schema_uris.add(import_uri)
+            taxonomy.imports.append(parse_taxonomy(import_path, cache, imported_schema_uris))
+    
 
     role_type_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's
