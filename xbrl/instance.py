@@ -463,7 +463,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
 
     if is_url(schema_uri):
         # fetch the taxonomy extension schema from remote
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache, imported_schema_uris)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
     elif schema_root:
         # take the given schema_root path as directory for searching for the taxonomy schema
         schema_path = str(next(Path(schema_root).glob(f'**/{schema_uri}')))
@@ -471,7 +471,7 @@ def parse_ixbrl(instance_path: str, cache: HttpCache, instance_url: str or None 
     elif instance_url:
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache, imported_schema_uris)
+        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
