@@ -18,10 +18,10 @@ class TaxonomySchemaTest(unittest.TestCase):
         cache_dir: str = './cache/'
         cache: HttpCache = HttpCache(cache_dir)
         print(f"Saving to {cache_dir}")
-
+        imported_schema_uris = set()
         extension_schema_path: str = './tests/data/example.xsd'
         # extension_schema_path: str = './data/example.xsd'
-        tax: TaxonomySchema = parse_taxonomy(extension_schema_path, cache)
+        tax: TaxonomySchema = parse_taxonomy(extension_schema_path, cache, imported_schema_uris = set())
         print(tax)
         srt_tax: TaxonomySchema = tax.get_taxonomy('http://fasb.org/srt/2020-01-31')
         self.assertTrue(srt_tax)
