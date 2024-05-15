@@ -588,26 +588,28 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
 
 
 @lru_cache(maxsize=60)
-def parse_taxonomy_url(schema_url: str, cache: HttpCache) -> TaxonomySchema:
+def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris: set = set()) -> TaxonomySchema:
     """
     Parses a taxonomy schema file from the internet
 
     :param schema_url: full link to the taxonomy schema
     :param cache: :class:`xbrl.cache.HttpCache` instance
+    :param imported_schema_uris: set of already imported schema uris
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
     if not is_url(schema_url): raise XbrlParseException('This function only parses remotely saved taxonomies. '
                                                         'Please use parse_taxonomy to parse local taxonomy schemas')
     schema_path: str = cache.cache_file(schema_url)
-    return parse_taxonomy(schema_path, cache, schema_url)
+    return parse_taxonomy(schema_path, cache, imported_schema_uris, schema_url)
 
 
-def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None = None) -> TaxonomySchema:
+def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : set, schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
 
     :param schema_path: url to the schema (on the internet)
     :param cache: :class:`xbrl.cache.HttpCache` instance
+    :param imported_schema_uris: set of already imported schema uris
     :param schema_url: if this url is set, the script will try to fetch additionally imported files such as linkbases or
         imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
@@ -633,6 +635,10 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         if import_uri == "":
             continue
 
+        # Skip already imported URIs
+        if import_uri in imported_schema_uris:
+            continue
+
         # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"
         if is_url(import_uri):
             # fetch the schema file from remote
@@ -640,11 +646,13 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, schema_url: str or None =
         elif schema_url:
             # fetch the schema file from remote by reconstructing the full url
             import_url = resolve_uri(schema_url, import_uri)
+            imported_schema_uris.add(import_uri)
             taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
         else:
             # We have to try to fetch the linkbase locally because no full url can be constructed
             import_path = resolve_uri(schema_path, import_uri)
-            taxonomy.imports.append(parse_taxonomy(import_path, cache))
+            taxonomy.imports.append(parse_taxonomy(import_path, cache, imported_schema_uris))
+    
 
     role_type_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
     # parse ELR's

@@ -11,6 +11,7 @@
 ### VS Code ###
 # Covers VS Code ide
 *.code-workspace
+.vscode/
 
 
 ### PyCharm ###
