@@ -18,6 +18,10 @@ Name: XII Transformation Registry 4
 Prefix: ixt
 Namespace: http://www.xbrl.org/inlineXBRL/transformation/2020-02-12
 
+Name: XII Transformation Registry 5
+Prefix: ixt
+Namespace: http://www.xbrl.org/inlineXBRL/transformation/2022-02-16
+
 Name: SEC Specific Transformation Registry
 Prefix: ixt-sec
 Namespace: http://www.sec.gov/inlineXBRL/transformation/2015-08-31
@@ -591,6 +595,8 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
             return ixt4[formatCode](value)
         elif namespace == 'http://www.sec.gov/inlineXBRL/transformation/2015-08-31':
             return ixt_sec[formatCode](value)
+        elif namespace == 'http://www.xbrl.org/inlineXBRL/transformation/2022-02-16':
+            return ixt4[formatCode](value)
         else:
             raise RegistryNotSupported(namespace)
     except KeyError:
