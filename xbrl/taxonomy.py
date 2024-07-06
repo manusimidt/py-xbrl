@@ -281,6 +281,7 @@ ns_schema_map: dict = {
     "http://xbrl.sec.gov/dei/2021": "https://xbrl.sec.gov/dei/2021/dei-2021.xsd",
     "http://xbrl.sec.gov/dei/2022": "https://xbrl.sec.gov/dei/2022/dei-2022.xsd",
     "http://xbrl.sec.gov/dei/2023": "https://xbrl.sec.gov/dei/2023/dei-2023.xsd",
+    "http://xbrl.sec.gov/dei/2024": "https://xbrl.sec.gov/dei/2024/dei-2024.xsd",
     "http://xbrl.sec.gov/dei/2021q4": "https://xbrl.sec.gov/dei/2021q4/dei-2021q4.xsd",
     "http://xbrl.sec.gov/dei-def/2021": "https://xbrl.sec.gov/dei/2021/dei-2021_def.xsd",
     "http://xbrl.sec.gov/dei-entire/2021": "https://xbrl.sec.gov/dei/2021/dei-entire-2021.xsd",
