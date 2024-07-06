@@ -605,7 +605,7 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris: 
     return parse_taxonomy(schema_path, cache, imported_schema_uris, schema_url)
 
 
-def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : set, schema_url: str or None = None) -> TaxonomySchema:
+def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : set = set(), schema_url: str or None = None) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
 
