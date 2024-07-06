@@ -168,6 +168,7 @@ ns_schema_map: dict = {
     "http://fasb.org/srt/2021-01-31": "http://xbrl.fasb.org/srt/2021/elts/srt-2021-01-31.xsd",
     "http://fasb.org/srt/2022": "https://xbrl.fasb.org/srt/2022/elts/srt-2022.xsd",
     "http://fasb.org/srt/2023": "https://xbrl.fasb.org/srt/2023/elts/srt-2023.xsd",
+    "http://fasb.org/srt/2024": "https://xbrl.fasb.org/srt/2024/elts/srt-2024.xsd",
     "http://fasb.org/srt-roles/2018-01-31": "http://xbrl.fasb.org/srt/2018/elts/srt-roles-2018-01-31.xsd",
     "http://fasb.org/srt-roles/2019-01-31": "http://xbrl.fasb.org/srt/2019/elts/srt-roles-2019-01-31.xsd",
     "http://fasb.org/srt-roles/2020-01-31": "http://xbrl.fasb.org/srt/2020/elts/srt-roles-2020-01-31.xsd",
