@@ -191,6 +191,7 @@ ns_schema_map: dict = {
     "http://fasb.org/us-gaap/2022-01-31": "https://xbrl.fasb.org/us-gaap/2022/elts/us-gaap-2022.xsd",
     "http://fasb.org/us-gaap/2022": "https://xbrl.fasb.org/us-gaap/2022/elts/us-gaap-2022.xsd",
     "http://fasb.org/us-gaap/2023": "https://xbrl.fasb.org/us-gaap/2023/elts/us-gaap-2023.xsd",
+    "http://fasb.org/us-gaap/2024": "https://xbrl.fasb.org/us-gaap/2024/elts/us-gaap-2024.xsd",
     "http://fasb.org/us-roles/2011-01-31": "http://xbrl.fasb.org/us-gaap/2011/elts/us-roles-2011-01-31.xsd",
     "http://fasb.org/us-roles/2012-01-31": "http://xbrl.fasb.org/us-gaap/2012/elts/us-roles-2012-01-31.xsd",
     "http://fasb.org/us-roles/2013-01-31": "http://xbrl.fasb.org/us-gaap/2013/elts/us-roles-2013-01-31.xsd",
