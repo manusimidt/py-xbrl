@@ -35,21 +35,68 @@ NAME_SPACES: dict = {
     "xbrldi": "http://xbrl.org/2006/xbrldi"
 }
 
+class AbstractMember:
+    def __init__(self, dimension: Concept) -> None:
+        self.dimension = dimension
 
-class ExplicitMember:
+    def __str__(self) -> str:
+        return "Dimension {}".format(self.dimension.name)
+
+    def to_dict(self):
+        return {
+            'dimension': self.dimension.to_dict(),
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+    
+
+class TypedMember(AbstractMember):
     """
     Representation of an explicit member in xbrl.
 
     XML Example:
     <xbrldi:explicitMember dimension="us-gaap:StatementBusinessSegmentsAxis">aapl:EuropeSegmentMember</xbrldi:explicitMember>
     """
+    def __init__(self, dimension: Concept, domain: List[str]) -> None:
+        super().__init__(dimension)
+        self.domain = domain
 
+    def __str__(self) -> str:
+        return "{} on dimension {}".format(self.domain, self.dimension.name)
+
+    def to_dict(self):
+        return {
+            'dimension': self.dimension.to_dict(),
+            'domain': self.domain
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+
+class ExplicitMember(AbstractMember):
+    """
+    Representation of an explicit member in xbrl.
+
+    XML Example:
+    <xbrldi:explicitMember dimension="us-gaap:StatementBusinessSegmentsAxis">aapl:EuropeSegmentMember</xbrldi:explicitMember>
+    """
     def __init__(self, dimension: Concept, member: Concept) -> None:
-        self.dimension = dimension
+        super().__init__(dimension)
         self.member = member
 
     def __str__(self) -> str:
         return "{} on dimension {}".format(self.member.name, self.dimension.name)
+
+    def to_dict(self):
+        return {
+            'dimension': self.dimension.to_dict(),
+            'member': self.member.to_dict()
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
 
 class AbstractContext(abc.ABC):
@@ -64,7 +111,7 @@ class AbstractContext(abc.ABC):
     def __init__(self, xml_id: str, entity: str) -> None:
         self.xml_id: str = xml_id
         self.entity: str = entity
-        self.segments: List[ExplicitMember] = []
+        self.segments: List[AbstractMember] = []
 
 
 class InstantContext(AbstractContext):
@@ -201,6 +248,7 @@ class AbstractFact(abc.ABC):
         if 'dimensions' not in kwargs: kwargs['dimensions'] = {}
         kwargs['dimensions']['concept'] = self.concept.name
         kwargs['dimensions']['entity'] = self.context.entity
+        kwargs['dimensions']['contextId'] = self.context.xml_id
         kwargs['dimensions']['period'] = period
         for segment in self.context.segments:
             kwargs['dimensions'][segment.dimension.name] = segment.member.name
@@ -656,6 +704,22 @@ def _parse_context_elements(context_elements: List[ET.Element], ns_map: dict, ta
 
                 # add the explicit member to the context
                 context.segments.append(ExplicitMember(dimension_concept, member_concept))
+
+            for typed_member_element in segment.findall('xbrldi:typedMember', NAME_SPACES):
+                _update_ns_map(ns_map, typed_member_element.attrib['ns_map'])
+                dimension_prefix, dimension_concept_name = typed_member_element.attrib['dimension'].strip().split(':')
+                # get the taxonomy where the dimension attribute is defined
+                dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
+                # check if the taxonomy was found
+                if dimension_tax is None:
+                    # try to subsequently load the taxonomy
+                    dimension_tax = _load_common_taxonomy(cache, ns_map[dimension_prefix], taxonomy)
+                dimension_concept: Concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
+                domain: List[str] = []
+                for child in typed_member_element:
+                    domain.append(child.text.strip())
+                
+                context.segments.append(TypedMember(dimension_concept, domain))
 
         context_dict[context_id] = context
     return context_dict
