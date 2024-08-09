@@ -35,7 +35,8 @@ NAME_SPACES: dict = {
     "xbrldi": "http://xbrl.org/2006/xbrldi"
 }
 
-class AbstractMember:
+
+class AbstractMember(abc.ABC):
     def __init__(self, dimension: Concept) -> None:
         self.dimension = dimension
 
@@ -53,10 +54,12 @@ class AbstractMember:
 
 class TypedMember(AbstractMember):
     """
-    Representation of an explicit member in xbrl.
+    Representation of a typed member in xbrl.
 
     XML Example:
-    <xbrldi:explicitMember dimension="us-gaap:StatementBusinessSegmentsAxis">aapl:EuropeSegmentMember</xbrldi:explicitMember>
+    <xbrldi:typedMember dimension="us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis">
+        <us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis.domain>2024-06-30</us-gaap:RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis.domain>
+    </xbrldi:typedMember>
     """
     def __init__(self, dimension: Concept, domain: List[str]) -> None:
         super().__init__(dimension)
@@ -251,7 +254,8 @@ class AbstractFact(abc.ABC):
         kwargs['dimensions']['contextId'] = self.context.xml_id
         kwargs['dimensions']['period'] = period
         for segment in self.context.segments:
-            kwargs['dimensions'][segment.dimension.name] = segment.member.name
+            if isinstance(segment, ExplicitMember):
+                kwargs['dimensions'][segment.dimension.name] = segment.member.name
         return kwargs
 
 
