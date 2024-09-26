@@ -587,6 +587,13 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
 
     if namespace in ns_schema_map:
         return parse_taxonomy_url(ns_schema_map[namespace], cache)
+
+    # If a namespace appears to be an url, load it as a new taxonomy
+    if is_url(namespace):
+        if not namespace.endswith('.xsd'):
+            namespace += '.xsd'
+        return parse_taxonomy_url(namespace, cache)
+    
     return None
 
 
