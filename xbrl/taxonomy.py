@@ -3,6 +3,7 @@ This module contains all classes and functions necessary for parsing Taxonomy sc
 """
 import logging
 import os
+import json
 import xml.etree.ElementTree as ET
 from functools import lru_cache
 from typing import List
@@ -480,6 +481,29 @@ class Concept:
         self.period_type: str or None = None
         self.balance: str or None = None
         self.labels: [Label] = []
+    
+    def to_dict(self):
+        """
+        Converts the Concept object into a dictionary representation
+        """
+        return {
+            'xml_id': self.xml_id,
+            'schema_url': self.schema_url,
+            'name': self.name,
+            'substitution_group': self.substitution_group,
+            'concept_type': self.concept_type,
+            'abstract': self.abstract,
+            'nillable': self.nillable,
+            'period_type': self.period_type,
+            'balance': self.balance,
+            'labels': [label.to_dict() for label in self.labels] if self.labels else []  # Assuming Label class has to_dict()
+        }
+
+    def to_json(self):
+        """
+        Converts the Concept object into a JSON string
+        """
+        return json.dumps(self.to_dict(), indent=4)
 
     def __str__(self) -> str:
         return self.name
