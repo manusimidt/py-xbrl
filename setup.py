@@ -15,7 +15,7 @@ def read(filename):
 
 setup(
     name="py-xbrl",
-    version="2.2.12",
+    version="2.2.13",
     url="https://github.com/manusimidt/xbrl_parser",
     license='GNU General Public License v3 (GPLv3)',
     author="Manuel Schmidt",

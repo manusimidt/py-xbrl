@@ -1,4 +1,5 @@
 import abc
+import json
 import os
 import xml.etree.ElementTree as ET
 from abc import ABC
@@ -246,6 +247,23 @@ class Label:
         self.text: str = text.strip() if text is not None else text
         # the role of the label i.e: http://www.xbrl.org/2003/role/terseLabel
         self.label_type: str = label_type
+
+    def to_dict(self):
+        """
+        Converts the Label object into a dictionary representation
+        """
+        return {
+            'label': self.label,
+            'label_type': self.label_type,
+            'language': self.language,
+            'text': self.text
+        }
+
+    def to_json(self):
+        """
+        Converts the Label object into a JSON string
+        """
+        return json.dumps(self.to_dict(), indent=4)
 
     def __str__(self) -> str:
         return self.text
