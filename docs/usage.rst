@@ -33,6 +33,7 @@ Online
 Parsing submissions stored on a webserver is pretty easy. Just provide `py-xbrl` with the url
 and `py-xbrl` will download all necessary files for you and store them into the cache.
 Make sure to set the http headers correctly (Services like SEC EDGAR require it!).
+Please find more information about headers and usage regulations in the `SEC EDGAR documentation <https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data>`_.
 
 .. code-block:: python
 
@@ -43,7 +44,7 @@ Make sure to set the http headers correctly (Services like SEC EDGAR require it!
     logging.basicConfig(level=logging.INFO)
 
     cache: HttpCache = HttpCache('./cache')
-    cache.set_headers({'From': 'YOUR@EMAIL.com', 'User-Agent': 'py-xbrl/2.1.0'})
+    cache.set_headers({'From': 'YOUR@EMAIL.com', 'User-Agent': 'Company Name AdminContact@<company-domain>.com'})
     parser = XbrlParser(cache)
 
     schema_url = "https://www.sec.gov/Archives/edgar/data/0000320193/000032019321000105/aapl-20210925.htm"
