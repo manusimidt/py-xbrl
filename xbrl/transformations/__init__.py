@@ -315,7 +315,7 @@ def durWordSen(arg: str) -> str:
 
 
 def numWordSen(arg: str) -> str:
-    if arg == 'no' or arg == 'none':
+    if arg == 'no' or arg == 'none' or arg == 'nil':
         return '0'
     else:
         arg = arg.replace(' and ', ' ')
