@@ -127,7 +127,7 @@ Here is an example of what the json representation will look like:
           "dimensions": {
             "concept": "RevenueFromContractWithCustomerTextBlock",
             "entity": "0000320193",
-            "period": "2021-09-26/2022-03-26"
+            "period": "2021-09-26T00:00:00/2022-03-26T00:00:00"
           }
         }
       }
