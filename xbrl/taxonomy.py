@@ -698,7 +698,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
         el_name: str = element.attrib['name']
 
         concept = Concept(el_id, schema_url, el_name)
-        concept.type = element.attrib['type'] if 'type' in element.attrib else False
+        concept.concept_type = element.attrib['type'] if 'type' in element.attrib else None
         concept.nillable = bool(element.attrib['nillable']) if 'nillable' in element.attrib else False
         concept.abstract = bool(element.attrib['abstract']) if 'abstract' in element.attrib else False
         type_attr_name = XBRLI_NS + 'periodType'
