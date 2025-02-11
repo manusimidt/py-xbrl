@@ -241,9 +241,12 @@ class AbstractFact(abc.ABC):
 
     def json(self, **kwargs) -> dict:
         if isinstance(self.context, TimeFrameContext):
-            period: str = f"{self.context.start_date}/{self.context.end_date}"
+            start_date = self.context.start_date.strftime('%Y-%m-%dT%H:%M:%S')
+            end_date = self.context.end_date.strftime('%Y-%m-%dT%H:%M:%S')
+            period: str = f"{start_date}/{end_date}"
         elif isinstance(self.context, InstantContext):
-            period: str = str(self.context.instant_date)
+            instant_date = self.context.instant_date.strftime('%Y-%m-%dT%H:%M:%S')
+            period: str = str(instant_date)
         else:
             period: str = ''  # Forever context not specified in REC-2021-10-13
 
