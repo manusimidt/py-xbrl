@@ -1,0 +1,9 @@
+{
+  "http://arelle.org/doc/2014-01-31": "http://arelle.org/2014/doc-2014-01-31.xsd",
+  "http://ici.org/rr/2006": "http://xbrl.ici.org/rr/2006/ici-rr.xsd",
+  "https://xbrl.ifrs.org/taxonomy/2022-03-24/ifrs-full": "https://xbrl.ifrs.org/taxonomy/2022-03-24/full_ifrs/full_ifrs-cor_2022-03-24.xsd",
+  "https://xbrl.ifrs.org/taxonomy/2023-03-23/ifrs-full": "https://xbrl.ifrs.org/taxonomy/2023-03-23/full_ifrs/full_ifrs-cor_2023-03-23.xsd",
+  "http://www.esma.europa.eu/xbrl/esef/arcrole/wider-narrower": "http://www.xbrl.org/lrr/arcrole/esma-arcrole-2018-11-21.xsd",
+  "http://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01": "https://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01/dpl-2021.xsd",
+  "http://www.w3.org/1999/xlink": "http://www.xbrl.org/2003/xlink-2003-12-31.xsd"
+}
