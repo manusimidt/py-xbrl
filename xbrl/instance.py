@@ -427,7 +427,7 @@ def parse_xbrl(instance_path: str, cache: HttpCache, instance_url: str or None =
     for fact_elem in root:
         # skip contexts and units
         taxonomy_ns, concept_name = fact_elem.tag.split('}')
-        if 'context' in concept_name or 'unit' in concept_name or 'schemaRef' in concept_name:
+        if concept_name.lower() == 'context' or  concept_name.lower() == 'unit' or concept_name.lower() == 'schemaref':
             continue
         # check if the element has the required attributes
         if 'contextRef' not in fact_elem.attrib:
