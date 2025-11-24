@@ -453,8 +453,10 @@ ns_schema_map: dict = {
     'http://xbrl.sec.gov/rr-lab/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_lab.xsd',
     'http://xbrl.sec.gov/rr-pre/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_pre.xsd',
     'http://xbrl.sec.gov/rr-def/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_def.xsd',
+
     'http://xbrl.sec.gov/cyd/2024': 'https://xbrl.sec.gov/cyd/2024/cyd-2024.xsd',
     'http://xbrl.sec.gov/cyd-entire/2024': 'https://xbrl.sec.gov/cyd/2024/cyd-entire-2024.xsd',
+    'http://xbrl.sec.gov/cyd/2025': 'https://xbrl.sec.gov/cyd/2025/cyd-2025.xsd',  
     
     'http://www.xbrl.org/dtr/type/2022-03-31': 'https://www.xbrl.org/dtr/type/2022-03-31/types.xsd',
 
