@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from io import StringIO
 
 
-def parse_file(file: str or StringIO) -> ET.ElementTree:
+def parse_file(file: str | StringIO) -> ET.ElementTree:
     """
     Parses a file, returns the Root element with an attribute 'ns_map' containing the prefix - namespaces map
     :param file: either the file path (str) or a file-like object

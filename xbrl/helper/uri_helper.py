@@ -77,8 +77,8 @@ def compare_uri(uri1: str, uri2: str) -> bool:
     if "://" in uri2:
         uri2 = uri2.split("://")[1]
 
-    uri1_segments: [str] = re.findall(r"[\w']+", uri1)
-    uri2_segments: [str] = re.findall(r"[\w']+", uri2)
+    uri1_segments: list[str] = re.findall(r"[\w']+", uri1)
+    uri2_segments: list[str] = re.findall(r"[\w']+", uri2)
     return uri1_segments == uri2_segments
 
 

@@ -13,23 +13,16 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
 from pathlib import Path
+from typing import Any, List
 
 from xbrl import InstanceParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import is_url, resolve_uri
 from xbrl.helper.xml_parser import parse_file
-from xbrl.taxonomy import (
-    Concept,
-    TaxonomySchema,
-    parse_common_taxonomy,
-    parse_taxonomy,
-    parse_taxonomy_url,
-)
-from xbrl.transformations import (
-    TransformationException,
-    TransformationNotImplemented,
-    normalize,
-)
+from xbrl.taxonomy import (Concept, TaxonomySchema, parse_common_taxonomy,
+                           parse_taxonomy, parse_taxonomy_url)
+from xbrl.transformations import (TransformationException,
+                                  TransformationNotImplemented, normalize)
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -235,7 +228,7 @@ class AbstractFact(abc.ABC):
     """
 
     def __init__(
-        self, concept: Concept, context: AbstractContext, value: any, xml_id: str | None
+        self, concept: Concept, context: AbstractContext, value: Any, xml_id: str | None
     ) -> None:
         """
         :param concept: concept from the taxonomy, that the fact is referencing
@@ -245,7 +238,7 @@ class AbstractFact(abc.ABC):
         """
         self.concept: Concept = concept
         self.context: AbstractContext = context
-        self.value: any = value
+        self.value: Any = value
         self.xml_id = xml_id
         self.footnote: Footnote | None = None
 

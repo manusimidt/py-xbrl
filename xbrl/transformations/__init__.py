@@ -30,7 +30,7 @@ Namespace: http://www.sec.gov/inlineXBRL/transformation/2015-08-31
 import re
 from math import floor
 
-from xbrl.transformations.text2num import text2num, replace_text_numbers
+from xbrl.transformations.text2num import replace_text_numbers, text2num
 
 
 class TransformationException(Exception):
@@ -313,7 +313,7 @@ def durMonth(arg: str) -> str:
 def durWordSen(arg: str) -> str:
     value = replace_text_numbers(arg)
     years, months, days = 0, 0, 0
-    words: [str] = value.split(" ")
+    words: list[str] = value.split(" ")
     for x in range(len(words) - 1):
         if not words[x].isnumeric():
             continue

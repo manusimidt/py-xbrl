@@ -86,9 +86,9 @@ class ContextParseException(InstanceParseException):
 __version__ = "2.2.17"
 __author__ = "Manuel Schmidt <hello@schmidt-manuel.de>"
 __all__ = [
-    XbrlParseException,
-    TaxonomyParseException,
-    TaxonomyNotFound,
-    InstanceParseException,
-    ContextParseException,
+    "XbrlParseException",
+    "TaxonomyParseException",
+    "TaxonomyNotFound",
+    "InstanceParseException",
+    "ContextParseException",
 ]

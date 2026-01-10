@@ -2,17 +2,16 @@ name: Python Unit tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14" ]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v5
@@ -33,7 +32,10 @@ jobs:
           ruff check .
           ruff format --check .
 
+      - name: Type check with mypy
+        run: |
+          mypy xbrl
+
       - name: Test with pytest
         run: |
           pytest tests/
-

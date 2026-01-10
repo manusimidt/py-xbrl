@@ -37,8 +37,16 @@ classifiers = [
 
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest", "build", "twine"]
+dev = ["ruff", "pytest", "build", "twine", "mypy", "types-requests"]
 
 
 [tool.setuptools.packages.find]
 include = ["xbrl*"]
+
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
