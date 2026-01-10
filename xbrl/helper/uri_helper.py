@@ -1,6 +1,7 @@
 """
 Module containing functions for creating and resolving uri's
 """
+
 import os
 import re
 
@@ -18,41 +19,45 @@ def resolve_uri(dir_uri: str, relative_uri: str) -> str:
     @param relative_uri:
     @return:
     """
-    if is_url(relative_uri): return relative_uri
+    if is_url(relative_uri):
+        return relative_uri
 
     # remove redundant characters in the relative uri
-    if relative_uri.startswith('/'): relative_uri = relative_uri[1:]
-    if relative_uri.startswith('./'): relative_uri = relative_uri[2:]
+    if relative_uri.startswith("/"):
+        relative_uri = relative_uri[1:]
+    if relative_uri.startswith("./"):
+        relative_uri = relative_uri[2:]
 
     dir_uri = str(dir_uri)
     if not is_url(dir_uri):
         # check if the dir_uri was really a path to a directory or a file
-        if '.' in dir_uri.split(os.sep)[-1]:
+        if "." in dir_uri.split(os.sep)[-1]:
             return os.path.normpath(os.path.dirname(dir_uri) + os.sep + relative_uri)
         else:
             return os.path.normpath(dir_uri + os.sep + relative_uri)
 
     # === From here on we only process urls ===
     # remove the file name if the dir_uri was the url to a file
-    if '.' in dir_uri.split('/')[-1]: dir_uri = '/'.join(dir_uri.split('/')[0:-1])
-    if not dir_uri.endswith('/'):
-        dir_uri += '/'
+    if "." in dir_uri.split("/")[-1]:
+        dir_uri = "/".join(dir_uri.split("/")[0:-1])
+    if not dir_uri.endswith("/"):
+        dir_uri += "/"
 
     absolute_uri = dir_uri + relative_uri
     if not is_url(dir_uri):
         # make sure the path is correct
         absolute_uri = os.path.normpath(absolute_uri)
 
-    url_parts = absolute_uri.split('/')
-    for x in range(0, absolute_uri.count('/..')):
+    url_parts = absolute_uri.split("/")
+    for x in range(0, absolute_uri.count("/..")):
         # loop over the url_parts array and remove the path_part, that has a '..' after it
         for y in range(0, len(url_parts) - 1):
-            if url_parts[y + 1] == '..':
+            if url_parts[y + 1] == "..":
                 del url_parts[y]  # delete the path part affected by the '/../'
                 del url_parts[y]  # delete the '/../' itself
                 break
 
-    return '/'.join(url_parts)
+    return "/".join(url_parts)
 
 
 def compare_uri(uri1: str, uri2: str) -> bool:
@@ -67,8 +72,10 @@ def compare_uri(uri1: str, uri2: str) -> bool:
     :return:
     """
     # first remove any protocol
-    if '://' in uri1: uri1 = uri1.split('://')[1]
-    if '://' in uri2: uri2 = uri2.split('://')[1]
+    if "://" in uri1:
+        uri1 = uri1.split("://")[1]
+    if "://" in uri2:
+        uri2 = uri2.split("://")[1]
 
     uri1_segments: [str] = re.findall(r"[\w']+", uri1)
     uri2_segments: [str] = re.findall(r"[\w']+", uri2)
@@ -76,4 +83,6 @@ def compare_uri(uri1: str, uri2: str) -> bool:
 
 
 def is_url(candidate: str) -> bool:
-    return candidate.lower().startswith('http://') or candidate.lower().startswith('https://')
+    return candidate.lower().startswith("http://") or candidate.lower().startswith(
+        "https://"
+    )

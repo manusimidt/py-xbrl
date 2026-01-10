@@ -1,6 +1,7 @@
 """
 Downloads files and stores them locally.
 """
+
 import os
 import re
 import zipfile
@@ -22,9 +23,10 @@ class HttpCache:
         :param verify_https: Disable SSL certificate validation for speed up (see https://github.com/manusimidt/py-xbrl/pull/57)
         """
         # check if the cache_dir ends with a /
-        if not cache_dir.endswith('/'): cache_dir += '/'
+        if not cache_dir.endswith("/"):
+            cache_dir += "/"
         self.cache_dir: str = cache_dir
-        self.headers: dict or None = None
+        self.headers: dict | None = None
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
     def set_headers(self, headers: dict) -> None:
@@ -44,8 +46,13 @@ class HttpCache:
         self.headers = headers
         self.connection_manager._headers = headers
 
-    def set_connection_params(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8,
-                              logs: bool = True) -> None:
+    def set_connection_params(
+        self,
+        delay: int = 500,
+        retries: int = 5,
+        backoff_factor: float = 0.8,
+        logs: bool = True,
+    ) -> None:
         """
         Sets the connection params for all following request
 
@@ -73,20 +80,28 @@ class HttpCache:
         if os.path.exists(file_path):
             return file_path
 
-        file_dir_path: str = '/'.join(file_path.split('/')[0:-1])
+        file_dir_path: str = "/".join(file_path.split("/")[0:-1])
         # try to download the file
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
 
-        query_response = self.connection_manager.download(file_url, headers=self.headers)
+        query_response = self.connection_manager.download(
+            file_url, headers=self.headers
+        )
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
                 raise Exception(
-                    "Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
+                    "Could not find file on {}. Error code: {}".format(
+                        file_url, query_response.status_code
+                    )
+                )
             else:
                 raise Exception(
-                    "Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))
+                    "Could not download file from {}. Error code: {}".format(
+                        file_url, query_response.status_code
+                    )
+                )
 
         with open(file_path, "wb+") as file:
             file.write(query_response.content)
@@ -124,11 +139,11 @@ class HttpCache:
         :return: relative path to extracted zip's content
         """
         # todo: why is it called "cache_edgar_enclosure" you could theoretically cache any zip enclosure.
-        if not enclosure_url.endswith('.zip'):
+        if not enclosure_url.endswith(".zip"):
             raise Exception("This is not a valid zip folder")
         # download the zip folder and store it into the default http cache
         enclosure_path = self.cache_file(file_url=enclosure_url)
-        submission_dir_path = self.url_to_path('/'.join(enclosure_url.split('/')[:-1]))
+        submission_dir_path = self.url_to_path("/".join(enclosure_url.split("/")[:-1]))
         # extract the zip folder
         with zipfile.ZipFile(enclosure_path, "r") as zip_ref:
             zip_ref.extractall(submission_dir_path)
@@ -136,7 +151,7 @@ class HttpCache:
         return submission_dir_path
 
     @DeprecationWarning
-    def find_entry_file(self, dir_path: str) -> str or None:
+    def find_entry_file(self, dir_path: str) -> str | None:
         """
         NOTE: This function only works for enclosed SEC submissions that where already downloaded!
         Also this function does only return the most likely file path for the instance document.
@@ -150,7 +165,7 @@ class HttpCache:
 
         # filter for files in interest
         valid_files = []
-        for ext in '.htm .xml .xsd'.split():  # valid extensions in priority
+        for ext in ".htm .xml .xsd".split():  # valid extensions in priority
             for f in os.listdir(dir_path):
                 f_full = os.path.join(dir_path, f)
                 if os.path.isfile(f_full) and f.lower().endswith(ext):

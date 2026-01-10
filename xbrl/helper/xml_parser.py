@@ -3,6 +3,7 @@ This module wraps the parse function of the Element Tree library to parse XML fi
 namespace map. Element tree discards all prefixes when parsing the file.
 It is used by the different parsing modules.
 """
+
 import xml.etree.ElementTree as ET
 from io import StringIO
 
@@ -26,6 +27,6 @@ def parse_file(file: str or StringIO) -> ET.ElementTree:
         elif event == "start":
             if root is None:
                 root = elem
-            elem.set('ns_map', dict(ns_map))
+            elem.set("ns_map", dict(ns_map))
 
     return ET.ElementTree(root)

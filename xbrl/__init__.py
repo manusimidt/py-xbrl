@@ -35,11 +35,13 @@ class XbrlParseException(Exception):
     """
     Generic Class representing a exception occurred while parsing xbrl
     """
+
     pass
 
 
 class LinkbaseNotFoundException(XbrlParseException):
-    """ Generic exception for imported linkbases that could not be fetched locally or remote """
+    """Generic exception for imported linkbases that could not be fetched locally or remote"""
+
     pass
 
 
@@ -47,6 +49,7 @@ class TaxonomyParseException(XbrlParseException):
     """
     Generic class for a exception thrown while parsing a taxonomy
     """
+
     pass
 
 
@@ -59,13 +62,16 @@ class TaxonomyNotFound(TaxonomyParseException):
     def __init__(self, namespace) -> None:
         super().__init__(
             "The taxonomy with namespace {} could not be found. Please check if it is imported in the schema file".format(
-                namespace))
+                namespace
+            )
+        )
 
 
 class InstanceParseException(XbrlParseException):
     """
     Generic class for an exception thrown while parsing an xbrl instance file
     """
+
     pass
 
 
@@ -73,11 +79,12 @@ class ContextParseException(InstanceParseException):
     """
     Exception thrown when a Context could not be parsed
     """
+
     pass
 
 
-__version__ = '2.2.17'
-__author__ = 'Manuel Schmidt <hello@schmidt-manuel.de>'
+__version__ = "2.2.17"
+__author__ = "Manuel Schmidt <hello@schmidt-manuel.de>"
 __all__ = [
     XbrlParseException,
     TaxonomyParseException,

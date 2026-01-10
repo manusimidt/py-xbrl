@@ -19,8 +19,15 @@ class ConnectionManager:
 
     """
 
-    def __init__(self, delay: int = 500, retries: int = 5, backoff_factor: float = 0.8, headers: dict = None, logs=True,
-                 verify_https: bool = True):
+    def __init__(
+        self,
+        delay: int = 500,
+        retries: int = 5,
+        backoff_factor: float = 0.8,
+        headers: dict = None,
+        logs=True,
+        verify_https: bool = True,
+    ):
         """
 
         @param delay: Specifies sleeping time after the request is successful.
@@ -36,7 +43,9 @@ class ConnectionManager:
         self._session = self._create_session()
         self.logs = logs
         self.verify_https = verify_https
-        self.next_try_systime_ms = self._get_systime_ms()  # when can we try next download
+        self.next_try_systime_ms = (
+            self._get_systime_ms()
+        )  # when can we try next download
 
         if verify_https is False:
             requests.packages.urllib3.disable_warnings()
@@ -48,16 +57,20 @@ class ConnectionManager:
         # make sure last post-delay elapsed, to rate limit API usage
         time.sleep(max(0, self.next_try_systime_ms - self._get_systime_ms()) / 1000)
 
-        response = self._session.get(url, headers=headers, allow_redirects=True, verify=self.verify_https)
-        if self.logs: logger.info(str(response.status_code) + " " + url)
+        response = self._session.get(
+            url, headers=headers, allow_redirects=True, verify=self.verify_https
+        )
+        if self.logs:
+            logger.info(str(response.status_code) + " " + url)
 
         # no actual delay after last download
         self.next_try_systime_ms = self._get_systime_ms() + self._delay_ms
 
         return response
 
-    def _create_session(self,
-                        status_forcelist: tuple = (500, 502, 503, 504, 403)) -> requests.Session:
+    def _create_session(
+        self, status_forcelist: tuple = (500, 502, 503, 504, 403)
+    ) -> requests.Session:
         session = requests.Session()
         retry = Retry(
             total=self._retries,
@@ -67,7 +80,7 @@ class ConnectionManager:
             status_forcelist=status_forcelist,
         )
         adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
 
         return session

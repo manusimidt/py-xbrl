@@ -12,14 +12,13 @@ import logging
 
 
 class CacheHelperTest(unittest.TestCase):
-
     def test_cache_file(self):
         """
         Unit test for CacheHelper.cache_file
         :return:
         """
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-        cache_dir: str = os.path.abspath('./../cache/') + '/'
+        cache_dir: str = os.path.abspath("./../cache/") + "/"
         delay: int = 5000
         cache: HttpCache = HttpCache(cache_dir, delay)
 
@@ -61,5 +60,5 @@ class CacheHelperTest(unittest.TestCase):
         self.assertFalse(os.path.isfile(expected_path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

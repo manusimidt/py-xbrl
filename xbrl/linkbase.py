@@ -6,9 +6,9 @@ from abc import ABC
 from enum import Enum
 from typing import List
 
-from xbrl import XbrlParseException, LinkbaseNotFoundException
+from xbrl import LinkbaseNotFoundException, XbrlParseException
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_helper import resolve_uri, is_url
+from xbrl.helper.uri_helper import is_url, resolve_uri
 
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
 XLINK_NS: str = "{http://www.w3.org/1999/xlink}"
@@ -17,14 +17,15 @@ XML_NS: str = "{http://www.w3.org/XML/1998/namespace}"
 
 
 class LinkbaseType(Enum):
-    """ Enum of linkbase types, that this parser can parse """
+    """Enum of linkbase types, that this parser can parse"""
+
     DEFINITION = 0x001
     CALCULATION = 0x002
     PRESENTATION = 0x003
     LABEL = 0x004
 
     @staticmethod
-    def get_type_from_role(role: str) -> int or None:
+    def get_type_from_role(role: str) -> int | None:
         """
         Takes a xlink:role (i.e http://www.xbrl.org/2003/role/definitionLinkbaseRef) and returns the corresponding
         LinkbaseType
@@ -32,24 +33,30 @@ class LinkbaseType(Enum):
         @return: LinkbaseType or None if the role is unknown
         """
         return {
-            'http://www.xbrl.org/2003/role/definitionLinkbaseRef': LinkbaseType.DEFINITION,
-            'http://www.xbrl.org/2003/role/calculationLinkbaseRef': LinkbaseType.CALCULATION,
-            'http://www.xbrl.org/2003/role/presentationLinkbaseRef': LinkbaseType.PRESENTATION,
-            'http://www.xbrl.org/2003/role/labelLinkbaseRef': LinkbaseType.LABEL,
+            "http://www.xbrl.org/2003/role/definitionLinkbaseRef": LinkbaseType.DEFINITION,
+            "http://www.xbrl.org/2003/role/calculationLinkbaseRef": LinkbaseType.CALCULATION,
+            "http://www.xbrl.org/2003/role/presentationLinkbaseRef": LinkbaseType.PRESENTATION,
+            "http://www.xbrl.org/2003/role/labelLinkbaseRef": LinkbaseType.LABEL,
         }.get(role, None)
 
     @staticmethod
-    def guess_linkbase_role(href: str) -> int or None:
+    def guess_linkbase_role(href: str) -> int | None:
         """
         Guesses the linkbase role based on the name of the linkbase
         @param href:
         @return:
         """
-        return LinkbaseType.DEFINITION if '_def' in href \
-            else LinkbaseType.CALCULATION if '_cal' in href \
-            else LinkbaseType.PRESENTATION if '_pre' in href \
-            else LinkbaseType.LABEL if '_lab' in href \
+        return (
+            LinkbaseType.DEFINITION
+            if "_def" in href
+            else LinkbaseType.CALCULATION
+            if "_cal" in href
+            else LinkbaseType.PRESENTATION
+            if "_pre" in href
+            else LinkbaseType.LABEL
+            if "_lab" in href
             else None
+        )
 
 
 class AbstractArcElement(ABC):
@@ -90,7 +97,7 @@ class AbstractArcElement(ABC):
 
     @abc.abstractmethod
     def to_dict(self):
-        """ Returns a dictionary representation of the arc """
+        """Returns a dictionary representation of the arc"""
         pass
 
 
@@ -105,10 +112,17 @@ class RelationArc(AbstractArcElement, ABC):
 
 
 class DefinitionArc(RelationArc):
-    """ Represents a definition arc (link:definitionArc) """
+    """Represents a definition arc (link:definitionArc)"""
 
-    def __init__(self, from_locator, to_locator, arcrole: str, order: int, closed: bool = None,
-                 context_element: str = None) -> None:
+    def __init__(
+        self,
+        from_locator,
+        to_locator,
+        arcrole: str,
+        order: int,
+        closed: bool = None,
+        context_element: str = None,
+    ) -> None:
         """
         @type from_locator: Locator
         @type to_locator: Locator
@@ -148,21 +162,27 @@ class DefinitionArc(RelationArc):
                     None
         """
         super().__init__(from_locator, to_locator, arcrole, order)
-        self.closed: bool or None = closed
-        self.context_element: bool or None = context_element
+        self.closed: bool | None = closed
+        self.context_element: bool | None = context_element
 
     def __str__(self) -> str:
-        return "Linking to {} as {}".format(str(self.to_locator.name), self.arcrole.split('/')[-1])
+        return "Linking to {} as {}".format(
+            str(self.to_locator.name), self.arcrole.split("/")[-1]
+        )
 
     def to_dict(self) -> dict:
-        """ Returns a dictionary representation of the arc """
-        return {"arcrole": self.arcrole, "order": self.order, "closed": self.closed,
-                "contextElement": self.context_element,
-                "locator": self.to_locator.to_dict()}
+        """Returns a dictionary representation of the arc"""
+        return {
+            "arcrole": self.arcrole,
+            "order": self.order,
+            "closed": self.closed,
+            "contextElement": self.context_element,
+            "locator": self.to_locator.to_dict(),
+        }
 
 
 class CalculationArc(RelationArc):
-    """ Represents a calculation arc (link:calculationArc) """
+    """Represents a calculation arc (link:calculationArc)"""
 
     def __init__(self, from_locator, to_locator, order: int, weight: float) -> None:
         """
@@ -172,22 +192,38 @@ class CalculationArc(RelationArc):
                         (XBRL for Interactive Data, 2009, p.61)
         """
         # A Calculation arc only has the summation-item arc role
-        super().__init__(from_locator, to_locator, "http://www.xbrl.org/2003/arcrole/summation-item", order)
+        super().__init__(
+            from_locator,
+            to_locator,
+            "http://www.xbrl.org/2003/arcrole/summation-item",
+            order,
+        )
         self.weight: float = weight
 
     def to_dict(self):
-        """ Returns a dictionary representation of the arc """
-        return {"arcrole": self.arcrole, "order": self.order, "weight": self.weight,
-                "locator": self.to_locator.to_dict()}
+        """Returns a dictionary representation of the arc"""
+        return {
+            "arcrole": self.arcrole,
+            "order": self.order,
+            "weight": self.weight,
+            "locator": self.to_locator.to_dict(),
+        }
 
     def __str__(self) -> str:
-        return "{} {}".format(self.arcrole.split('/')[-1], self.to_locator.concept_id)
+        return "{} {}".format(self.arcrole.split("/")[-1], self.to_locator.concept_id)
 
 
 class PresentationArc(RelationArc):
-    """ Represents a presentation arc (link:presentationArc) """
+    """Represents a presentation arc (link:presentationArc)"""
 
-    def __init__(self, from_locator, to_locator, order: int, priority: int, preferred_label: str = None) -> None:
+    def __init__(
+        self,
+        from_locator,
+        to_locator,
+        order: int,
+        priority: int,
+        preferred_label: str = None,
+    ) -> None:
         """
         @type from_locator: Locator
         @type to_locator: Locator
@@ -195,17 +231,26 @@ class PresentationArc(RelationArc):
         (XBRL Specification 2.1, 5.2.4.2.1)
         """
         # A Presentation arc only has the parent-child arc role
-        super().__init__(from_locator, to_locator, "http://www.xbrl.org/2003/arcrole/parent-child", order)
+        super().__init__(
+            from_locator,
+            to_locator,
+            "http://www.xbrl.org/2003/arcrole/parent-child",
+            order,
+        )
         self.priority = priority
         self.preferred_label: str = preferred_label
 
     def to_dict(self):
-        """ Returns a dictionary representation of the arc """
-        return {"arcrole": self.arcrole, "order": self.order,
-                "preferredLabel": self.preferred_label, "locator": self.to_locator.to_dict()}
+        """Returns a dictionary representation of the arc"""
+        return {
+            "arcrole": self.arcrole,
+            "order": self.order,
+            "preferredLabel": self.preferred_label,
+            "locator": self.to_locator.to_dict(),
+        }
 
     def __str__(self) -> str:
-        return "{} {}".format(self.arcrole.split('/')[-1], self.to_locator.concept_id)
+        return "{} {}".format(self.arcrole.split("/")[-1], self.to_locator.concept_id)
 
 
 class Label:
@@ -253,10 +298,10 @@ class Label:
         Converts the Label object into a dictionary representation
         """
         return {
-            'label': self.label,
-            'label_type': self.label_type,
-            'language': self.language,
-            'text': self.text
+            "label": self.label,
+            "label_type": self.label_type,
+            "language": self.language,
+            "text": self.text,
         }
 
     def to_json(self):
@@ -285,7 +330,9 @@ class LabelArc(AbstractArcElement):
         @type labels: Label[]
         """
         # A Label Arc only has the concept-label arc role
-        super().__init__(from_locator, "http://www.xbrl.org/2003/arcrole/concept-label", order)
+        super().__init__(
+            from_locator, "http://www.xbrl.org/2003/arcrole/concept-label", order
+        )
         self.labels = labels
 
     def __str__(self) -> str:
@@ -320,7 +367,7 @@ class Locator:
         # the label of the Locator (i.e: loc_Goodwill)
         self.name: str = name
         # the id of the concept (i.e: us-gaap_Goodwill)
-        self.concept_id: str = href.split('#')[1]
+        self.concept_id: str = href.split("#")[1]
         # This array stores the locators that that are connected with this locator via a label arc, there
         # the current locator was in the to attribute. This array is only used for finding the root locators (the locators
         # that have no parents)
@@ -338,8 +385,12 @@ class Locator:
         recursive dictionary hierarchy
         @return:
         """
-        return {"name": self.name, "href": self.href, "concept_id": self.concept_id,
-                "children": [arc_element.to_dict() for arc_element in self.children]}
+        return {
+            "name": self.name,
+            "href": self.href,
+            "concept_id": self.concept_id,
+            "children": [arc_element.to_dict() for arc_element in self.children],
+        }
 
     def to_simple_dict(self) -> dict:
         """
@@ -348,8 +399,12 @@ class Locator:
         parent and children are
         @return:
         """
-        return {"concept_id": self.concept_id,
-                "children": [arc_element.to_locator.to_simple_dict() for arc_element in self.children]}
+        return {
+            "concept_id": self.concept_id,
+            "children": [
+                arc_element.to_locator.to_simple_dict() for arc_element in self.children
+            ],
+        }
 
 
 class ExtendedLink:
@@ -363,7 +418,9 @@ class ExtendedLink:
 
     """
 
-    def __init__(self, role: str, elr_id: str or None, root_locators: List[Locator]) -> None:
+    def __init__(
+        self, role: str, elr_id: str | None, root_locators: List[Locator]
+    ) -> None:
         """
         @param role: role of the extended link element
         @param elr_id: the link to the extended Link role (as defined in the schema file)
@@ -372,7 +429,7 @@ class ExtendedLink:
         @param root_locators: Label array of all root locators (all locators that have no parents)
         """
         self.role: str = role
-        self.elr_id: str or None = elr_id
+        self.elr_id: str | None = elr_id
         self.root_locators: List[Locator] = root_locators
 
     def to_dict(self) -> dict:
@@ -380,8 +437,11 @@ class ExtendedLink:
         Returns a dictionary representation of the ExtendedLinkElement
         @return:
         """
-        return {"role": self.role, "elr_id": self.elr_id,
-                "root_locators": [loc.to_dict() for loc in self.root_locators]}
+        return {
+            "role": self.role,
+            "elr_id": self.elr_id,
+            "root_locators": [loc.to_dict() for loc in self.root_locators],
+        }
 
     def to_simple_dict(self) -> dict:
         """
@@ -390,7 +450,10 @@ class ExtendedLink:
         parent and children are
         @return:
         """
-        return {"role": self.role, "children": [loc.to_simple_dict() for loc in self.root_locators]}
+        return {
+            "role": self.role,
+            "children": [loc.to_simple_dict() for loc in self.root_locators],
+        }
 
     def __str__(self) -> str:
         return self.elr_id
@@ -401,8 +464,12 @@ class Linkbase:
     Represents a complete Linkbase (non-generic).
     """
 
-    def __init__(self, extended_links: List[ExtendedLink], linkbase_type: LinkbaseType,
-                 linkbase_uri: None or str = None) -> None:
+    def __init__(
+        self,
+        extended_links: List[ExtendedLink],
+        linkbase_type: LinkbaseType,
+        linkbase_uri: None | str = None,
+    ) -> None:
         """
         :param extended_links: All standard extended links that are defined in the linkbase
         :type extended_links: [ExtendedDefinitionLink] or [ExtendedCalculationLink] or [ExtendedPresentationLink] or [ExtendedLabelArc]
@@ -417,7 +484,9 @@ class Linkbase:
         """
         Converts the Linkbase object with in a dictionary representing the Hierarchy of the locators
         """
-        return {"standardExtendedLinkElements": [el.to_dict() for el in self.extended_links]}
+        return {
+            "standardExtendedLinkElements": [el.to_dict() for el in self.extended_links]
+        }
 
     def to_simple_dict(self) -> dict:
         """
@@ -425,10 +494,16 @@ class Linkbase:
         So it basically returns the hierarchy, without the information in which type of relationship
         parent and children are
         """
-        return {"standardExtendedLinkElements": [el.to_simple_dict() for el in self.extended_links]}
+        return {
+            "standardExtendedLinkElements": [
+                el.to_simple_dict() for el in self.extended_links
+            ]
+        }
 
 
-def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: HttpCache) -> Linkbase:
+def parse_linkbase_url(
+    linkbase_url: str, linkbase_type: LinkbaseType, cache: HttpCache
+) -> Linkbase:
     """
     Parses a linkbase given given a url
 
@@ -437,14 +512,19 @@ def parse_linkbase_url(linkbase_url: str, linkbase_type: LinkbaseType, cache: Ht
     :param cache: :class:`xbrl.cache.HttpCache` instance
     :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
-    if not is_url(linkbase_url): raise XbrlParseException('This function only parses remotely saved linkbases. '
-                                                          'Please use parse_linkbase to parse local linkbases')
+    if not is_url(linkbase_url):
+        raise XbrlParseException(
+            "This function only parses remotely saved linkbases. "
+            "Please use parse_linkbase to parse local linkbases"
+        )
 
     linkbase_path: str = cache.cache_file(linkbase_url)
     return parse_linkbase(linkbase_path, linkbase_type, linkbase_url)
 
 
-def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url: str or None = None) -> Linkbase:
+def parse_linkbase(
+    linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url: str | None = None
+) -> Linkbase:
     """
     Parses a linkbase and returns a Linkbase object containing all
     locators, arcs and links of the linkbase in a hierarchical order (a Tree)
@@ -458,8 +538,11 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
         the locator with concept from the taxonomy
     :return: parsed :class:`xbrl.linkbase.Linkbase` object
     """
-    if is_url(linkbase_path): raise XbrlParseException('This function only parses locally saved linkbases. '
-                                                       'Please use parse_linkbase_url to parse remote linkbases')
+    if is_url(linkbase_path):
+        raise XbrlParseException(
+            "This function only parses locally saved linkbases. "
+            "Please use parse_linkbase_url to parse remote linkbases"
+        )
     if not os.path.exists(linkbase_path):
         raise LinkbaseNotFoundException(f"Could not find linkbase at {linkbase_path}")
 
@@ -467,8 +550,8 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     # store the role refs in a dictionary, with the role uri as key.
     # Role Refs are xlink's that connect the extended Links to the ELR defined in the schema
     role_refs: dict = {}
-    for role_ref in root.findall(LINK_NS + 'roleRef'):
-        role_refs[role_ref.attrib['roleURI']] = role_ref.attrib[XLINK_NS + 'href']
+    for role_ref in root.findall(LINK_NS + "roleRef"):
+        role_refs[role_ref.attrib["roleURI"]] = role_ref.attrib[XLINK_NS + "href"]
 
     # Loop over all definition/calculation/presentation/label links.
     # Each extended link contains the locators and the definition arc's
@@ -494,32 +577,36 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     # loop over all extended links. Extended links can be: link:definitionLink, link:calculationLink e.t.c
     # Note that label linkbases only have one extended link
     for extended_link in root.findall(LINK_NS + extended_link_tag):
-        extended_link_role: str = extended_link.attrib[XLINK_NS + 'role']
+        extended_link_role: str = extended_link.attrib[XLINK_NS + "role"]
         # find all locators (link:loc) and arcs (i.e link:definitionArc or link:calculationArc)
-        locators = extended_link.findall(LINK_NS + 'loc')
+        locators = extended_link.findall(LINK_NS + "loc")
         arc_elements = extended_link.findall(LINK_NS + arc_type)
 
         # store the locators in a dictionary. The label attribute is the key. This way we can access them in O(1)
         locator_map = {}
         for loc in locators:
-            loc_label: str = loc.attrib[XLINK_NS + 'label']
+            loc_label: str = loc.attrib[XLINK_NS + "label"]
             # check if the locator href is absolute
-            locator_href = loc.attrib[XLINK_NS + 'href']
+            locator_href = loc.attrib[XLINK_NS + "href"]
             if not is_url(locator_href):
                 # resolve the path
                 # todo, try to get the URL here, instead of the path!!!
-                locator_href = resolve_uri(linkbase_url if linkbase_url else linkbase_path, locator_href)
+                locator_href = resolve_uri(
+                    linkbase_url if linkbase_url else linkbase_path, locator_href
+                )
             locator_map[loc_label] = Locator(locator_href, loc_label)
 
         # Performance: extract the labels in advance. The label name (xlink:label) is the key and the value is
         # an array of all labels that have this name. This can be multiple labels (label, terseLabel, documentation...)
         label_map = {}
         if linkbase_type == LinkbaseType.LABEL:
-            for label_element in extended_link.findall(LINK_NS + 'label'):
-                label_name: str = label_element.attrib[XLINK_NS + 'label']
-                label_role: str = label_element.attrib[XLINK_NS + 'role']
-                label_lang: str = label_element.attrib[XML_NS + 'lang']
-                label_obj = Label(label_name, label_role, label_lang, label_element.text)
+            for label_element in extended_link.findall(LINK_NS + "label"):
+                label_name: str = label_element.attrib[XLINK_NS + "label"]
+                label_role: str = label_element.attrib[XLINK_NS + "role"]
+                label_lang: str = label_element.attrib[XML_NS + "lang"]
+                label_obj = Label(
+                    label_name, label_role, label_lang, label_element.text
+                )
                 if label_name in label_map:
                     label_map[label_name].append(label_obj)
                 else:
@@ -527,42 +614,79 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
 
         for arc_element in arc_elements:
             # if the use of the element referenced by the arc is prohibited, just ignore it
-            if 'use' in arc_element.attrib and arc_element.attrib['use'] == 'prohibited': continue
+            if (
+                "use" in arc_element.attrib
+                and arc_element.attrib["use"] == "prohibited"
+            ):
+                continue
             # extract the attributes if the arc. The arc always connects two locators through the from and to attributes
             # additionally it defines the relationship between these two locators (arcrole)
-            arc_from: str = arc_element.attrib[XLINK_NS + 'from']
-            arc_to: str = arc_element.attrib[XLINK_NS + 'to']
-            arc_role: str = arc_element.attrib[XLINK_NS + 'arcrole']
-            arc_order: int = arc_element.attrib['order'] if 'order' in arc_element.attrib else None
+            arc_from: str = arc_element.attrib[XLINK_NS + "from"]
+            arc_to: str = arc_element.attrib[XLINK_NS + "to"]
+            arc_role: str = arc_element.attrib[XLINK_NS + "arcrole"]
+            arc_order: int = (
+                arc_element.attrib["order"] if "order" in arc_element.attrib else None
+            )
 
             # the following attributes are linkbase specific, so we have to check if they exist!
             # Needed for (sometimes) definitionArc
-            arc_closed: bool = bool(arc_element.attrib[XBRLDT_NS + "closed"]) \
-                if (XBRLDT_NS + "weight") in arc_element.attrib else None
-            arc_context_element: str = arc_element.attrib[XBRLDT_NS + "contextElement"] if \
-                (XBRLDT_NS + "contextElement") in arc_element.attrib else None
+            arc_closed: bool = (
+                bool(arc_element.attrib[XBRLDT_NS + "closed"])
+                if (XBRLDT_NS + "weight") in arc_element.attrib
+                else None
+            )
+            arc_context_element: str = (
+                arc_element.attrib[XBRLDT_NS + "contextElement"]
+                if (XBRLDT_NS + "contextElement") in arc_element.attrib
+                else None
+            )
             # Needed for calculationArc
-            arc_weight: float = float(arc_element.attrib["weight"]) if "weight" in arc_element.attrib else None
+            arc_weight: float = (
+                float(arc_element.attrib["weight"])
+                if "weight" in arc_element.attrib
+                else None
+            )
             # Needed for presentationArc
-            arc_priority: int = int(arc_element.attrib["priority"]) if "priority" in arc_element.attrib else None
-            arc_preferred_label: str = arc_element.attrib[
-                "preferredLabel"] if "preferredLabel" in arc_element.attrib else None
+            arc_priority: int = (
+                int(arc_element.attrib["priority"])
+                if "priority" in arc_element.attrib
+                else None
+            )
+            arc_preferred_label: str = (
+                arc_element.attrib["preferredLabel"]
+                if "preferredLabel" in arc_element.attrib
+                else None
+            )
 
             # Create the arc object based on the current linkbase type
             arc_object: AbstractArcElement
             if linkbase_type == LinkbaseType.DEFINITION:
                 arc_object = DefinitionArc(
-                    locator_map[arc_from], locator_map[arc_to], arc_role, arc_order, arc_closed,
-                    arc_context_element)
+                    locator_map[arc_from],
+                    locator_map[arc_to],
+                    arc_role,
+                    arc_order,
+                    arc_closed,
+                    arc_context_element,
+                )
             elif linkbase_type == LinkbaseType.CALCULATION:
-                arc_object = CalculationArc(locator_map[arc_from], locator_map[arc_to], arc_order, arc_weight)
+                arc_object = CalculationArc(
+                    locator_map[arc_from], locator_map[arc_to], arc_order, arc_weight
+                )
             elif linkbase_type == LinkbaseType.PRESENTATION:
-                arc_object = PresentationArc(locator_map[arc_from], locator_map[arc_to], arc_order, arc_priority,
-                                             arc_preferred_label)
+                arc_object = PresentationArc(
+                    locator_map[arc_from],
+                    locator_map[arc_to],
+                    arc_order,
+                    arc_priority,
+                    arc_preferred_label,
+                )
             else:
                 # find all labels that are referenced by this arc.
                 # These where preprocessed previously, so we can just take them
-                arc_object = LabelArc(locator_map[arc_from], arc_order, label_map[arc_to])
+                arc_object = LabelArc(
+                    locator_map[arc_from], arc_order, label_map[arc_to]
+                )
 
             # Build the hierarchy for the Locators.
             if linkbase_type != LinkbaseType.LABEL:
@@ -582,7 +706,12 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
         # <definitionLink xlink:type="extended" xlink:role="http://www.xbrl.org/2003/role/link"/>)
         if extended_link_role in role_refs:
             extended_links.append(
-                ExtendedLink(extended_link_role, role_refs[extended_link_role], root_locators))
+                ExtendedLink(
+                    extended_link_role, role_refs[extended_link_role], root_locators
+                )
+            )
         elif linkbase_type == LinkbaseType.LABEL:
             extended_links.append(ExtendedLink(extended_link_role, None, root_locators))
-    return Linkbase(extended_links, linkbase_type, linkbase_url if linkbase_url else linkbase_path)
+    return Linkbase(
+        extended_links, linkbase_type, linkbase_url if linkbase_url else linkbase_path
+    )

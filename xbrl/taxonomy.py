@@ -1,18 +1,26 @@
 """
 This module contains all classes and functions necessary for parsing Taxonomy schema files.
 """
+
+import json
 import logging
 import os
-import json
 import xml.etree.ElementTree as ET
 from functools import lru_cache
 from typing import List
 from urllib.parse import unquote
 
-from xbrl import XbrlParseException, TaxonomyNotFound
+from xbrl import TaxonomyNotFound, XbrlParseException
 from xbrl.cache import HttpCache
-from xbrl.helper.uri_helper import resolve_uri, compare_uri, is_url
-from xbrl.linkbase import Linkbase, ExtendedLink, LinkbaseType, parse_linkbase, parse_linkbase_url, Label
+from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
+from xbrl.linkbase import (
+    ExtendedLink,
+    Label,
+    Linkbase,
+    LinkbaseType,
+    parse_linkbase,
+    parse_linkbase_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +34,7 @@ NAME_SPACES: dict = {
     "xsd": "http://www.w3.org/2001/XMLSchema",
     "link": "http://www.xbrl.org/2003/linkbase",
     "xlink": "http://www.w3.org/1999/xlink",
-    "xbrldt": "http://xbrl.org/2005/xbrldt"
+    "xbrldt": "http://xbrl.org/2005/xbrldt",
 }
 
 ns_schema_map: dict = {
@@ -384,83 +392,81 @@ ns_schema_map: dict = {
     "http://xbrl.us/us-roles/2009-01-31": "http://taxonomies.xbrl.us/us-gaap/2009/elts/us-roles-2009-01-31.xsd",
     "http://xbrl.us/us-types/2008-03-31": "http://xbrl.us/us-gaap/1.0/elts/us-types-2008-03-31.xsd",
     "http://xbrl.us/us-types/2009-01-31": "http://taxonomies.xbrl.us/us-gaap/2009/elts/us-types-2009-01-31.xsd",
-    'http://xbrl.sec.gov/rxp/2023': 'https://xbrl.sec.gov/rxp/2023/rxp-2023.xsd',
-    'http://xbrl.sec.gov/snj/2023': 'https://xbrl.sec.gov/snj/2023/snj-2023.xsd',
-    'http://xbrl.sec.gov/snj-def/2023': 'https://xbrl.sec.gov/snj/2023/snj-2023_def.xsd',
-    'http://xbrl.sec.gov/country-def/2023': 'https://xbrl.sec.gov/country/2023/country-2023_def.xsd',
-    'http://xbrl.sec.gov/oef/2023': 'https://xbrl.sec.gov/oef/2023/oef-2023.xsd',
-    'http://xbrl.sec.gov/oef-rr/2023': 'https://xbrl.sec.gov/oef/2023/oef-rr-2023.xsd',
-    'http://xbrl.sec.gov/oef-sr/2023': 'https://xbrl.sec.gov/oef/2023/oef-sr-2023.xsd',
-    'http://xbrl.sec.gov/oef-lab/2023': 'https://xbrl.sec.gov/oef/2023/oef-2023_lab.xsd',
-    'http://xbrl.sec.gov/oef-cal/2023': 'https://xbrl.sec.gov/oef/2023/oef-2023_cal.xsd',
-    'https://xbrl.ifrs.org/taxonomy/2023-03-23/ifrs-full': 'https://xbrl.ifrs.org/taxonomy/2023-03-23/full_ifrs/full_ifrs-cor_2023-03-23.xsd',
-    'http://xbrl.sec.gov/rr-sub/2023': 'https://xbrl.sec.gov/rr/2023/rr-sub-2023.xsd',
-    'http://xbrl.sec.gov/rr-cal/2023': 'https://xbrl.sec.gov/rr/2023/rr-2023_cal.xsd',
-    'http://xbrl.sec.gov/dei-sub/2023': 'https://xbrl.sec.gov/dei/2023/dei-sub-2023.xsd',
-    'http://xbrl.sec.gov/dei-def/2023': 'https://xbrl.sec.gov/dei/2023/dei-2023_def.xsd',
-    'http://xbrl.sec.gov/dei-lab/2023': 'https://xbrl.sec.gov/dei/2023/dei-2023_lab.xsd',
-    'http://xbrl.sec.gov/dei-pre/2023': 'https://xbrl.sec.gov/dei/2023/dei-2023_pre.xsd',
-    'http://xbrl.sec.gov/dei/2022q4': 'https://xbrl.sec.gov/dei/2022q4/dei-2022q4.xsd',
-    'http://xbrl.sec.gov/dei-sub/2022q4': 'https://xbrl.sec.gov/dei/2022q4/dei-sub-2022q4.xsd',
-    'http://xbrl.sec.gov/dei-def/2022q4': 'https://xbrl.sec.gov/dei/2022q4/dei-2022q4_def.xsd',
-    'http://xbrl.sec.gov/dei-lab/2022q4': 'https://xbrl.sec.gov/dei/2022q4/dei-2022q4_lab.xsd',
-    'http://xbrl.sec.gov/dei-pre/2022q4': 'https://xbrl.sec.gov/dei/2022q4/dei-2022q4_pre.xsd',
-    'http://xbrl.sec.gov/ecd/2023': 'https://xbrl.sec.gov/ecd/2023/ecd-2023.xsd',
-    'http://xbrl.sec.gov/ecd-sub/2023': 'https://xbrl.sec.gov/ecd/2023/ecd-sub-2023.xsd',
-    'http://xbrl.sec.gov/ecd/2022q4': 'https://xbrl.sec.gov/ecd/2022q4/ecd-2022q4.xsd',
-    'http://xbrl.sec.gov/ecd-sub/2022q4': 'https://xbrl.sec.gov/ecd/2022q4/ecd-sub-2022q4.xsd',
-    'http://fasb.org/srt-sup/2022q3': 'https://xbrl.fasb.org/srt/2022q3/srt-sup-2022q3.xsd',
-    'http://fasb.org/us-gaap-sup/2022q3': 'https://xbrl.fasb.org/us-gaap/2022q3/us-gaap-sup-2022q3.xsd',
-    'http://xbrl.sec.gov/vip/2023': 'https://xbrl.sec.gov/vip/2023/vip-2023.xsd',
-    'http://xbrl.sec.gov/vip-n3/2023': 'https://xbrl.sec.gov/vip/2023/vip-n3-2023.xsd',
-    'http://xbrl.sec.gov/vip-n4/2023': 'https://xbrl.sec.gov/vip/2023/vip-n4-2023.xsd',
-    'http://xbrl.sec.gov/vip-n6/2023': 'https://xbrl.sec.gov/vip/2023/vip-n6-2023.xsd',
-    'http://xbrl.sec.gov/country/2023': 'https://xbrl.sec.gov/country/2023/country-2023.xsd',
-    'http://xbrl.sec.gov/currency/2023': 'https://xbrl.sec.gov/currency/2023/currency-2023.xsd',
-    'http://xbrl.sec.gov/vip/2022q2': 'https://xbrl.sec.gov/vip/2022q2/vip-2022q2.xsd',
-    'http://xbrl.sec.gov/vip-n3/2022q2': 'https://xbrl.sec.gov/vip/2022q2/vip-n3-2022q2.xsd',
-    'http://xbrl.sec.gov/vip-n4/2022q2': 'https://xbrl.sec.gov/vip/2022q2/vip-n4-2022q2.xsd',
-    'http://xbrl.sec.gov/vip-n6/2022q2': 'https://xbrl.sec.gov/vip/2022q2/vip-n6-2022q2.xsd',
-    'http://xbrl.sec.gov/country/2022': 'https://xbrl.sec.gov/country/2022/country-2022.xsd',
-    'http://xbrl.sec.gov/sic/2022': 'https://xbrl.sec.gov/sic/2022/sic-2022.xsd',
-    'https://xbrl.ifrs.org/taxonomy/2022-03-24/ifrs-full': 'https://xbrl.ifrs.org/taxonomy/2022-03-24/full_ifrs/full_ifrs-cor_2022-03-24.xsd',
-    'http://xbrl.sec.gov/dei-lab/2022': 'https://xbrl.sec.gov/dei/2022/dei-2022_lab.xsd',
-    'http://xbrl.sec.gov/dei-pre/2022': 'https://xbrl.sec.gov/dei/2022/dei-2022_pre.xsd',
-    'http://xbrl.sec.gov/dei-def/2022': 'https://xbrl.sec.gov/dei/2022/dei-2022_def.xsd',
-    'http://xbrl.sec.gov/sic/2023': 'https://xbrl.sec.gov/sic/2023/sic-2023.xsd',
-    'http://xbrl.sec.gov/stpr/2023': 'https://xbrl.sec.gov/stpr/2023/stpr-2023.xsd',
-    'http://fasb.org/us-types/2023': 'https://xbrl.fasb.org/us-gaap/2023/elts/us-types-2023.xsd',
-    'http://fasb.org/us-roles/2023': 'https://xbrl.fasb.org/us-gaap/2023/elts/us-roles-2023.xsd',
-    'http://fasb.org/srt-types/2023': 'https://xbrl.fasb.org/srt/2023/elts/srt-types-2023.xsd',
-    'http://fasb.org/srt-roles/2023': 'https://xbrl.fasb.org/srt/2023/elts/srt-roles-2023.xsd',
-    'http://xbrl.sec.gov/dei-sub/2022': 'https://xbrl.sec.gov/dei/2022/dei-sub-2022.xsd',
-    'http://fasb.org/us-types/2022': 'https://xbrl.fasb.org/us-gaap/2022/elts/us-types-2022.xsd',
-    'http://fasb.org/us-roles/2022': 'https://xbrl.fasb.org/us-gaap/2022/elts/us-roles-2022.xsd',
-    'http://fasb.org/srt-types/2022': 'https://xbrl.fasb.org/srt/2022/elts/srt-types-2022.xsd',
-    'http://fasb.org/srt-roles/2022': 'https://xbrl.fasb.org/srt/2022/elts/srt-roles-2022.xsd',
-    'http://xbrl.sec.gov/cef/2023': 'https://xbrl.sec.gov/cef/2023/cef-2023.xsd',
-    'http://xbrl.sec.gov/cef-pre/2023': 'https://xbrl.sec.gov/cef/2023/cef-2023_pre.xsd',
-    'http://xbrl.sec.gov/cef/2022': 'https://xbrl.sec.gov/cef/2022/cef-2022.xsd',
-    'http://xbrl.sec.gov/vip/2022': 'https://xbrl.sec.gov/vip/2022/vip-2022.xsd',
-    'http://xbrl.sec.gov/vip-n3/2022': 'https://xbrl.sec.gov/vip/2022/vip-n3-2022.xsd',
-    'http://xbrl.sec.gov/vip-n4/2022': 'https://xbrl.sec.gov/vip/2022/vip-n4-2022.xsd',
-    'http://xbrl.sec.gov/vip-n6/2022': 'https://xbrl.sec.gov/vip/2022/vip-n6-2022.xsd',
-    'http://xbrl.sec.gov/rr/2023': 'https://xbrl.sec.gov/rr/2023/rr-2023.xsd',
-    'http://xbrl.sec.gov/rr-lab/2023': 'https://xbrl.sec.gov/rr/2023/rr-2023_lab.xsd',
-    'http://xbrl.sec.gov/rr-pre/2023': 'https://xbrl.sec.gov/rr/2023/rr-2023_pre.xsd',
-    'http://xbrl.sec.gov/rr-def/2023': 'https://xbrl.sec.gov/rr/2023/rr-2023_def.xsd',
-    'http://xbrl.sec.gov/rr/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022.xsd',
-    'http://xbrl.sec.gov/rr-lab/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_lab.xsd',
-    'http://xbrl.sec.gov/rr-pre/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_pre.xsd',
-    'http://xbrl.sec.gov/rr-def/2022': 'https://xbrl.sec.gov/rr/2022/rr-2022_def.xsd',
-
-    'http://xbrl.sec.gov/cyd/2024': 'https://xbrl.sec.gov/cyd/2024/cyd-2024.xsd',
-    'http://xbrl.sec.gov/cyd-entire/2024': 'https://xbrl.sec.gov/cyd/2024/cyd-entire-2024.xsd',
-    'http://xbrl.sec.gov/cyd/2025': 'https://xbrl.sec.gov/cyd/2025/cyd-2025.xsd',  
-    
-    'http://www.xbrl.org/dtr/type/2022-03-31': 'https://www.xbrl.org/dtr/type/2022-03-31/types.xsd',
-
-    'http://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01': 'https://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01/dpl-2021.xsd'
+    "http://xbrl.sec.gov/rxp/2023": "https://xbrl.sec.gov/rxp/2023/rxp-2023.xsd",
+    "http://xbrl.sec.gov/snj/2023": "https://xbrl.sec.gov/snj/2023/snj-2023.xsd",
+    "http://xbrl.sec.gov/snj-def/2023": "https://xbrl.sec.gov/snj/2023/snj-2023_def.xsd",
+    "http://xbrl.sec.gov/country-def/2023": "https://xbrl.sec.gov/country/2023/country-2023_def.xsd",
+    "http://xbrl.sec.gov/oef/2023": "https://xbrl.sec.gov/oef/2023/oef-2023.xsd",
+    "http://xbrl.sec.gov/oef-rr/2023": "https://xbrl.sec.gov/oef/2023/oef-rr-2023.xsd",
+    "http://xbrl.sec.gov/oef-sr/2023": "https://xbrl.sec.gov/oef/2023/oef-sr-2023.xsd",
+    "http://xbrl.sec.gov/oef-lab/2023": "https://xbrl.sec.gov/oef/2023/oef-2023_lab.xsd",
+    "http://xbrl.sec.gov/oef-cal/2023": "https://xbrl.sec.gov/oef/2023/oef-2023_cal.xsd",
+    "https://xbrl.ifrs.org/taxonomy/2023-03-23/ifrs-full": "https://xbrl.ifrs.org/taxonomy/2023-03-23/full_ifrs/full_ifrs-cor_2023-03-23.xsd",
+    "http://xbrl.sec.gov/rr-sub/2023": "https://xbrl.sec.gov/rr/2023/rr-sub-2023.xsd",
+    "http://xbrl.sec.gov/rr-cal/2023": "https://xbrl.sec.gov/rr/2023/rr-2023_cal.xsd",
+    "http://xbrl.sec.gov/dei-sub/2023": "https://xbrl.sec.gov/dei/2023/dei-sub-2023.xsd",
+    "http://xbrl.sec.gov/dei-def/2023": "https://xbrl.sec.gov/dei/2023/dei-2023_def.xsd",
+    "http://xbrl.sec.gov/dei-lab/2023": "https://xbrl.sec.gov/dei/2023/dei-2023_lab.xsd",
+    "http://xbrl.sec.gov/dei-pre/2023": "https://xbrl.sec.gov/dei/2023/dei-2023_pre.xsd",
+    "http://xbrl.sec.gov/dei/2022q4": "https://xbrl.sec.gov/dei/2022q4/dei-2022q4.xsd",
+    "http://xbrl.sec.gov/dei-sub/2022q4": "https://xbrl.sec.gov/dei/2022q4/dei-sub-2022q4.xsd",
+    "http://xbrl.sec.gov/dei-def/2022q4": "https://xbrl.sec.gov/dei/2022q4/dei-2022q4_def.xsd",
+    "http://xbrl.sec.gov/dei-lab/2022q4": "https://xbrl.sec.gov/dei/2022q4/dei-2022q4_lab.xsd",
+    "http://xbrl.sec.gov/dei-pre/2022q4": "https://xbrl.sec.gov/dei/2022q4/dei-2022q4_pre.xsd",
+    "http://xbrl.sec.gov/ecd/2023": "https://xbrl.sec.gov/ecd/2023/ecd-2023.xsd",
+    "http://xbrl.sec.gov/ecd-sub/2023": "https://xbrl.sec.gov/ecd/2023/ecd-sub-2023.xsd",
+    "http://xbrl.sec.gov/ecd/2022q4": "https://xbrl.sec.gov/ecd/2022q4/ecd-2022q4.xsd",
+    "http://xbrl.sec.gov/ecd-sub/2022q4": "https://xbrl.sec.gov/ecd/2022q4/ecd-sub-2022q4.xsd",
+    "http://fasb.org/srt-sup/2022q3": "https://xbrl.fasb.org/srt/2022q3/srt-sup-2022q3.xsd",
+    "http://fasb.org/us-gaap-sup/2022q3": "https://xbrl.fasb.org/us-gaap/2022q3/us-gaap-sup-2022q3.xsd",
+    "http://xbrl.sec.gov/vip/2023": "https://xbrl.sec.gov/vip/2023/vip-2023.xsd",
+    "http://xbrl.sec.gov/vip-n3/2023": "https://xbrl.sec.gov/vip/2023/vip-n3-2023.xsd",
+    "http://xbrl.sec.gov/vip-n4/2023": "https://xbrl.sec.gov/vip/2023/vip-n4-2023.xsd",
+    "http://xbrl.sec.gov/vip-n6/2023": "https://xbrl.sec.gov/vip/2023/vip-n6-2023.xsd",
+    "http://xbrl.sec.gov/country/2023": "https://xbrl.sec.gov/country/2023/country-2023.xsd",
+    "http://xbrl.sec.gov/currency/2023": "https://xbrl.sec.gov/currency/2023/currency-2023.xsd",
+    "http://xbrl.sec.gov/vip/2022q2": "https://xbrl.sec.gov/vip/2022q2/vip-2022q2.xsd",
+    "http://xbrl.sec.gov/vip-n3/2022q2": "https://xbrl.sec.gov/vip/2022q2/vip-n3-2022q2.xsd",
+    "http://xbrl.sec.gov/vip-n4/2022q2": "https://xbrl.sec.gov/vip/2022q2/vip-n4-2022q2.xsd",
+    "http://xbrl.sec.gov/vip-n6/2022q2": "https://xbrl.sec.gov/vip/2022q2/vip-n6-2022q2.xsd",
+    "http://xbrl.sec.gov/country/2022": "https://xbrl.sec.gov/country/2022/country-2022.xsd",
+    "http://xbrl.sec.gov/sic/2022": "https://xbrl.sec.gov/sic/2022/sic-2022.xsd",
+    "https://xbrl.ifrs.org/taxonomy/2022-03-24/ifrs-full": "https://xbrl.ifrs.org/taxonomy/2022-03-24/full_ifrs/full_ifrs-cor_2022-03-24.xsd",
+    "http://xbrl.sec.gov/dei-lab/2022": "https://xbrl.sec.gov/dei/2022/dei-2022_lab.xsd",
+    "http://xbrl.sec.gov/dei-pre/2022": "https://xbrl.sec.gov/dei/2022/dei-2022_pre.xsd",
+    "http://xbrl.sec.gov/dei-def/2022": "https://xbrl.sec.gov/dei/2022/dei-2022_def.xsd",
+    "http://xbrl.sec.gov/sic/2023": "https://xbrl.sec.gov/sic/2023/sic-2023.xsd",
+    "http://xbrl.sec.gov/stpr/2023": "https://xbrl.sec.gov/stpr/2023/stpr-2023.xsd",
+    "http://fasb.org/us-types/2023": "https://xbrl.fasb.org/us-gaap/2023/elts/us-types-2023.xsd",
+    "http://fasb.org/us-roles/2023": "https://xbrl.fasb.org/us-gaap/2023/elts/us-roles-2023.xsd",
+    "http://fasb.org/srt-types/2023": "https://xbrl.fasb.org/srt/2023/elts/srt-types-2023.xsd",
+    "http://fasb.org/srt-roles/2023": "https://xbrl.fasb.org/srt/2023/elts/srt-roles-2023.xsd",
+    "http://xbrl.sec.gov/dei-sub/2022": "https://xbrl.sec.gov/dei/2022/dei-sub-2022.xsd",
+    "http://fasb.org/us-types/2022": "https://xbrl.fasb.org/us-gaap/2022/elts/us-types-2022.xsd",
+    "http://fasb.org/us-roles/2022": "https://xbrl.fasb.org/us-gaap/2022/elts/us-roles-2022.xsd",
+    "http://fasb.org/srt-types/2022": "https://xbrl.fasb.org/srt/2022/elts/srt-types-2022.xsd",
+    "http://fasb.org/srt-roles/2022": "https://xbrl.fasb.org/srt/2022/elts/srt-roles-2022.xsd",
+    "http://xbrl.sec.gov/cef/2023": "https://xbrl.sec.gov/cef/2023/cef-2023.xsd",
+    "http://xbrl.sec.gov/cef-pre/2023": "https://xbrl.sec.gov/cef/2023/cef-2023_pre.xsd",
+    "http://xbrl.sec.gov/cef/2022": "https://xbrl.sec.gov/cef/2022/cef-2022.xsd",
+    "http://xbrl.sec.gov/vip/2022": "https://xbrl.sec.gov/vip/2022/vip-2022.xsd",
+    "http://xbrl.sec.gov/vip-n3/2022": "https://xbrl.sec.gov/vip/2022/vip-n3-2022.xsd",
+    "http://xbrl.sec.gov/vip-n4/2022": "https://xbrl.sec.gov/vip/2022/vip-n4-2022.xsd",
+    "http://xbrl.sec.gov/vip-n6/2022": "https://xbrl.sec.gov/vip/2022/vip-n6-2022.xsd",
+    "http://xbrl.sec.gov/rr/2023": "https://xbrl.sec.gov/rr/2023/rr-2023.xsd",
+    "http://xbrl.sec.gov/rr-lab/2023": "https://xbrl.sec.gov/rr/2023/rr-2023_lab.xsd",
+    "http://xbrl.sec.gov/rr-pre/2023": "https://xbrl.sec.gov/rr/2023/rr-2023_pre.xsd",
+    "http://xbrl.sec.gov/rr-def/2023": "https://xbrl.sec.gov/rr/2023/rr-2023_def.xsd",
+    "http://xbrl.sec.gov/rr/2022": "https://xbrl.sec.gov/rr/2022/rr-2022.xsd",
+    "http://xbrl.sec.gov/rr-lab/2022": "https://xbrl.sec.gov/rr/2022/rr-2022_lab.xsd",
+    "http://xbrl.sec.gov/rr-pre/2022": "https://xbrl.sec.gov/rr/2022/rr-2022_pre.xsd",
+    "http://xbrl.sec.gov/rr-def/2022": "https://xbrl.sec.gov/rr/2022/rr-2022_def.xsd",
+    "http://xbrl.sec.gov/cyd/2024": "https://xbrl.sec.gov/cyd/2024/cyd-2024.xsd",
+    "http://xbrl.sec.gov/cyd-entire/2024": "https://xbrl.sec.gov/cyd/2024/cyd-entire-2024.xsd",
+    "http://xbrl.sec.gov/cyd/2025": "https://xbrl.sec.gov/cyd/2025/cyd-2025.xsd",
+    "http://www.xbrl.org/dtr/type/2022-03-31": "https://www.xbrl.org/dtr/type/2022-03-31/types.xsd",
+    "http://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01": "https://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01/dpl-2021.xsd",
+    "http://xbrl.sec.gov/ffd/2025": "https://xbrl.sec.gov/ffd/2025/ffd-2025.xsd",
 }
 
 
@@ -482,29 +488,30 @@ class Concept:
         self.xml_id: str = xml_id
         self.schema_url: str = schema_url
         self.name: str = name
-        self.substitution_group: str or None = None
-        self.concept_type: str or None = None
-        self.abstract: bool or None = None
-        self.nillable: bool or None = None
-        self.period_type: str or None = None
-        self.balance: str or None = None
-        self.labels: [Label] = []
-    
+        self.substitution_group: str | None = None
+        self.concept_type: str | None = None
+        self.abstract: bool | None = None
+        self.nillable: bool | None = None
+        self.period_type: str | None = None
+        self.balance: str | None = None
+        self.labels: List[Label] = []
+
     def to_dict(self):
         """
         Converts the Concept object into a dictionary representation
         """
         return {
-            'xml_id': self.xml_id,
-            'schema_url': self.schema_url,
-            'name': self.name,
-            'substitution_group': self.substitution_group,
-            'concept_type': self.concept_type,
-            'abstract': self.abstract,
-            'nillable': self.nillable,
-            'period_type': self.period_type,
-            'balance': self.balance,
-            'labels': [label.to_dict() for label in self.labels] if self.labels else []  # Assuming Label class has to_dict()
+            "xml_id": self.xml_id,
+            "schema_url": self.schema_url,
+            "name": self.name,
+            "substitution_group": self.substitution_group,
+            "concept_type": self.concept_type,
+            "abstract": self.abstract,
+            "nillable": self.nillable,
+            "period_type": self.period_type,
+            "balance": self.balance,
+            # Assuming Label class has to_dict()
+            "labels": [label.to_dict() for label in self.labels] if self.labels else [],
         }
 
     def to_json(self):
@@ -535,9 +542,9 @@ class ExtendedLinkRole:
         self.xml_id: str = role_id
         self.uri: str = uri
         self.definition: str = definition
-        self.definition_link: ExtendedLink or None = None
-        self.presentation_link: ExtendedLink or None = None
-        self.calculation_link: ExtendedLink or None = None
+        self.definition_link: ExtendedLink | None = None
+        self.presentation_link: ExtendedLink | None = None
+        self.calculation_link: ExtendedLink | None = None
 
     def __str__(self) -> str:
         return self.definition
@@ -594,19 +601,19 @@ class TaxonomySchema:
                 return result
         return None
 
-    def get_schema_urls(self) -> []:
+    def get_schema_urls(self) -> list[str]:
         """
         Returns an array of all taxonomy urls that are used by this taxonomy
         Also includes the schema url of this taxonomy
         :return:
         """
-        urls: [] = [self.schema_url]
+        urls: list[str] = [self.schema_url]
         for imported_tax in self.imports:
             urls += imported_tax.get_schema_urls()
         return list(set(urls))
 
 
-def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or None:
+def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema | None:
     """
     Parses a taxonomy by namespace. This is only possible for certain well known taxonomies, as we need the schema_url for
     parsing it.
@@ -623,7 +630,9 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema or
 
 
 @lru_cache(maxsize=60)
-def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris: set = set()) -> TaxonomySchema:
+def parse_taxonomy_url(
+    schema_url: str, cache: HttpCache, imported_schema_uris: set = set()
+) -> TaxonomySchema:
     """
     Parses a taxonomy schema file from the internet
 
@@ -632,13 +641,21 @@ def parse_taxonomy_url(schema_url: str, cache: HttpCache, imported_schema_uris: 
     :param imported_schema_uris: set of already imported schema uris
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
-    if not is_url(schema_url): raise XbrlParseException('This function only parses remotely saved taxonomies. '
-                                                        'Please use parse_taxonomy to parse local taxonomy schemas')
+    if not is_url(schema_url):
+        raise XbrlParseException(
+            "This function only parses remotely saved taxonomies. "
+            "Please use parse_taxonomy to parse local taxonomy schemas"
+        )
     schema_path: str = cache.cache_file(schema_url)
     return parse_taxonomy(schema_path, cache, imported_schema_uris, schema_url)
 
 
-def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : set = set(), schema_url: str or None = None) -> TaxonomySchema:
+def parse_taxonomy(
+    schema_path: str,
+    cache: HttpCache,
+    imported_schema_uris: set = set(),
+    schema_url: str | None = None,
+) -> TaxonomySchema:
     """
     Parses a taxonomy schema file.
 
@@ -650,21 +667,26 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
     :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
     """
     schema_path = str(schema_path)
-    if is_url(schema_path): raise XbrlParseException('This function only parses locally saved taxonomies. '
-                                                     'Please use parse_taxonomy_url to parse remote taxonomy schemas')
+    if is_url(schema_path):
+        raise XbrlParseException(
+            "This function only parses locally saved taxonomies. "
+            "Please use parse_taxonomy_url to parse remote taxonomy schemas"
+        )
     if not os.path.exists(schema_path):
         raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")
 
     # Get the local absolute path to the schema file (and download it if it is not yet cached)
     root: ET.Element = ET.parse(schema_path).getroot()
     # get the target namespace of the taxonomy
-    target_ns = root.attrib['targetNamespace']
-    taxonomy: TaxonomySchema = TaxonomySchema(schema_url if schema_url else schema_path, target_ns)
+    target_ns = root.attrib["targetNamespace"]
+    taxonomy: TaxonomySchema = TaxonomySchema(
+        schema_url if schema_url else schema_path, target_ns
+    )
 
-    import_elements: List[ET.Element] = root.findall('xsd:import', NAME_SPACES)
+    import_elements: List[ET.Element] = root.findall("xsd:import", NAME_SPACES)
 
     for import_element in import_elements:
-        import_uri = import_element.attrib['schemaLocation'].strip()
+        import_uri = import_element.attrib["schemaLocation"].strip()
 
         # Skip empty imports
         if import_uri == "":
@@ -686,46 +708,77 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
         else:
             # We have to try to fetch the linkbase locally because no full url can be constructed
             import_path = resolve_uri(schema_path, import_uri)
-            taxonomy.imports.append(parse_taxonomy(import_path, cache, imported_schema_uris))
-    
+            taxonomy.imports.append(
+                parse_taxonomy(import_path, cache, imported_schema_uris)
+            )
 
-    role_type_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:roleType', NAME_SPACES)
+    role_type_elements: List[ET.Element] = root.findall(
+        "xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES
+    )
     # parse ELR's
     for elr in role_type_elements:
-        elr_definition = elr.find(LINK_NS + 'definition')
-        if elr_definition is None or elr_definition.text is None: continue
+        elr_definition = elr.find(LINK_NS + "definition")
+        if elr_definition is None or elr_definition.text is None:
+            continue
         taxonomy.link_roles.append(
-            ExtendedLinkRole(elr.attrib['id'], elr.attrib['roleURI'], elr_definition.text.strip()))
+            ExtendedLinkRole(
+                elr.attrib["id"], elr.attrib["roleURI"], elr_definition.text.strip()
+            )
+        )
 
     # find all elements that are defined in the schema
-    for element in root.findall(XDS_NS + 'element'):
+    for element in root.findall(XDS_NS + "element"):
         # if a concept has no id, it can not be referenced by a linkbase, so just ignore it
-        if 'id' not in element.attrib or 'name' not in element.attrib:
+        if "id" not in element.attrib or "name" not in element.attrib:
             continue
-        el_id: str = element.attrib['id']
-        el_name: str = element.attrib['name']
+        el_id: str = element.attrib["id"]
+        el_name: str = element.attrib["name"]
 
         concept = Concept(el_id, schema_url, el_name)
-        concept.concept_type = element.attrib['type'] if 'type' in element.attrib else None
-        concept.nillable = bool(element.attrib['nillable']) if 'nillable' in element.attrib else False
-        concept.abstract = bool(element.attrib['abstract']) if 'abstract' in element.attrib else False
-        type_attr_name = XBRLI_NS + 'periodType'
-        concept.period_type = element.attrib[type_attr_name] if type_attr_name in element.attrib else None
-        balance_attr_name = XBRLI_NS + 'balance'
-        concept.balance = element.attrib[balance_attr_name] if balance_attr_name in element.attrib else None
+        concept.concept_type = (
+            element.attrib["type"] if "type" in element.attrib else None
+        )
+        concept.nillable = (
+            bool(element.attrib["nillable"]) if "nillable" in element.attrib else False
+        )
+        concept.abstract = (
+            bool(element.attrib["abstract"]) if "abstract" in element.attrib else False
+        )
+        type_attr_name = XBRLI_NS + "periodType"
+        concept.period_type = (
+            element.attrib[type_attr_name] if type_attr_name in element.attrib else None
+        )
+        balance_attr_name = XBRLI_NS + "balance"
+        concept.balance = (
+            element.attrib[balance_attr_name]
+            if balance_attr_name in element.attrib
+            else None
+        )
         # remove the prefix from the substitutionGroup (i.e xbrli:item -> item)
-        concept.substitution_group = \
-            element.attrib['substitutionGroup'].split(':')[-1] if 'substitutionGroup' in element.attrib else None
+        concept.substitution_group = (
+            element.attrib["substitutionGroup"].split(":")[-1]
+            if "substitutionGroup" in element.attrib
+            else None
+        )
 
         taxonomy.concepts[concept.xml_id] = concept
         taxonomy.name_id_map[concept.name] = concept.xml_id
 
-    linkbase_ref_elements: List[ET.Element] = root.findall('xsd:annotation/xsd:appinfo/link:linkbaseRef', NAME_SPACES)
+    linkbase_ref_elements: List[ET.Element] = root.findall(
+        "xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES
+    )
     for linkbase_ref in linkbase_ref_elements:
-        linkbase_uri = linkbase_ref.attrib[XLINK_NS + 'href']
-        role = linkbase_ref.attrib[XLINK_NS + 'role'] if XLINK_NS + 'role' in linkbase_ref.attrib else None
-        linkbase_type = LinkbaseType.get_type_from_role(role) if role is not None else LinkbaseType.guess_linkbase_role(
-            linkbase_uri)
+        linkbase_uri = linkbase_ref.attrib[XLINK_NS + "href"]
+        role = (
+            linkbase_ref.attrib[XLINK_NS + "role"]
+            if XLINK_NS + "role" in linkbase_ref.attrib
+            else None
+        )
+        linkbase_type = (
+            LinkbaseType.get_type_from_role(role)
+            if role is not None
+            else LinkbaseType.guess_linkbase_role(linkbase_uri)
+        )
 
         # check if the linkbase url is relative
         if is_url(linkbase_uri):
@@ -752,19 +805,25 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
 
     # loop over the ELR's of the schema and assign the extended links from the linkbases
     for elr in taxonomy.link_roles:
-        for extended_def_links in [def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases]:
+        for extended_def_links in [
+            def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases
+        ]:
             for extended_def_link in extended_def_links:
-                if extended_def_link.elr_id.split('#')[1] == elr.xml_id:
+                if extended_def_link.elr_id.split("#")[1] == elr.xml_id:
                     elr.definition_link = extended_def_link
                     break
-        for extended_pre_links in [pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases]:
+        for extended_pre_links in [
+            pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases
+        ]:
             for extended_pre_link in extended_pre_links:
-                if extended_pre_link.elr_id.split('#')[1] == elr.xml_id:
+                if extended_pre_link.elr_id.split("#")[1] == elr.xml_id:
                     elr.presentation_link = extended_pre_link
                     break
-        for extended_cal_links in [cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases]:
+        for extended_cal_links in [
+            cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases
+        ]:
             for extended_cal_link in extended_cal_links:
-                if extended_cal_link.elr_id.split('#')[1] == elr.xml_id:
+                if extended_cal_link.elr_id.split("#")[1] == elr.xml_id:
                     elr.calculation_link = extended_cal_link
                     break
 
@@ -772,7 +831,7 @@ def parse_taxonomy(schema_path: str, cache: HttpCache, imported_schema_uris : se
         for extended_link in label_linkbase.extended_links:
             for root_locator in extended_link.root_locators:
                 # find the taxonomy the locator is referring to
-                schema_url, concept_id = unquote(root_locator.href).split('#')
+                schema_url, concept_id = unquote(root_locator.href).split("#")
                 c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
                 if c_taxonomy is None:
                     if schema_url in ns_schema_map.values():
