@@ -19,10 +19,18 @@ from xbrl import InstanceParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import is_url, resolve_uri
 from xbrl.helper.xml_parser import parse_file
-from xbrl.taxonomy import (Concept, TaxonomySchema, parse_common_taxonomy,
-                           parse_taxonomy, parse_taxonomy_url)
-from xbrl.transformations import (TransformationException,
-                                  TransformationNotImplemented, normalize)
+from xbrl.taxonomy import (
+    Concept,
+    TaxonomySchema,
+    parse_common_taxonomy,
+    parse_taxonomy,
+    parse_taxonomy_url,
+)
+from xbrl.transformations import (
+    TransformationException,
+    TransformationNotImplemented,
+    normalize,
+)
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -393,24 +401,37 @@ class XbrlInstance(abc.ABC):
             return json.dumps(json_dict, **kwargs)
 
 
-def parse_xbrl_url(instance_url: str, cache: HttpCache) -> XbrlInstance:
+def parse_xbrl_url(
+    instance_url: str,
+    cache: HttpCache,
+    use_local_ns_map: bool = True,
+    use_edgar_taxonomies: bool = True,
+) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy. This function will check, if the instance file is already
     in the cache and load it from there based on the instance_url.
     For EDGAR submissions: Before calling this method; extract the enclosure and copy the files to the cache.
-    i.e. Use CacheHelper.extract_edgar_enclosure()
+    i.e. Use HttpCache.cache_edgar_enclosure()
 
     :param instance_url: url to the instance file (on the internet)
     :param cache: HttpCache instance
-
+    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
-    return parse_xbrl(instance_path, cache, instance_url)
+    return parse_xbrl(
+        instance_path, cache, instance_url, use_local_ns_map, use_edgar_taxonomies
+    )
 
 
 def parse_xbrl(
-    instance_path: str, cache: HttpCache, instance_url: str | None = None
+    instance_path: str,
+    cache: HttpCache,
+    instance_url: str | None = None,
+    use_local_ns_map: bool = True,
+    use_edgar_taxonomies: bool = True,
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
@@ -420,6 +441,9 @@ def parse_xbrl(
     :param instance_url: optional url to the instance file. Is sometimes necessary if the xbrl filings have their own
         extension taxonomy. If i.e. a submission from the sec is parsed, the instance file might reference the taxonomy schema
         with a relative path (since it is in the same directory as the instance file) schemaRef="./aapl-20211231.xsd"
+    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     root: ET.Element = parse_file(instance_path).getroot()
@@ -520,7 +544,11 @@ def parse_xbrl(
 
 
 def parse_ixbrl_url(
-    instance_url: str, cache: HttpCache, encoding: str | None = None
+    instance_url: str,
+    cache: HttpCache,
+    encoding: str | None = None,
+    use_local_ns_map: bool = True,
+    use_edgar_taxonomies: bool = True,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -528,6 +556,9 @@ def parse_ixbrl_url(
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     :param encoding: specifies the encoding of the file
+    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
@@ -540,6 +571,8 @@ def parse_ixbrl(
     instance_url: str | None = None,
     encoding=None,
     schema_root=None,
+    use_local_ns_map: bool = True,
+    use_edgar_taxonomies: bool = True,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -549,6 +582,9 @@ def parse_ixbrl(
     :param instance_url: url to the instance file(on the internet)
     :param encoding: optionally specify a file encoding
     :param schema_root: path to the directory where the taxonomy schema is stored (Only works for relative imports)
+    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     """
