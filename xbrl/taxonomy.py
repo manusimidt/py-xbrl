@@ -7,7 +7,6 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from functools import lru_cache
-from typing import List
 from urllib.parse import unquote
 
 from xbrl import TaxonomyNotFound, XbrlParseException
@@ -494,7 +493,7 @@ class Concept:
         self.nillable: bool | None = None
         self.period_type: str | None = None
         self.balance: str | None = None
-        self.labels: List[Label] = []
+        self.labels: list[Label] = []
 
     def to_dict(self):
         """
@@ -566,12 +565,12 @@ class TaxonomySchema:
         :param schema_url:
         :param namespace:
         """
-        self.imports: List[TaxonomySchema] = []
-        self.link_roles: List[ExtendedLinkRole] = []
-        self.lab_linkbases: List[Linkbase] = []
-        self.def_linkbases: List[Linkbase] = []
-        self.cal_linkbases: List[Linkbase] = []
-        self.pre_linkbases: List[Linkbase] = []
+        self.imports: list[TaxonomySchema] = []
+        self.link_roles: list[ExtendedLinkRole] = []
+        self.lab_linkbases: list[Linkbase] = []
+        self.def_linkbases: list[Linkbase] = []
+        self.cal_linkbases: list[Linkbase] = []
+        self.pre_linkbases: list[Linkbase] = []
 
         self.schema_url = schema_url
         self.namespace = namespace
@@ -683,7 +682,7 @@ def parse_taxonomy(
         schema_url if schema_url else schema_path, target_ns
     )
 
-    import_elements: List[ET.Element] = root.findall("xsd:import", NAME_SPACES)
+    import_elements: list[ET.Element] = root.findall("xsd:import", NAME_SPACES)
 
     for import_element in import_elements:
         import_uri = import_element.attrib["schemaLocation"].strip()
@@ -712,7 +711,7 @@ def parse_taxonomy(
                 parse_taxonomy(import_path, cache, imported_schema_uris)
             )
 
-    role_type_elements: List[ET.Element] = root.findall(
+    role_type_elements: list[ET.Element] = root.findall(
         "xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES
     )
     # parse ELR's
@@ -764,7 +763,7 @@ def parse_taxonomy(
         taxonomy.concepts[concept.xml_id] = concept
         taxonomy.name_id_map[concept.name] = concept.xml_id
 
-    linkbase_ref_elements: List[ET.Element] = root.findall(
+    linkbase_ref_elements: list[ET.Element] = root.findall(
         "xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES
     )
     for linkbase_ref in linkbase_ref_elements:

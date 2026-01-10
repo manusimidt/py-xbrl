@@ -13,7 +13,6 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
 from pathlib import Path
-from typing import List
 
 from xbrl import InstanceParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
@@ -74,7 +73,7 @@ class TypedMember(AbstractMember):
     </xbrldi:typedMember>
     """
 
-    def __init__(self, dimension: Concept, domain: List[str]) -> None:
+    def __init__(self, dimension: Concept, domain: list[str]) -> None:
         super().__init__(dimension)
         self.domain = domain
 
@@ -122,7 +121,7 @@ class AbstractContext(abc.ABC):
     def __init__(self, xml_id: str, entity: str) -> None:
         self.xml_id: str = xml_id
         self.entity: str = entity
-        self.segments: List[AbstractMember] = []
+        self.segments: list[AbstractMember] = []
 
 
 class InstantContext(AbstractContext):
@@ -353,7 +352,7 @@ class XbrlInstance(abc.ABC):
         self,
         url: str,
         taxonomy: TaxonomySchema,
-        facts: List[AbstractFact],
+        facts: list[AbstractFact],
         context_map: dict,
         unit_map: dict,
     ) -> None:
@@ -362,7 +361,7 @@ class XbrlInstance(abc.ABC):
         :param facts: array of all facts that the instance contains
         """
         self.taxonomy: TaxonomySchema = taxonomy
-        self.facts: List[AbstractFact] = facts
+        self.facts: list[AbstractFact] = facts
         self.instance_url: str = url
         self.context_map: dict = context_map
         self.unit_map: dict = unit_map
@@ -463,7 +462,7 @@ def parse_xbrl(
     unit_dir = _parse_unit_elements(root.findall("xbrli:unit", NAME_SPACES))
 
     # parse facts
-    facts: List[AbstractFact] = []
+    facts: list[AbstractFact] = []
     for fact_elem in root:
         # skip contexts and units
         taxonomy_ns, concept_name = fact_elem.tag.split("}")
@@ -614,8 +613,8 @@ def parse_ixbrl(
     unit_dir = _parse_unit_elements(xbrl_resources.findall("xbrli:unit", NAME_SPACES))
 
     # parse facts
-    facts: List[AbstractFact] = []
-    fact_elements: List[ET.Element] = root.findall(
+    facts: list[AbstractFact] = []
+    fact_elements: list[ET.Element] = root.findall(
         ".//ix:nonFraction", ns_map
     ) + root.findall(".//ix:nonNumeric", ns_map)
     for fact_elem in fact_elements:
@@ -763,7 +762,7 @@ def _extract_text_value(element: ET.Element) -> str:
 
 
 def _parse_context_elements(
-    context_elements: List[ET.Element],
+    context_elements: list[ET.Element],
     ns_map: dict,
     taxonomy: TaxonomySchema,
     cache: HttpCache,
@@ -880,7 +879,7 @@ def _parse_context_elements(
                 dimension_concept: Concept = dimension_tax.concepts[
                     dimension_tax.name_id_map[dimension_concept_name]
                 ]
-                domain: List[str] = []
+                domain: list[str] = []
                 for child in typed_member_element:
                     domain.append(child.text.strip())
 
@@ -902,7 +901,7 @@ def _update_ns_map(ns_map: dict, new_ns_map: dict) -> None:
             ns_map[prefix] = new_ns_map[prefix]
 
 
-def _parse_unit_elements(unit_elements: List[ET.Element]) -> dict:
+def _parse_unit_elements(unit_elements: list[ET.Element]) -> dict:
     """
     Parses all unit elements from the instance file and stores them into a dictionary with the
     unit id as key

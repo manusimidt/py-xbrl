@@ -4,7 +4,6 @@ import os
 import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
-from typing import List
 
 from xbrl import LinkbaseNotFoundException, XbrlParseException
 from xbrl.cache import HttpCache
@@ -323,7 +322,7 @@ class LabelArc(AbstractArcElement):
 
     """
 
-    def __init__(self, from_locator, order: int, labels: List[Label]) -> None:
+    def __init__(self, from_locator, order: int, labels: list[Label]) -> None:
         """
         @type from_locator: Locator
         @param labels: Array of label objects, the arc is pointing to
@@ -371,9 +370,9 @@ class Locator:
         # This array stores the locators that that are connected with this locator via a label arc, there
         # the current locator was in the to attribute. This array is only used for finding the root locators (the locators
         # that have no parents)
-        self.parents: List[Locator] = []
+        self.parents: list[Locator] = []
         # This array stores all the labelArcs that reference this locator in the "from" attribute
-        self.children: List[AbstractArcElement] = []
+        self.children: list[AbstractArcElement] = []
 
     def __str__(self) -> str:
         return "{} with {} children".format(self.name, len(self.children))
@@ -419,7 +418,7 @@ class ExtendedLink:
     """
 
     def __init__(
-        self, role: str, elr_id: str | None, root_locators: List[Locator]
+        self, role: str, elr_id: str | None, root_locators: list[Locator]
     ) -> None:
         """
         @param role: role of the extended link element
@@ -430,7 +429,7 @@ class ExtendedLink:
         """
         self.role: str = role
         self.elr_id: str | None = elr_id
-        self.root_locators: List[Locator] = root_locators
+        self.root_locators: list[Locator] = root_locators
 
     def to_dict(self) -> dict:
         """
@@ -466,7 +465,7 @@ class Linkbase:
 
     def __init__(
         self,
-        extended_links: List[ExtendedLink],
+        extended_links: list[ExtendedLink],
         linkbase_type: LinkbaseType,
         linkbase_uri: None | str = None,
     ) -> None:
@@ -476,7 +475,7 @@ class Linkbase:
         :param linkbase_type: Type of the linkbase
         :param linkbase_uri: Either the path or the url to the linkbase (depends from where the parser loaded it for parsing)
         """
-        self.extended_links: List[ExtendedLink] = extended_links
+        self.extended_links: list[ExtendedLink] = extended_links
         self.type = linkbase_type
         self.linkbase_uri = linkbase_uri
 
@@ -555,7 +554,7 @@ def parse_linkbase(
 
     # Loop over all definition/calculation/presentation/label links.
     # Each extended link contains the locators and the definition arc's
-    extended_links: List[ExtendedLink] = []
+    extended_links: list[ExtendedLink] = []
 
     # figure out if we want to search for definitionLink, calculationLink, presentationLink or labelLink
     # figure out for what type of arcs we are searching; definitionArc, calculationArc, presentationArc or labelArc
