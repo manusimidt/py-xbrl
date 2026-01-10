@@ -1,0 +1,44 @@
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-xbrl"
+version = "3.0.0"
+description = "Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases)."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+license = { text = "GNU General Public License v3 (GPLv3)" }
+authors = [{ name = "Manuel Schmidt", email = "hello@schmidt-manuel.de" }]
+urls = { Homepage = "https://github.com/manusimidt/py-xbrl" }
+dependencies = ["requests", "urllib3"]
+keywords = [
+    "XBRL",
+    "iXBRL",
+    "XML",
+    "Financial",
+    "Accounting",
+    "Taxonomy",
+    "Parser",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Natural Language :: English",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+
+
+[project.optional-dependencies]
+dev = ["ruff", "pytest", "build", "twine"]
+
+
+[tool.setuptools.packages.find]
+include = ["xbrl*"]
