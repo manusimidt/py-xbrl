@@ -1,10 +1,9 @@
 """
 This file holds a fallback namespace map for common XBRL taxonomies
 
-Normally, the taxonomy schema should define the namespaces used and provide their schemaUrl, however some do not. 
+Normally, the taxonomy schema should define the namespaces used and provide their schemaUrl, however some do not.
 For this reason we have this fallback map to help resolve common taxonomies.
 """
-
 
 NS_MAP: dict[str, str] = {
     "http://arelle.org/doc/2014-01-31": "http://arelle.org/2014/doc-2014-01-31.xsd",

@@ -12,9 +12,7 @@ from urllib.parse import unquote
 from xbrl import TaxonomyNotFound, XbrlParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
-from xbrl.linkbase import (ExtendedLink, Label, Linkbase, LinkbaseType,
-                           parse_linkbase, parse_linkbase_url)
-
+from xbrl.linkbase import ExtendedLink, Label, Linkbase, LinkbaseType, parse_linkbase, parse_linkbase_url
 from xbrl.ns_map import NS_MAP
 
 logger = logging.getLogger(__name__)
@@ -192,6 +190,29 @@ def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema | 
     return None
 
 
+def load_edgar_taxonomies(cache: HttpCache) -> dict[str, str]:
+    """
+    This function loads the https://www.sec.gov/files/edgartaxonomies.xml file and returns a namespace to schema url map
+
+    :param cache: http cache instance to use for downloading the file
+    :return: A directionary mapping namespace to schema url
+    """
+    edgar_taxonomies_url = "https://www.sec.gov/files/edgartaxonomies.xml"
+    edgar_taxonomies_path = cache.cache_file(edgar_taxonomies_url)
+    root: ET.Element = ET.parse(edgar_taxonomies_path).getroot()
+    taxonomy_map: dict[str, str] = {}
+
+    for loc in root.findall("Loc"):
+        namespace_el = loc.find("Namespace")
+        href_el = loc.find("Href")
+
+        if namespace_el is not None and href_el is not None:
+            namespace = namespace_el.text.strip()
+            href = href_el.text.strip()
+            taxonomy_map[namespace] = href
+    return taxonomy_map
+
+
 @lru_cache(maxsize=60)
 def parse_taxonomy_url(
     schema_url: str, cache: HttpCache, imported_schema_uris: set = set()
@@ -206,8 +227,7 @@ def parse_taxonomy_url(
     """
     if not is_url(schema_url):
         raise XbrlParseException(
-            "This function only parses remotely saved taxonomies. "
-            "Please use parse_taxonomy to parse local taxonomy schemas"
+            "This function only parses remotely saved taxonomies. Please use parse_taxonomy to parse local taxonomy schemas"
         )
     schema_path: str = cache.cache_file(schema_url)
     return parse_taxonomy(schema_path, cache, imported_schema_uris, schema_url)
@@ -232,8 +252,7 @@ def parse_taxonomy(
     schema_path = str(schema_path)
     if is_url(schema_path):
         raise XbrlParseException(
-            "This function only parses locally saved taxonomies. "
-            "Please use parse_taxonomy_url to parse remote taxonomy schemas"
+            "This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas"
         )
     if not os.path.exists(schema_path):
         raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")

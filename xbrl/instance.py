@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from io import StringIO
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from xbrl import InstanceParseException, TaxonomyNotFound
 from xbrl.cache import HttpCache
@@ -405,7 +405,7 @@ def parse_xbrl_url(
     instance_url: str,
     cache: HttpCache,
     use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = True,
+    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy. This function will check, if the instance file is already
@@ -431,7 +431,7 @@ def parse_xbrl(
     cache: HttpCache,
     instance_url: str | None = None,
     use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = True,
+    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
@@ -512,8 +512,7 @@ def parse_xbrl(
             concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         except KeyError:
             logger.warning(
-                f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} "
-                f"won't be parsed!"
+                f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} won't be parsed!"
             )
             continue
         context: AbstractContext = context_dir[fact_elem.attrib["contextRef"].strip()]
@@ -548,7 +547,7 @@ def parse_ixbrl_url(
     cache: HttpCache,
     encoding: str | None = None,
     use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = True,
+    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -572,7 +571,7 @@ def parse_ixbrl(
     encoding=None,
     schema_root=None,
     use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = True,
+    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -986,7 +985,12 @@ class XbrlParser:
         self.cache = cache
 
     def parse_instance(
-        self, uri: str, instance_url: str | None = None, encoding: str | None = None
+        self,
+        uri: str,
+        instance_url: str | None = None,
+        encoding: str | None = None,
+        use_local_ns_map: bool = True,
+        use_edgar_taxonomies: bool = False,
     ) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
@@ -1001,6 +1005,9 @@ class XbrlParser:
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
             instance document was downloaded, the parser can fetch relative imports using this base url
         :param encoding: specifies the encoding of the file
+            :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+        :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+            https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
         :return:
         """
         if uri.split(".")[-1] == "xml" or uri.split(".")[-1] == "xbrl":
