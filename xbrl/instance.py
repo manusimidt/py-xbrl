@@ -732,13 +732,15 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float | str | None:
     :param fact_elem:
     :return:
     """
-    if "xsi" in fact_elem.attrib["ns_map"]:
-        xsi_nil_attrib: str = "{" + fact_elem.attrib["ns_map"]["xsi"] + "}nil"
-        if (
-            xsi_nil_attrib in fact_elem.attrib
-            and fact_elem.attrib[xsi_nil_attrib] == "true"
-        ):
-            return None
+    # First look if the fact is nilled (look for xsi:nil="true" or xs:nil="true")
+    for prefix in ("xsi", "xs"):
+        if prefix in fact_elem.attrib["ns_map"]:
+            nil_attrib = f"{{{fact_elem.attrib['ns_map'][prefix]}}}nil"
+            if fact_elem.attrib.get(nil_attrib) == "true":
+                return None
+    # Also, if the fact just has no value, we also return null (instead of just failing)
+    if fact_elem.text is None or len(fact_elem.text.strip()) == 0:
+        return None
 
     fact_value = "" if fact_elem.text is None else fact_elem.text
     # recursively iterate over all children (<ix:nonNumeric><b>data</b></ix:nonNumeric>)
@@ -979,9 +981,11 @@ def _load_common_taxonomy(
         if namespace in edgar_map:
             tax = parse_taxonomy_url(edgar_map[namespace], cache)
 
+    if tax is None:
         raise TaxonomyNotFound(namespace)
-    taxonomy.imports.append(tax)
-    return tax
+    else:
+        taxonomy.imports.append(tax)
+        return tax
 
 
 class XbrlParser:

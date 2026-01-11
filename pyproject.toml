@@ -12,7 +12,10 @@ requires-python = ">=3.10"
 license = { text = "GNU General Public License v3 (GPLv3)" }
 authors = [{ name = "Manuel Schmidt", email = "hello@schmidt-manuel.de" }]
 urls = { Homepage = "https://github.com/manusimidt/py-xbrl" }
-dependencies = ["requests", "urllib3"]
+dependencies = [
+    "requests", # Used for fetching XML / XBRL / html files over HTTP(S)
+    "urllib3" # Used for HTTP connection retries
+]
 keywords = [
     "XBRL",
     "iXBRL",
@@ -37,7 +40,16 @@ classifiers = [
 
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest", "build", "twine", "mypy", "types-requests"]
+dev = [
+    "ruff", # Used for linting
+    "mypy", # Used for static type checking
+    "pytest", # Used for unit testing
+    "build", # Used to build distributions
+    "twine", # Used to check distrubutions and upload to PyPI
+    "types-requests", # Types for requests libary (needed for mypy)
+    "python-dotenv", # Used to load environment variables from .env files (for testing)
+    "psycopg2-binary" # Database adapter for PostgreSQL (used only in dev, to query edgar filings)
+]
 
 
 [tool.setuptools.packages.find]
