@@ -22,6 +22,7 @@ from xbrl.helper.xml_parser import parse_file
 from xbrl.taxonomy import (
     Concept,
     TaxonomySchema,
+    load_edgar_taxonomies,
     parse_common_taxonomy,
     parse_taxonomy,
     parse_taxonomy_url,
@@ -971,6 +972,13 @@ def _load_common_taxonomy(
     """
     tax = parse_common_taxonomy(cache, namespace)
     if tax is None:
+        # Final fallback: check if the taxonomy is in the edgar-taxonomies
+        # TODO: This should be cached. Then parsing thousands of filings, it should only be loaded once => TaxonomyParser helper class?
+        print(" ===== FALLBACK TO EDGAR TAXONOMIES ===== ")
+        edgar_map = load_edgar_taxonomies(cache)
+        if namespace in edgar_map:
+            tax = parse_taxonomy_url(edgar_map[namespace], cache)
+
         raise TaxonomyNotFound(namespace)
     taxonomy.imports.append(tax)
     return tax

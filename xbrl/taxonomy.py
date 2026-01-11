@@ -12,7 +12,14 @@ from urllib.parse import unquote
 from xbrl import TaxonomyNotFound, XbrlParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
-from xbrl.linkbase import ExtendedLink, Label, Linkbase, LinkbaseType, parse_linkbase, parse_linkbase_url
+from xbrl.linkbase import (
+    ExtendedLink,
+    Label,
+    Linkbase,
+    LinkbaseType,
+    parse_linkbase,
+    parse_linkbase_url,
+)
 from xbrl.ns_map import NS_MAP
 
 logger = logging.getLogger(__name__)
@@ -428,3 +435,43 @@ def parse_taxonomy(
                         concept.labels.append(label)
 
     return taxonomy
+
+
+class TaxonomyParser:
+    """
+    Helper class to parse taxonomies and cache namespace maps
+    """
+
+    global_ns_map: dict[str, str] = {}
+
+    def __init__(
+        self,
+        cache: HttpCache,
+        use_local_ns_map: bool = True,
+        fetch_edgar_taxonomies: bool = True,
+        fetch_py_xbrl_ns_map: bool = True,
+    ) -> None:
+        self.cache = cache
+        self.use_local_ns_map = use_local_ns_map
+        self.fetch_edgar_taxonomies = fetch_edgar_taxonomies
+        self.fetch_py_xbrl_ns_map = fetch_py_xbrl_ns_map
+
+        if self.use_local_ns_map:
+            self._add_local_ns_map()
+        if self.fetch_edgar_taxonomies:
+            self._add_edgar_taxonomies()
+
+    def _add_local_ns_map(self):
+        """
+        Adds the local NS_MAP to the global namespace map
+        """
+        for ns, url in NS_MAP.items():
+            self.global_ns_map[ns] = url
+
+    def _add_edgar_taxonomies(self):
+        """
+        Adds the Edgar taxonomy namespace map to the global namespace map
+        """
+        edgar_map = load_edgar_taxonomies(self.cache)
+        for ns, url in edgar_map.items():
+            self.global_ns_map[ns] = url
