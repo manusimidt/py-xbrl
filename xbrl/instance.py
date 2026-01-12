@@ -15,18 +15,11 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 
-from xbrl import InstanceParseException, TaxonomyNotFound
+from xbrl import InstanceParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import is_url, resolve_uri
 from xbrl.helper.xml_parser import parse_file
-from xbrl.taxonomy import (
-    Concept,
-    TaxonomySchema,
-    load_edgar_taxonomies,
-    parse_common_taxonomy,
-    parse_taxonomy,
-    parse_taxonomy_url,
-)
+from xbrl.taxonomy import Concept, TaxonomyParser, TaxonomySchema
 from xbrl.transformations import (
     TransformationException,
     TransformationNotImplemented,
@@ -403,10 +396,7 @@ class XbrlInstance(abc.ABC):
 
 
 def parse_xbrl_url(
-    instance_url: str,
-    cache: HttpCache,
-    use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = False,
+    instance_url: str, cache: HttpCache, taxParser: TaxonomyParser | None = None
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy. This function will check, if the instance file is already
@@ -416,23 +406,17 @@ def parse_xbrl_url(
 
     :param instance_url: url to the instance file (on the internet)
     :param cache: HttpCache instance
-    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
-    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
-        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
-    return parse_xbrl(
-        instance_path, cache, instance_url, use_local_ns_map, use_edgar_taxonomies
-    )
+    return parse_xbrl(instance_path, cache, taxParser, instance_url)
 
 
 def parse_xbrl(
     instance_path: str,
     cache: HttpCache,
+    taxParser: TaxonomyParser | None = None,
     instance_url: str | None = None,
-    use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
@@ -447,6 +431,9 @@ def parse_xbrl(
         https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
+    if taxParser is None:
+        taxParser = TaxonomyParser(cache)
+
     root: ET.Element = parse_file(instance_path).getroot()
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element = root.find(LINK_NS + "schemaRef")
@@ -456,26 +443,22 @@ def parse_xbrl(
 
     if is_url(schema_uri):
         # fetch the taxonomy extension schema from remote
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_uri)
     elif instance_url:
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_url)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
-        # initalise a set that will store cached taxonomy schemas uris to avoid recursive loops
-        imported_schema_uris = set()
-        taxonomy: TaxonomySchema = parse_taxonomy(
-            schema_path, cache, imported_schema_uris
-        )
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_path)
 
     # parse contexts and units
     context_dir = _parse_context_elements(
         root.findall("xbrli:context", NAME_SPACES),
         root.attrib["ns_map"],
         taxonomy,
-        cache,
+        taxParser,
     )
     unit_dir = _parse_unit_elements(root.findall("xbrli:unit", NAME_SPACES))
 
@@ -507,8 +490,8 @@ def parse_xbrl(
         # get the concept object from the taxonomy
         tax = taxonomy.get_taxonomy(taxonomy_ns)
         if tax is None:
-            tax = _load_common_taxonomy(cache, taxonomy_ns, taxonomy)
-
+            tax = taxParser.try_taxonomy_from_namespace(taxonomy_ns)
+            taxonomy.imports.append(tax)
         try:
             concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         except KeyError:
@@ -546,9 +529,8 @@ def parse_xbrl(
 def parse_ixbrl_url(
     instance_url: str,
     cache: HttpCache,
+    taxParser: TaxonomyParser | None = None,
     encoding: str | None = None,
-    use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -556,23 +538,19 @@ def parse_ixbrl_url(
     :param cache: HttpCache instance
     :param instance_url: url to the instance file(on the internet)
     :param encoding: specifies the encoding of the file
-    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
-    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
-        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     instance_path: str = cache.cache_file(instance_url)
-    return parse_ixbrl(instance_path, cache, instance_url, encoding)
+    return parse_ixbrl(instance_path, cache, taxParser, instance_url, encoding)
 
 
 def parse_ixbrl(
     instance_path: str,
     cache: HttpCache,
+    taxParser: TaxonomyParser | None = None,
     instance_url: str | None = None,
     encoding=None,
     schema_root=None,
-    use_local_ns_map: bool = True,
-    use_edgar_taxonomies: bool = False,
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -582,9 +560,6 @@ def parse_ixbrl(
     :param instance_url: url to the instance file(on the internet)
     :param encoding: optionally specify a file encoding
     :param schema_root: path to the directory where the taxonomy schema is stored (Only works for relative imports)
-    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
-    :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
-        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
     :return: parsed XbrlInstance object containing all facts with additional information
     """
     """
@@ -592,7 +567,8 @@ def parse_ixbrl(
     to the .getRoot() is missing. This has the benefit, that we can search the document with absolute xpath expressions
     => in the XBRL-parse function root is ET.Element, here just an instance of ElementTree class!
     """
-
+    if taxParser is None:
+        taxParser = TaxonomyParser(cache)
     instance_file = open(instance_path, "r", encoding=encoding)
     contents = instance_file.read()
     pattern = r"<[ ]*script.*?\/[ ]*script[ ]*>"
@@ -608,28 +584,21 @@ def parse_ixbrl(
     # check if the schema uri is relative or absolute
     # submissions from SEC normally have their own schema files, whereas submissions from the uk have absolute schemas
 
-    # initalise a set that will store cached taxonomy schemas uris to avoid recursive loops
-    imported_schema_uris = set()
-
     if is_url(schema_uri):
         # fetch the taxonomy extension schema from remote
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_uri, cache)
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_uri)
     elif schema_root:
         # take the given schema_root path as directory for searching for the taxonomy schema
         schema_path = str(next(Path(schema_root).glob(f"**/{schema_uri}")))
-        taxonomy: TaxonomySchema = parse_taxonomy(
-            schema_path, cache, imported_schema_uris
-        )
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_path)
     elif instance_url:
         # fetch the taxonomy extension schema from remote by reconstructing the url
         schema_url = resolve_uri(instance_url, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy_url(schema_url, cache)
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_url)
     else:
         # try to find the taxonomy extension schema file locally because no full url can be constructed
         schema_path = resolve_uri(instance_path, schema_uri)
-        taxonomy: TaxonomySchema = parse_taxonomy(
-            schema_path, cache, imported_schema_uris
-        )
+        taxonomy: TaxonomySchema = taxParser.parse_taxonomy(schema_path)
 
     # get all contexts and units
     xbrl_resources: ET.Element = root.find(".//ix:resources", ns_map)
@@ -637,7 +606,10 @@ def parse_ixbrl(
         raise InstanceParseException("Could not find xbrl resources in file")
     # parse contexts and units
     context_dir = _parse_context_elements(
-        xbrl_resources.findall("xbrli:context", NAME_SPACES), ns_map, taxonomy, cache
+        xbrl_resources.findall("xbrli:context", NAME_SPACES),
+        ns_map,
+        taxonomy,
+        taxParser,
     )
     unit_dir = _parse_unit_elements(xbrl_resources.findall("xbrli:unit", NAME_SPACES))
 
@@ -653,7 +625,8 @@ def parse_ixbrl(
 
         tax = taxonomy.get_taxonomy(ns_map[taxonomy_prefix])
         if tax is None:
-            tax = _load_common_taxonomy(cache, ns_map[taxonomy_prefix], taxonomy)
+            tax = taxParser.try_taxonomy_from_namespace(ns_map[taxonomy_prefix])
+            taxonomy.imports.append(tax)
 
         xml_id: str | None = (
             fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
@@ -796,7 +769,7 @@ def _parse_context_elements(
     context_elements: list[ET.Element],
     ns_map: dict,
     taxonomy: TaxonomySchema,
-    cache: HttpCache,
+    taxParser: TaxonomyParser,
 ) -> dict:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
@@ -864,9 +837,10 @@ def _parse_context_elements(
                 # check if the taxonomy was found
                 if dimension_tax is None:
                     # try to subsequently load the taxonomy
-                    dimension_tax = _load_common_taxonomy(
-                        cache, ns_map[dimension_prefix], taxonomy
+                    dimension_tax = taxParser.try_taxonomy_from_namespace(
+                        ns_map[dimension_prefix]
                     )
+                    taxonomy.imports.append(dimension_tax)
 
                 # get the taxonomy where the member attribute is defined
                 member_tax = (
@@ -877,9 +851,10 @@ def _parse_context_elements(
                 # check if the taxonomy was found
                 if member_tax is None:
                     # try to subsequently load the taxonomy
-                    member_tax = _load_common_taxonomy(
-                        cache, ns_map[member_prefix], taxonomy
+                    member_tax = taxParser.try_taxonomy_from_namespace(
+                        ns_map[member_prefix]
                     )
+                    taxonomy.imports.append(member_tax)
                 dimension_concept: Concept = dimension_tax.concepts[
                     dimension_tax.name_id_map[dimension_concept_name]
                 ]
@@ -904,9 +879,10 @@ def _parse_context_elements(
                 # check if the taxonomy was found
                 if dimension_tax is None:
                     # try to subsequently load the taxonomy
-                    dimension_tax = _load_common_taxonomy(
-                        cache, ns_map[dimension_prefix], taxonomy
+                    dimension_tax = taxParser.try_taxonomy_from_namespace(
+                        ns_map[dimension_prefix]
                     )
+                    taxonomy.imports.append(dimension_tax)
                 dimension_concept: Concept = dimension_tax.concepts[
                     dimension_tax.name_id_map[dimension_concept_name]
                 ]
@@ -962,32 +938,6 @@ def _parse_unit_elements(unit_elements: list[ET.Element]) -> dict:
     return unit_dict
 
 
-def _load_common_taxonomy(
-    cache: HttpCache, namespace: str, taxonomy: TaxonomySchema
-) -> TaxonomySchema:
-    """
-    tries to load a common taxonomy
-    :param cache: http cache instance
-    :param namespace: namespace of the taxonomy
-    :raises TaxonomyNotFound: if the taxonomy could not be loaded
-    :return:
-    """
-    tax = parse_common_taxonomy(cache, namespace)
-    if tax is None:
-        # Final fallback: check if the taxonomy is in the edgar-taxonomies
-        # TODO: This should be cached. Then parsing thousands of filings, it should only be loaded once => TaxonomyParser helper class?
-        print(" ===== FALLBACK TO EDGAR TAXONOMIES ===== ")
-        edgar_map = load_edgar_taxonomies(cache)
-        if namespace in edgar_map:
-            tax = parse_taxonomy_url(edgar_map[namespace], cache)
-
-    if tax is None:
-        raise TaxonomyNotFound(namespace)
-    else:
-        taxonomy.imports.append(tax)
-        return tax
-
-
 class XbrlParser:
     """
     XbrlParser to make interaction easier.
@@ -995,14 +945,13 @@ class XbrlParser:
 
     def __init__(self, cache: HttpCache):
         self.cache = cache
+        self.taxParser = TaxonomyParser(cache)
 
     def parse_instance(
         self,
         uri: str,
         instance_url: str | None = None,
         encoding: str | None = None,
-        use_local_ns_map: bool = True,
-        use_edgar_taxonomies: bool = False,
     ) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
@@ -1017,21 +966,18 @@ class XbrlParser:
         :param instance_url: this parameter overrides the above described behaviour. If you also provide the url where the
             instance document was downloaded, the parser can fetch relative imports using this base url
         :param encoding: specifies the encoding of the file
-            :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
-        :param use_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
-            https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
         :return:
         """
         if uri.split(".")[-1] == "xml" or uri.split(".")[-1] == "xbrl":
             return (
-                parse_xbrl_url(uri, self.cache)
+                parse_xbrl_url(uri, self.cache, self.taxParser)
                 if is_url(uri)
-                else parse_xbrl(uri, self.cache, instance_url)
+                else parse_xbrl(uri, self.cache, self.taxParser, instance_url)
             )
         return (
-            parse_ixbrl_url(uri, self.cache)
+            parse_ixbrl_url(uri, self.cache, self.taxParser)
             if is_url(uri)
-            else parse_ixbrl(uri, self.cache, instance_url, encoding)
+            else parse_ixbrl(uri, self.cache, self.taxParser, instance_url, encoding)
         )
 
     def __str__(self) -> str:

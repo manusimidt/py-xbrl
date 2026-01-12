@@ -6,10 +6,10 @@ import json
 import logging
 import os
 import xml.etree.ElementTree as ET
-from functools import lru_cache
+from collections import OrderedDict
 from urllib.parse import unquote
 
-from xbrl import TaxonomyNotFound, XbrlParseException
+from xbrl import TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
 from xbrl.linkbase import (
@@ -181,268 +181,16 @@ class TaxonomySchema:
         return list(set(urls))
 
 
-def parse_common_taxonomy(cache: HttpCache, namespace: str) -> TaxonomySchema | None:
-    """
-    Parses a taxonomy by namespace. This is only possible for certain well known taxonomies, as we need the schema_url for
-    parsing it.
-    Some xbrl documents from the sec use namespaces without defining a schema url for those namespaces, so this function
-    might come in handy
-    :param cache:
-    :param namespace: namespace of the taxonomy
-    :return:
-    """
-
-    if namespace in NS_MAP:
-        return parse_taxonomy_url(NS_MAP[namespace], cache)
-    return None
-
-
-def load_edgar_taxonomies(cache: HttpCache) -> dict[str, str]:
-    """
-    This function loads the https://www.sec.gov/files/edgartaxonomies.xml file and returns a namespace to schema url map
-
-    :param cache: http cache instance to use for downloading the file
-    :return: A directionary mapping namespace to schema url
-    """
-    edgar_taxonomies_url = "https://www.sec.gov/files/edgartaxonomies.xml"
-    edgar_taxonomies_path = cache.cache_file(edgar_taxonomies_url)
-    root: ET.Element = ET.parse(edgar_taxonomies_path).getroot()
-    taxonomy_map: dict[str, str] = {}
-
-    for loc in root.findall("Loc"):
-        namespace_el = loc.find("Namespace")
-        href_el = loc.find("Href")
-
-        if namespace_el is not None and href_el is not None:
-            namespace = namespace_el.text.strip()
-            href = href_el.text.strip()
-            taxonomy_map[namespace] = href
-    return taxonomy_map
-
-
-@lru_cache(maxsize=60)
-def parse_taxonomy_url(
-    schema_url: str, cache: HttpCache, imported_schema_uris: set = set()
-) -> TaxonomySchema:
-    """
-    Parses a taxonomy schema file from the internet
-
-    :param schema_url: full link to the taxonomy schema
-    :param cache: :class:`xbrl.cache.HttpCache` instance
-    :param imported_schema_uris: set of already imported schema uris
-    :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
-    """
-    if not is_url(schema_url):
-        raise XbrlParseException(
-            "This function only parses remotely saved taxonomies. Please use parse_taxonomy to parse local taxonomy schemas"
-        )
-    schema_path: str = cache.cache_file(schema_url)
-    return parse_taxonomy(schema_path, cache, imported_schema_uris, schema_url)
-
-
-def parse_taxonomy(
-    schema_path: str,
-    cache: HttpCache,
-    imported_schema_uris: set = set(),
-    schema_url: str | None = None,
-) -> TaxonomySchema:
-    """
-    Parses a taxonomy schema file.
-
-    :param schema_path: url to the schema (on the internet)
-    :param cache: :class:`xbrl.cache.HttpCache` instance
-    :param imported_schema_uris: set of already imported schema uris
-    :param schema_url: if this url is set, the script will try to fetch additionally imported files such as linkbases or
-        imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
-    :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
-    """
-    schema_path = str(schema_path)
-    if is_url(schema_path):
-        raise XbrlParseException(
-            "This function only parses locally saved taxonomies. Please use parse_taxonomy_url to parse remote taxonomy schemas"
-        )
-    if not os.path.exists(schema_path):
-        raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")
-
-    # Get the local absolute path to the schema file (and download it if it is not yet cached)
-    root: ET.Element = ET.parse(schema_path).getroot()
-    # get the target namespace of the taxonomy
-    target_ns = root.attrib["targetNamespace"]
-    taxonomy: TaxonomySchema = TaxonomySchema(
-        schema_url if schema_url else schema_path, target_ns
-    )
-
-    import_elements: list[ET.Element] = root.findall("xsd:import", NAME_SPACES)
-
-    for import_element in import_elements:
-        import_uri = import_element.attrib["schemaLocation"].strip()
-
-        # Skip empty imports
-        if import_uri == "":
-            continue
-
-        # Skip already imported URIs
-        if import_uri in imported_schema_uris:
-            continue
-
-        # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"
-        if is_url(import_uri):
-            # fetch the schema file from remote
-            taxonomy.imports.append(parse_taxonomy_url(import_uri, cache))
-        elif schema_url:
-            # fetch the schema file from remote by reconstructing the full url
-            import_url = resolve_uri(schema_url, import_uri)
-            imported_schema_uris.add(import_uri)
-            taxonomy.imports.append(parse_taxonomy_url(import_url, cache))
-        else:
-            # We have to try to fetch the linkbase locally because no full url can be constructed
-            import_path = resolve_uri(schema_path, import_uri)
-            taxonomy.imports.append(
-                parse_taxonomy(import_path, cache, imported_schema_uris)
-            )
-
-    role_type_elements: list[ET.Element] = root.findall(
-        "xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES
-    )
-    # parse ELR's
-    for elr in role_type_elements:
-        elr_definition = elr.find(LINK_NS + "definition")
-        if elr_definition is None or elr_definition.text is None:
-            continue
-        taxonomy.link_roles.append(
-            ExtendedLinkRole(
-                elr.attrib["id"], elr.attrib["roleURI"], elr_definition.text.strip()
-            )
-        )
-
-    # find all elements that are defined in the schema
-    for element in root.findall(XDS_NS + "element"):
-        # if a concept has no id, it can not be referenced by a linkbase, so just ignore it
-        if "id" not in element.attrib or "name" not in element.attrib:
-            continue
-        el_id: str = element.attrib["id"]
-        el_name: str = element.attrib["name"]
-
-        concept = Concept(el_id, schema_url, el_name)
-        concept.concept_type = (
-            element.attrib["type"] if "type" in element.attrib else None
-        )
-        concept.nillable = (
-            bool(element.attrib["nillable"]) if "nillable" in element.attrib else False
-        )
-        concept.abstract = (
-            bool(element.attrib["abstract"]) if "abstract" in element.attrib else False
-        )
-        type_attr_name = XBRLI_NS + "periodType"
-        concept.period_type = (
-            element.attrib[type_attr_name] if type_attr_name in element.attrib else None
-        )
-        balance_attr_name = XBRLI_NS + "balance"
-        concept.balance = (
-            element.attrib[balance_attr_name]
-            if balance_attr_name in element.attrib
-            else None
-        )
-        # remove the prefix from the substitutionGroup (i.e xbrli:item -> item)
-        concept.substitution_group = (
-            element.attrib["substitutionGroup"].split(":")[-1]
-            if "substitutionGroup" in element.attrib
-            else None
-        )
-
-        taxonomy.concepts[concept.xml_id] = concept
-        taxonomy.name_id_map[concept.name] = concept.xml_id
-
-    linkbase_ref_elements: list[ET.Element] = root.findall(
-        "xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES
-    )
-    for linkbase_ref in linkbase_ref_elements:
-        linkbase_uri = linkbase_ref.attrib[XLINK_NS + "href"]
-        role = (
-            linkbase_ref.attrib[XLINK_NS + "role"]
-            if XLINK_NS + "role" in linkbase_ref.attrib
-            else None
-        )
-        linkbase_type = (
-            LinkbaseType.get_type_from_role(role)
-            if role is not None
-            else LinkbaseType.guess_linkbase_role(linkbase_uri)
-        )
-
-        # check if the linkbase url is relative
-        if is_url(linkbase_uri):
-            # fetch the linkbase from remote
-            linkbase: Linkbase = parse_linkbase_url(linkbase_uri, linkbase_type, cache)
-        elif schema_url:
-            # fetch the linkbase from remote by reconstructing the full URL
-            linkbase_url = resolve_uri(schema_url, linkbase_uri)
-            linkbase: Linkbase = parse_linkbase_url(linkbase_url, linkbase_type, cache)
-        else:
-            # We have to try to fetch the linkbase locally because no full url can be constructed
-            linkbase_path = resolve_uri(schema_path, linkbase_uri)
-            linkbase: Linkbase = parse_linkbase(linkbase_path, linkbase_type)
-
-        # add the linkbase to the taxonomy
-        if linkbase_type == LinkbaseType.DEFINITION:
-            taxonomy.def_linkbases.append(linkbase)
-        elif linkbase_type == LinkbaseType.CALCULATION:
-            taxonomy.cal_linkbases.append(linkbase)
-        elif linkbase_type == LinkbaseType.PRESENTATION:
-            taxonomy.pre_linkbases.append(linkbase)
-        elif linkbase_type == LinkbaseType.LABEL:
-            taxonomy.lab_linkbases.append(linkbase)
-
-    # loop over the ELR's of the schema and assign the extended links from the linkbases
-    for elr in taxonomy.link_roles:
-        for extended_def_links in [
-            def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases
-        ]:
-            for extended_def_link in extended_def_links:
-                if extended_def_link.elr_id.split("#")[1] == elr.xml_id:
-                    elr.definition_link = extended_def_link
-                    break
-        for extended_pre_links in [
-            pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases
-        ]:
-            for extended_pre_link in extended_pre_links:
-                if extended_pre_link.elr_id.split("#")[1] == elr.xml_id:
-                    elr.presentation_link = extended_pre_link
-                    break
-        for extended_cal_links in [
-            cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases
-        ]:
-            for extended_cal_link in extended_cal_links:
-                if extended_cal_link.elr_id.split("#")[1] == elr.xml_id:
-                    elr.calculation_link = extended_cal_link
-                    break
-
-    for label_linkbase in taxonomy.lab_linkbases:
-        for extended_link in label_linkbase.extended_links:
-            for root_locator in extended_link.root_locators:
-                # find the taxonomy the locator is referring to
-                schema_url, concept_id = unquote(root_locator.href).split("#")
-                c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
-                if c_taxonomy is None:
-                    if schema_url in NS_MAP.values():
-                        c_taxonomy = parse_taxonomy_url(schema_url, cache)
-                        taxonomy.imports.append(c_taxonomy)
-                    else:
-                        continue
-                concept: Concept = c_taxonomy.concepts[concept_id]
-                concept.labels = []
-                for label_arc in root_locator.children:
-                    for label in label_arc.labels:
-                        concept.labels.append(label)
-
-    return taxonomy
-
-
 class TaxonomyParser:
     """
     Helper class to parse taxonomies and cache namespace maps
     """
 
-    global_ns_map: dict[str, str] = {}
+    """
+    :param use_local_ns_map: if enabled the parser will use a local namespace map as fallback to try resolving taxonomies
+    :param fetch_edgar_taxonomies: if enabled, the parser will upfront load the EDGAR Common Taxonomies from
+        https://www.sec.gov/files/edgartaxonomies.xml and use them as fallback
+    """
 
     def __init__(
         self,
@@ -450,11 +198,18 @@ class TaxonomyParser:
         use_local_ns_map: bool = True,
         fetch_edgar_taxonomies: bool = True,
         fetch_py_xbrl_ns_map: bool = True,
+        max_taxonomy_cache_size: int = 60,
     ) -> None:
         self.cache = cache
         self.use_local_ns_map = use_local_ns_map
         self.fetch_edgar_taxonomies = fetch_edgar_taxonomies
         self.fetch_py_xbrl_ns_map = fetch_py_xbrl_ns_map
+        self.max_taxonomy_cache_size = max_taxonomy_cache_size
+
+        # Cache for global namespace to schema url mapping of common taxonomies
+        self.global_ns_map: dict[str, str] = {}
+        # Cache for parsed taxonomies with LRU eviction, the key is the schema url
+        self.taxonomy_cache: OrderedDict[str, TaxonomySchema] = OrderedDict()
 
         if self.use_local_ns_map:
             self._add_local_ns_map()
@@ -472,6 +227,256 @@ class TaxonomyParser:
         """
         Adds the Edgar taxonomy namespace map to the global namespace map
         """
-        edgar_map = load_edgar_taxonomies(self.cache)
-        for ns, url in edgar_map.items():
-            self.global_ns_map[ns] = url
+        edgar_taxonomies_url = "https://www.sec.gov/files/edgartaxonomies.xml"
+        edgar_taxonomies_path = self.cache.cache_file(edgar_taxonomies_url)
+        root: ET.Element = ET.parse(edgar_taxonomies_path).getroot()
+
+        for loc in root.findall("Loc"):
+            namespace_el = loc.find("Namespace")
+            href_el = loc.find("Href")
+
+            if namespace_el is not None and href_el is not None:
+                namespace = namespace_el.text.strip()
+                href = href_el.text.strip()
+                self.global_ns_map[namespace] = href
+
+    def _add_to_cache(self, schema_path: str, taxonomy: TaxonomySchema):
+        self.taxonomy_cache[schema_path] = taxonomy
+        self.taxonomy_cache.move_to_end(schema_path)
+
+        # Remove oldest entry if cache exceeds max size
+        if len(self.taxonomy_cache) > self.max_taxonomy_cache_size:
+            self.taxonomy_cache.popitem(last=False)
+
+    def _is_in_cache(self, schema_path: str) -> bool:
+        return schema_path in self.taxonomy_cache
+
+    def _load_from_cache(self, schema_path: str) -> TaxonomySchema | None:
+        if self._is_in_cache(schema_path):
+            # Move to end (mark as recently used)
+            self.taxonomy_cache.move_to_end(schema_path)
+            return self.taxonomy_cache[schema_path]
+        return None
+
+    def try_taxonomy_from_namespace(self, namespace: str) -> TaxonomySchema | None:
+        """
+        Tries to parse a taxonomy by its namespace using the global namespace map
+
+        :param namespace: Namespace of the taxonomy
+        :return: Parsed TaxonomySchema object or None if not found
+        """
+        if namespace in self.global_ns_map:
+            schema_url = self.global_ns_map[namespace]
+            return self.parse_taxonomy(schema_url)
+        raise TaxonomyNotFound(namespace)
+
+    def parse_taxonomy(
+        self,
+        schema_path: str,
+        imported_schema_uris: set = set(),
+        schema_url: str | None = None,
+    ) -> TaxonomySchema:
+        """
+        Parses a taxonomy schema file.
+
+        :param schema_path: url to the schema (on the internet)
+        :param cache: :class:`xbrl.cache.HttpCache` instance
+        :param imported_schema_uris: set of already imported schema uris
+        :param schema_url: if this url is set, the script will try to fetch additionally imported files such as linkbases or
+            imported schemas from the remote location. If this url is None, the script will try to find those resources locally.
+        :return: parsed :class:`xbrl.taxonomy.TaxonomySchema` object
+        """
+        schema_path = str(schema_path).strip()
+        if is_url(schema_path):
+            # If the path is acually a url, we set the schema_url to it and download the file first
+            schema_url = schema_path
+            schema_path = self.cache.cache_file(schema_path)
+
+        if not os.path.exists(schema_path):
+            raise TaxonomyNotFound(f"Could not find taxonomy schema at {schema_path}")
+
+        if self._is_in_cache(schema_path):
+            return self._load_from_cache(schema_path)
+
+        # Get the local absolute path to the schema file (and download it if it is not yet cached)
+        root: ET.Element = ET.parse(schema_path).getroot()
+        # get the target namespace of the taxonomy
+        target_ns = root.attrib["targetNamespace"]
+        taxonomy: TaxonomySchema = TaxonomySchema(
+            schema_url if schema_url else schema_path, target_ns
+        )
+
+        import_elements: list[ET.Element] = root.findall("xsd:import", NAME_SPACES)
+
+        for import_element in import_elements:
+            import_uri = import_element.attrib["schemaLocation"].strip()
+
+            # Skip empty imports
+            if import_uri == "":
+                continue
+
+            # Skip already imported URIs
+            if import_uri in imported_schema_uris:
+                continue
+
+            # sometimes the import schema location is relative. i.e schemaLocation="xbrl-linkbase-2003-12-31.xsd"
+            if is_url(import_uri):
+                # fetch the schema file from remote
+                taxonomy.imports.append(self.parse_taxonomy(import_uri))
+            elif schema_url:
+                # fetch the schema file from remote by reconstructing the full url
+                import_url = resolve_uri(schema_url, import_uri)
+                imported_schema_uris.add(import_uri)
+                taxonomy.imports.append(self.parse_taxonomy(import_url))
+            else:
+                # We have to try to fetch the linkbase locally because no full url can be constructed
+                import_path = resolve_uri(schema_path, import_uri)
+                taxonomy.imports.append(
+                    self.parse_taxonomy(import_path, imported_schema_uris)
+                )
+
+        role_type_elements: list[ET.Element] = root.findall(
+            "xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES
+        )
+        # parse ELR's
+        for elr in role_type_elements:
+            elr_definition = elr.find(LINK_NS + "definition")
+            if elr_definition is None or elr_definition.text is None:
+                continue
+            taxonomy.link_roles.append(
+                ExtendedLinkRole(
+                    elr.attrib["id"], elr.attrib["roleURI"], elr_definition.text.strip()
+                )
+            )
+
+        # find all elements that are defined in the schema
+        for element in root.findall(XDS_NS + "element"):
+            # if a concept has no id, it can not be referenced by a linkbase, so just ignore it
+            if "id" not in element.attrib or "name" not in element.attrib:
+                continue
+            el_id: str = element.attrib["id"]
+            el_name: str = element.attrib["name"]
+
+            concept = Concept(el_id, schema_url, el_name)
+            concept.concept_type = (
+                element.attrib["type"] if "type" in element.attrib else None
+            )
+            concept.nillable = (
+                bool(element.attrib["nillable"])
+                if "nillable" in element.attrib
+                else False
+            )
+            concept.abstract = (
+                bool(element.attrib["abstract"])
+                if "abstract" in element.attrib
+                else False
+            )
+            type_attr_name = XBRLI_NS + "periodType"
+            concept.period_type = (
+                element.attrib[type_attr_name]
+                if type_attr_name in element.attrib
+                else None
+            )
+            balance_attr_name = XBRLI_NS + "balance"
+            concept.balance = (
+                element.attrib[balance_attr_name]
+                if balance_attr_name in element.attrib
+                else None
+            )
+            # remove the prefix from the substitutionGroup (i.e xbrli:item -> item)
+            concept.substitution_group = (
+                element.attrib["substitutionGroup"].split(":")[-1]
+                if "substitutionGroup" in element.attrib
+                else None
+            )
+
+            taxonomy.concepts[concept.xml_id] = concept
+            taxonomy.name_id_map[concept.name] = concept.xml_id
+
+        linkbase_ref_elements: list[ET.Element] = root.findall(
+            "xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES
+        )
+        for linkbase_ref in linkbase_ref_elements:
+            linkbase_uri = linkbase_ref.attrib[XLINK_NS + "href"]
+            role = (
+                linkbase_ref.attrib[XLINK_NS + "role"]
+                if XLINK_NS + "role" in linkbase_ref.attrib
+                else None
+            )
+            linkbase_type = (
+                LinkbaseType.get_type_from_role(role)
+                if role is not None
+                else LinkbaseType.guess_linkbase_role(linkbase_uri)
+            )
+
+            # check if the linkbase url is relative
+            if is_url(linkbase_uri):
+                # fetch the linkbase from remote
+                linkbase: Linkbase = parse_linkbase_url(
+                    linkbase_uri, linkbase_type, self.cache
+                )
+            elif schema_url:
+                # fetch the linkbase from remote by reconstructing the full URL
+                linkbase_url = resolve_uri(schema_url, linkbase_uri)
+                linkbase: Linkbase = parse_linkbase_url(
+                    linkbase_url, linkbase_type, self.cache
+                )
+            else:
+                # We have to try to fetch the linkbase locally because no full url can be constructed
+                linkbase_path = resolve_uri(schema_path, linkbase_uri)
+                linkbase: Linkbase = parse_linkbase(linkbase_path, linkbase_type)
+
+            # add the linkbase to the taxonomy
+            if linkbase_type == LinkbaseType.DEFINITION:
+                taxonomy.def_linkbases.append(linkbase)
+            elif linkbase_type == LinkbaseType.CALCULATION:
+                taxonomy.cal_linkbases.append(linkbase)
+            elif linkbase_type == LinkbaseType.PRESENTATION:
+                taxonomy.pre_linkbases.append(linkbase)
+            elif linkbase_type == LinkbaseType.LABEL:
+                taxonomy.lab_linkbases.append(linkbase)
+
+        # loop over the ELR's of the schema and assign the extended links from the linkbases
+        for elr in taxonomy.link_roles:
+            for extended_def_links in [
+                def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases
+            ]:
+                for extended_def_link in extended_def_links:
+                    if extended_def_link.elr_id.split("#")[1] == elr.xml_id:
+                        elr.definition_link = extended_def_link
+                        break
+            for extended_pre_links in [
+                pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases
+            ]:
+                for extended_pre_link in extended_pre_links:
+                    if extended_pre_link.elr_id.split("#")[1] == elr.xml_id:
+                        elr.presentation_link = extended_pre_link
+                        break
+            for extended_cal_links in [
+                cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases
+            ]:
+                for extended_cal_link in extended_cal_links:
+                    if extended_cal_link.elr_id.split("#")[1] == elr.xml_id:
+                        elr.calculation_link = extended_cal_link
+                        break
+
+        for label_linkbase in taxonomy.lab_linkbases:
+            for extended_link in label_linkbase.extended_links:
+                for root_locator in extended_link.root_locators:
+                    # find the taxonomy the locator is referring to
+                    schema_url, concept_id = unquote(root_locator.href).split("#")
+                    c_taxonomy: TaxonomySchema = taxonomy.get_taxonomy(schema_url)
+                    if c_taxonomy is None:
+                        if schema_url in NS_MAP.values():
+                            c_taxonomy = self.parse_taxonomy(schema_url)
+                            taxonomy.imports.append(c_taxonomy)
+                        else:
+                            continue
+                    concept: Concept = c_taxonomy.concepts[concept_id]
+                    concept.labels = []
+                    for label_arc in root_locator.children:
+                        for label in label_arc.labels:
+                            concept.labels.append(label)
+
+        self._add_to_cache(schema_path, taxonomy)
+        return taxonomy

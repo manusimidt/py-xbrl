@@ -12,7 +12,7 @@ from xbrl.instance import parse_xbrl_url, parse_ixbrl_url, XbrlInstance
 from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-cache: HttpCache = HttpCache("../cache/", delay=1500)
+cache: HttpCache = HttpCache('D:\\XBRL cache\\cache', delay=1500)
 bot_header = get_bot_header()
 if bot_header:
     cache.set_headers(bot_header)

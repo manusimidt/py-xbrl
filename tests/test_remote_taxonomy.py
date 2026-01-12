@@ -12,7 +12,7 @@ from xbrl.taxonomy import TaxonomySchema, parse_taxonomy_url
 from tests.utils import get_bot_header
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-cache: HttpCache = HttpCache("../cache/", delay=1500)
+cache: HttpCache = HttpCache('D:\\XBRL cache\\cache', delay=1500)
 bot_header = get_bot_header()
 # bot_header = get_bot_header('.env')
 if bot_header:

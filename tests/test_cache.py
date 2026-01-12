@@ -3,12 +3,13 @@ This is just a very simple unit test, that checks if the HttpCache is able to do
 specified cache directory and serves it from there.
 """
 
-import sys
-import unittest
-import os
-import time
-from xbrl.cache import HttpCache
 import logging
+import os
+import sys
+import time
+import unittest
+
+from xbrl.cache import HttpCache
 
 
 class CacheHelperTest(unittest.TestCase):
@@ -18,7 +19,7 @@ class CacheHelperTest(unittest.TestCase):
         :return:
         """
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-        cache_dir: str = os.path.abspath("./../cache/") + "/"
+        cache_dir: str = os.path.abspath("D:\XBRL cache\cache/") + "/"
         delay: int = 5000
         cache: HttpCache = HttpCache(cache_dir, delay)
 
