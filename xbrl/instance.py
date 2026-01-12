@@ -943,9 +943,9 @@ class XbrlParser:
     XbrlParser to make interaction easier.
     """
 
-    def __init__(self, cache: HttpCache):
+    def __init__(self, cache: HttpCache, taxParser: TaxonomyParser | None = None) -> None:
         self.cache = cache
-        self.taxParser = TaxonomyParser(cache)
+        self.taxParser = taxParser if taxParser is not None else TaxonomyParser(cache)
 
     def parse_instance(
         self,
