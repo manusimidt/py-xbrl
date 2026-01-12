@@ -196,7 +196,7 @@ class TaxonomyParser:
         self,
         cache: HttpCache,
         use_local_ns_map: bool = True,
-        fetch_edgar_taxonomies: bool = True,
+        fetch_edgar_taxonomies: bool = False,
         fetch_py_xbrl_ns_map: bool = True,
         max_taxonomy_cache_size: int = 60,
     ) -> None:
