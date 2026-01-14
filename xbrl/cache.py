@@ -26,7 +26,7 @@ class HttpCache:
         if not cache_dir.endswith("/"):
             cache_dir += "/"
         self.cache_dir: str = cache_dir
-        self.headers: dict | None = None
+        self.headers: dict = {}
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
     def set_headers(self, headers: dict) -> None:
@@ -85,23 +85,13 @@ class HttpCache:
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
 
-        query_response = self.connection_manager.download(
-            file_url, headers=self.headers
-        )
+        query_response = self.connection_manager.download(file_url, headers=self.headers)
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
-                raise Exception(
-                    "Could not find file on {}. Error code: {}".format(
-                        file_url, query_response.status_code
-                    )
-                )
+                raise Exception("Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
             else:
-                raise Exception(
-                    "Could not download file from {}. Error code: {}".format(
-                        file_url, query_response.status_code
-                    )
-                )
+                raise Exception("Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))
 
         with open(file_path, "wb+") as file:
             file.write(query_response.content)
