@@ -30,6 +30,16 @@ The Label Linkbase of this taxonomy can override the labels of the base taxonomy
 
 read more at: https://manusimidt.dev/2021-07/xbrl-explained
 
+
+Parser Class
+---------------
+.. autoclass:: xbrl.instance::XbrlInstance
+    :members:
+    :inherited-members:
+
+    .. automethod:: __init__
+
+
 Parse functions
 ---------------
 
@@ -39,7 +49,7 @@ Parse functions
     .. automethod:: xbrl.taxonomy.parse_taxonomy_url
     .. automethod:: xbrl.taxonomy.parse_taxonomy
 
-Classes
+Other Classes
 --------------
 
 .. autoclass:: xbrl.taxonomy::Concept

@@ -16,6 +16,15 @@ a **unit** (USD) and tagged with a **concept** from the taxonomy (us-gaap_Revenu
 The Context defines the time frame and the company to which the fact belongs.
 
 
+Parser Class
+---------------
+.. autoclass:: xbrl.instance::XbrlParser
+    :members:
+    :inherited-members:
+
+    .. automethod:: __init__
+
+
 Parse functions
 ---------------
 
@@ -26,19 +35,13 @@ Parse functions
     .. automethod:: xbrl.instance.parse_ixbrl_url
     .. automethod:: xbrl.instance.parse_ixbrl
 
-Classes
+Other Classes
 --------------
-
-.. autoclass:: xbrl.instance::XbrlParser
-    :members:
-    :inherited-members:
-
-    .. automethod:: __init__
-
 
 .. autoclass:: xbrl.instance::XbrlInstance
     :members:
     :inherited-members:
 
     .. automethod:: __init__
+
 

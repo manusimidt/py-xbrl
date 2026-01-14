@@ -36,6 +36,27 @@ Make sure to set the http headers correctly (Services like SEC EDGAR require it!
 Please find more information about headers and usage regulations in the `SEC EDGAR documentation <https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data>`_.
 
 .. code-block:: python
+    from xbrl.instance import XbrlParser, XbrlInstance
+
+    taxParser = TaxonomyParser(cache, use_local_ns_map=True, fetch_edgar_taxonomies=True)
+    parser = XbrlParser(cache, taxParser)
+
+
+
+Additional note on TaxonomyNotFound Errors
+-------------------------------------------
+Especially SEC EDGAR submissions sometimes reference taxonomies that are not properly imported. They just declare a 
+namespace (i.e. `xmlns:us-gaap="http://fasb.org/us-gaap/2021-01-31"`) but do not actually import the schema 
+(`http://xbrl.fasb.org/us-gaap/2021/elts/us-gaap-2021-01-31.xsd`). 
+This will lead to a `TaxonomyNotFound` error when parsing the instance document.
+
+`py-xbrl` gives you some options to reduce these errors: 
+1. Using a local namespace to schemaUrl map, which is shipped with the libary and enabled by 
+2. Dynamically fetch the edgartaxonomies file (https://www.sec.gov/files/edgartaxonomies.xml)
+
+For the second option you can enable it by using the `TaxonomyParser` class:
+
+.. code-block:: python
 
     import logging
     from xbrl.cache import HttpCache
@@ -49,6 +70,8 @@ Please find more information about headers and usage regulations in the `SEC EDG
 
     schema_url = "https://www.sec.gov/Archives/edgar/data/0000320193/000032019321000105/aapl-20210925.htm"
     inst: XbrlInstance = parser.parse_instance(schema_url)
+
+
 
 
 Offline
