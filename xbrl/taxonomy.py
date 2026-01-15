@@ -12,7 +12,15 @@ from urllib.parse import unquote
 from xbrl import TaxonomyNotFound, TaxonomyParseException
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
-from xbrl.linkbase import ExtendedLink, Label, LabelArc, Linkbase, LinkbaseType, parse_linkbase, parse_linkbase_url
+from xbrl.linkbase import (
+    ExtendedLink,
+    Label,
+    LabelArc,
+    Linkbase,
+    LinkbaseType,
+    parse_linkbase,
+    parse_linkbase_url,
+)
 from xbrl.ns_map import NS_MAP
 
 logger = logging.getLogger(__name__)
@@ -251,7 +259,7 @@ class TaxonomyParser:
             return self.taxonomy_cache[schema_path]
         return None
 
-    def try_taxonomy_from_namespace(self, namespace: str) -> TaxonomySchema | None:
+    def try_taxonomy_from_namespace(self, namespace: str) -> TaxonomySchema:
         """
         Tries to parse a taxonomy by its namespace using the global namespace map
 
@@ -296,7 +304,9 @@ class TaxonomyParser:
         root: ET.Element = ET.parse(schema_path).getroot()
         # get the target namespace of the taxonomy
         target_ns = root.attrib["targetNamespace"]
-        taxonomy: TaxonomySchema = TaxonomySchema(schema_url if schema_url else schema_path, target_ns)
+        taxonomy: TaxonomySchema = TaxonomySchema(
+            schema_url if schema_url else schema_path, target_ns
+        )
 
         import_elements: list[ET.Element] = root.findall("xsd:import", NAME_SPACES)
 
@@ -323,15 +333,25 @@ class TaxonomyParser:
             else:
                 # We have to try to fetch the linkbase locally because no full url can be constructed
                 import_path = resolve_uri(schema_path, import_uri)
-                taxonomy.imports.append(self.parse_taxonomy(import_path, imported_schema_uris))
+                taxonomy.imports.append(
+                    self.parse_taxonomy(import_path, imported_schema_uris)
+                )
 
-        role_type_elements: list[ET.Element] = root.findall("xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES)
+        role_type_elements: list[ET.Element] = root.findall(
+            "xsd:annotation/xsd:appinfo/link:roleType", NAME_SPACES
+        )
         # parse ELR's
         for elr_elem in role_type_elements:
             elr_definition = elr_elem.find(LINK_NS + "definition")
             if elr_definition is None or elr_definition.text is None:
                 continue
-            taxonomy.link_roles.append(ExtendedLinkRole(elr_elem.attrib["id"], elr_elem.attrib["roleURI"], elr_definition.text.strip()))
+            taxonomy.link_roles.append(
+                ExtendedLinkRole(
+                    elr_elem.attrib["id"],
+                    elr_elem.attrib["roleURI"],
+                    elr_definition.text.strip(),
+                )
+            )
 
         # find all elements that are defined in the schema
         for element in root.findall(XDS_NS + "element"):
@@ -342,28 +362,60 @@ class TaxonomyParser:
             el_name: str = element.attrib["name"]
 
             new_concept = Concept(el_id, schema_url or schema_path, el_name)
-            new_concept.concept_type = element.attrib["type"] if "type" in element.attrib else None
-            new_concept.nillable = bool(element.attrib["nillable"]) if "nillable" in element.attrib else False
-            new_concept.abstract = bool(element.attrib["abstract"]) if "abstract" in element.attrib else False
+            new_concept.concept_type = (
+                element.attrib["type"] if "type" in element.attrib else None
+            )
+            new_concept.nillable = (
+                bool(element.attrib["nillable"])
+                if "nillable" in element.attrib
+                else False
+            )
+            new_concept.abstract = (
+                bool(element.attrib["abstract"])
+                if "abstract" in element.attrib
+                else False
+            )
             type_attr_name = XBRLI_NS + "periodType"
-            new_concept.period_type = element.attrib[type_attr_name] if type_attr_name in element.attrib else None
+            new_concept.period_type = (
+                element.attrib[type_attr_name]
+                if type_attr_name in element.attrib
+                else None
+            )
             balance_attr_name = XBRLI_NS + "balance"
-            new_concept.balance = element.attrib[balance_attr_name] if balance_attr_name in element.attrib else None
+            new_concept.balance = (
+                element.attrib[balance_attr_name]
+                if balance_attr_name in element.attrib
+                else None
+            )
             # remove the prefix from the substitutionGroup (i.e xbrli:item -> item)
             new_concept.substitution_group = (
-                element.attrib["substitutionGroup"].split(":")[-1] if "substitutionGroup" in element.attrib else None
+                element.attrib["substitutionGroup"].split(":")[-1]
+                if "substitutionGroup" in element.attrib
+                else None
             )
 
             taxonomy.concepts[new_concept.xml_id] = new_concept
             taxonomy.name_id_map[new_concept.name] = new_concept.xml_id
 
-        linkbase_ref_elements: list[ET.Element] = root.findall("xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES)
+        linkbase_ref_elements: list[ET.Element] = root.findall(
+            "xsd:annotation/xsd:appinfo/link:linkbaseRef", NAME_SPACES
+        )
         for linkbase_ref in linkbase_ref_elements:
             linkbase_uri = linkbase_ref.attrib[XLINK_NS + "href"]
-            role = linkbase_ref.attrib[XLINK_NS + "role"] if XLINK_NS + "role" in linkbase_ref.attrib else None
-            linkbase_type = LinkbaseType.get_type_from_role(role) if role is not None else LinkbaseType.guess_linkbase_role(linkbase_uri)
+            role = (
+                linkbase_ref.attrib[XLINK_NS + "role"]
+                if XLINK_NS + "role" in linkbase_ref.attrib
+                else None
+            )
+            linkbase_type = (
+                LinkbaseType.get_type_from_role(role)
+                if role is not None
+                else LinkbaseType.guess_linkbase_role(linkbase_uri)
+            )
             if linkbase_type is None:
-                raise TaxonomyParseException(f"Could not determine linkbase type for linkbase with href {linkbase_uri}")
+                raise TaxonomyParseException(
+                    f"Could not determine linkbase type for linkbase with href {linkbase_uri}"
+                )
 
             # check if the linkbase url is relative
             linkbase: Linkbase
@@ -390,19 +442,34 @@ class TaxonomyParser:
                 taxonomy.lab_linkbases.append(linkbase)
 
         # loop over the ELR's of the schema and assign the extended links from the linkbases
+        all_def_links = [
+            def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases
+        ]
+        all_pre_links = [
+            pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases
+        ]
+        all_cal_links = [
+            cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases
+        ]
         for elr in taxonomy.link_roles:
-            for extended_def_links in [def_linkbase.extended_links for def_linkbase in taxonomy.def_linkbases]:
+            for extended_def_links in all_def_links:
                 for extended_def_link in extended_def_links:
+                    if extended_def_link.elr_id is None:
+                        continue
                     if extended_def_link.elr_id.split("#")[1] == elr.xml_id:
                         elr.definition_link = extended_def_link
                         break
-            for extended_pre_links in [pre_linkbase.extended_links for pre_linkbase in taxonomy.pre_linkbases]:
+            for extended_pre_links in all_pre_links:
                 for extended_pre_link in extended_pre_links:
+                    if extended_pre_link.elr_id is None:
+                        continue
                     if extended_pre_link.elr_id.split("#")[1] == elr.xml_id:
                         elr.presentation_link = extended_pre_link
                         break
-            for extended_cal_links in [cal_linkbase.extended_links for cal_linkbase in taxonomy.cal_linkbases]:
+            for extended_cal_links in all_cal_links:
                 for extended_cal_link in extended_cal_links:
+                    if extended_cal_link.elr_id is None:
+                        continue
                     if extended_cal_link.elr_id.split("#")[1] == elr.xml_id:
                         elr.calculation_link = extended_cal_link
                         break

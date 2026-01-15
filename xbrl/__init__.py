@@ -61,9 +61,7 @@ class TaxonomyNotFound(TaxonomyParseException):
 
     def __init__(self, namespace) -> None:
         super().__init__(
-            "The taxonomy with namespace {} could not be found. Please check if it is imported in the schema file".format(
-                namespace
-            )
+            f"The taxonomy with namespace {namespace} could not be found. Please check if it is imported in the schema file"
         )
 
 

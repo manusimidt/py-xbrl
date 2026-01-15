@@ -85,13 +85,19 @@ class HttpCache:
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
 
-        query_response = self.connection_manager.download(file_url, headers=self.headers)
+        query_response = self.connection_manager.download(
+            file_url, headers=self.headers
+        )
 
         if not query_response.status_code == 200:
             if query_response.status_code == 404:
-                raise Exception("Could not find file on {}. Error code: {}".format(file_url, query_response.status_code))
+                raise Exception(
+                    f"Could not find file on {file_url}. Error code: {query_response.status_code}"
+                )
             else:
-                raise Exception("Could not download file from {}. Error code: {}".format(file_url, query_response.status_code))
+                raise Exception(
+                    f"Could not download file from {file_url}. Error code: {query_response.status_code}"
+                )
 
         with open(file_path, "wb+") as file:
             file.write(query_response.content)

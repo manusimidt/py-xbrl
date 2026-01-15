@@ -79,7 +79,7 @@ class NumberException(Exception):
 
 def text2num(s) -> int:
     if s.isnumeric():
-        return s
+        return int(s)
 
     a = re.split(r"[\s-]+", s)
     n = 0
