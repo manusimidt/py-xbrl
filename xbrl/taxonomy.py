@@ -413,9 +413,8 @@ class TaxonomyParser:
                 else LinkbaseType.guess_linkbase_role(linkbase_uri)
             )
             if linkbase_type is None:
-                raise TaxonomyParseException(
-                    f"Could not determine linkbase type for linkbase with href {linkbase_uri}"
-                )
+                logger.info(f"Ignoring unsupported linkbase: {role}")
+                continue
 
             # check if the linkbase url is relative
             linkbase: Linkbase

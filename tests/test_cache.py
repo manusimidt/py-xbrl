@@ -19,7 +19,7 @@ class CacheHelperTest(unittest.TestCase):
         :return:
         """
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-        cache_dir: str = os.path.abspath("D:\XBRL cache\cache/") + "/"
+        cache_dir: str = os.path.abspath("D:\XBRL_cache\cache/") + "/"
         delay: int = 5000
         cache: HttpCache = HttpCache(cache_dir, delay)
 
