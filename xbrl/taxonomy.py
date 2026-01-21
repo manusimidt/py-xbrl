@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from urllib.parse import unquote
 
-from xbrl import TaxonomyNotFound, TaxonomyParseException
+from xbrl import TaxonomyNotFound
 from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import compare_uri, is_url, resolve_uri
 from xbrl.linkbase import (
