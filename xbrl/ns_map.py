@@ -5,9 +5,6 @@ Normally, the taxonomy schema should define the namespaces used and provide thei
 For this reason we have this fallback map to help resolve common taxonomies.
 """
 
-#  TODO TEMPORARILY DISABLED TO TEST FALLBACK TO EDGAR
-# NS_MAP: dict[str, str] = {}
-
 NS_MAP: dict[str, str] = {
     "http://arelle.org/doc/2014-01-31": "http://arelle.org/2014/doc-2014-01-31.xsd",
     "http://fasb.org/dis/cecltmp01/2019-01-31": "http://xbrl.fasb.org/us-gaap/2019/dis/us-gaap-dis-cecltmp01-2019-01-31.xsd",
