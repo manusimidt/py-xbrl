@@ -170,15 +170,22 @@ class TaxonomySchema:
                 return result
         return None
 
-    def get_schema_urls(self) -> list[str]:
+    def get_schema_urls(self, visited: None | set[str] = None) -> list[str]:
         """
         Returns an array of all taxonomy urls that are used by this taxonomy
         Also includes the schema url of this taxonomy
         :return:
         """
+        if visited is None:
+            visited = set()
+        # IF the taxonomy imports have already been added to the list, do not add them again
+        if self.schema_url in visited:
+            return []
+        visited.add(self.schema_url)
+
         urls: list[str] = [self.schema_url]
         for imported_tax in self.imports:
-            urls += imported_tax.get_schema_urls()
+            urls += imported_tax.get_schema_urls(visited)
         return list(set(urls))
 
 
