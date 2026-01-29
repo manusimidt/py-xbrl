@@ -1,6 +1,6 @@
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools >=80.9"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,8 +13,8 @@ license = { text = "GNU General Public License v3 (GPLv3)" }
 authors = [{ name = "Manuel Schmidt", email = "hello@schmidt-manuel.de" }]
 urls = { Homepage = "https://github.com/manusimidt/py-xbrl" }
 dependencies = [
-    "requests", # Used for fetching XML / XBRL / html files over HTTP(S)
-    "urllib3" # Used for HTTP connection retries
+    "requests>=2.32.3", # Used for fetching XML / XBRL / html files over HTTP(S)
+    "urllib3>=2.6.3" # Used for HTTP connection retries
 ]
 keywords = [
     "XBRL",
