@@ -634,9 +634,20 @@ def parse_linkbase(
 
             # the following attributes are linkbase specific, so we have to check if they exist!
             # Needed for (sometimes) definitionArc
-            arc_closed: bool | None = (
-                bool(arc_element.attrib.get(XBRLDT_NS + "closed")) or None
-            )
+            closed_attr = arc_element.attrib.get(XBRLDT_NS + "closed")
+            if closed_attr is None:
+                arc_closed: bool | None = None
+            else:
+                # Parse lexical boolean explicitly.
+                # Using bool("false") would incorrectly evaluate to True, so we must map
+                # the XML attribute value ("true"/"false"/"1"/"0") ourselves.
+                closed_value = closed_attr.strip().lower()
+                if closed_value in ("true", "1"):
+                    arc_closed = True
+                elif closed_value in ("false", "0"):
+                    arc_closed = False
+                else:
+                    arc_closed = None
             arc_context_element: str | None = arc_element.attrib.get(
                 XBRLDT_NS + "contextElement"
             )
