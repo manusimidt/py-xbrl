@@ -26,7 +26,7 @@ class CacheHelperTest(unittest.TestCase):
             cache: HttpCache = HttpCache(cache_dir, delay)
 
             test_url: str = "https://www.w3schools.com/xml/note.xml"
-            expected_path: str = cache_dir + "www.w3schools.com/xml/note.xml"
+            expected_path: str = os.path.join(cache_dir, "www.w3schools.com", "xml", "note.xml")
 
             # if the testing file already exists delete if first
             if os.path.isfile(expected_path):

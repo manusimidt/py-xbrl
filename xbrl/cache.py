@@ -23,8 +23,8 @@ class HttpCache:
         :param verify_https: Disable SSL certificate validation for speed up (see https://github.com/manusimidt/py-xbrl/pull/57)
         """
         # check if the cache_dir ends with a /
-        if not cache_dir.endswith("/"):
-            cache_dir += "/"
+        if not cache_dir.endswith(os.sep):
+            cache_dir += os.sep
         self.cache_dir: str = cache_dir
         self.headers: dict = {}
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
@@ -80,7 +80,7 @@ class HttpCache:
         if os.path.exists(file_path):
             return file_path
 
-        file_dir_path: str = "/".join(file_path.split("/")[0:-1])
+        file_dir_path: str = os.sep.join(file_path.split(os.sep)[0:-1])
         # try to download the file
         if not os.path.isdir(file_dir_path):
             os.makedirs(file_dir_path)
@@ -125,7 +125,9 @@ class HttpCache:
         :param url: url of the file you want to know the cache path
         :return: absolute local cache path
         """
-        return self.cache_dir + re.sub("https?://", "", url.strip())
+        return os.path.join(
+            self.cache_dir, re.sub("https?://", "", url.strip()).replace("/", os.sep)
+        )
 
     def cache_edgar_enclosure(self, enclosure_url: str) -> str:
         """
