@@ -57,6 +57,7 @@ class Concept:
         self.xml_id: str = xml_id
         self.schema_url: str = schema_url
         self.name: str = name
+        self.namespace: str | None = None
         self.substitution_group: str | None = None
         self.concept_type: str | None = None
         self.abstract: bool | None = None

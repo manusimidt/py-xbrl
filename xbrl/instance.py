@@ -503,6 +503,7 @@ def parse_xbrl(
             taxonomy.imports.append(tax)
         try:
             concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+            concept.namespace = taxonomy_ns
         except KeyError:
             logger.warning(
                 f"Instance file uses invalid concept {concept_name}, thus fact {fact_elem.attrib['id']} won't be parsed!"
@@ -647,6 +648,7 @@ def parse_ixbrl(
         )
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
+        concept.namespace = ns_map[taxonomy_prefix]
         context: AbstractContext = context_dir[fact_elem.attrib["contextRef"].strip()]
         # ixbrl values are not normalized! They are formatted (i.e. 123,000,000)
         fact_value: float | str | None
@@ -885,9 +887,11 @@ def _parse_context_elements(
                 dimension_concept = dimension_tax.concepts[
                     dimension_tax.name_id_map[dimension_concept_name]
                 ]
+                dimension_concept.namespace = ns_map[dimension_prefix]
                 member_concept: Concept = member_tax.concepts[
                     member_tax.name_id_map[member_concept_name]
                 ]
+                member_concept.namespace = ns_map[member_prefix]
 
                 # add the explicit member to the context
                 context.segments.append(
@@ -913,6 +917,7 @@ def _parse_context_elements(
                 dimension_concept = dimension_tax.concepts[
                     dimension_tax.name_id_map[dimension_concept_name]
                 ]
+                dimension_concept.namespace = ns_map[dimension_prefix]
                 domain: list[str] = []
                 for child in typed_member_element:
                     if child.text is not None:
