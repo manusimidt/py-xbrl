@@ -154,18 +154,27 @@ class TaxonomySchema:
     def __str__(self) -> str:
         return self.namespace
 
-    def get_taxonomy(self, url: str):
+    def get_taxonomy(self, url: str, visited: None | set[str] = None):
         """
         Returns the taxonomy with the given namespace (if it is the current taxonomy, or if it is imported)
         If the taxonomy cannot be found, the function will return None
         :param url: can either be the namespace or the schema url
+        :param visited: set of already visited schema urls to prevent infinite recursion
         :return: either a TaxonomySchema obj or None
         """
+        if visited is None:
+            visited = set()
+
+        # Prevent infinite recursion from circular imports
+        if self.schema_url in visited:
+            return None
+        visited.add(self.schema_url)
+
         if compare_uri(self.namespace, url) or compare_uri(self.schema_url, url):
             return self
 
         for imported_tax in self.imports:
-            result = imported_tax.get_taxonomy(url)
+            result = imported_tax.get_taxonomy(url, visited)
             if result is not None:
                 return result
         return None
