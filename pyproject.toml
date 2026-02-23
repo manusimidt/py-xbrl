@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-xbrl"
-version = "3.0.1"
+version = "3.0.2"
 description = "Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases)."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
