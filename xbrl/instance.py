@@ -524,8 +524,8 @@ def parse_xbrl(
             if decimals_text:
                 decimals = 0 if decimals_text.lower() == "inf" else int(decimals_text)
 
-            numeric_fact_value: float = (
-                0.0 if not fact_elem.text else float(fact_elem.text)
+            numeric_fact_value: float | None = (
+                None if not fact_elem.text else float(fact_elem.text)
             )
             fact = NumericFact(
                 concept, context, numeric_fact_value, unit, decimals, xml_id
