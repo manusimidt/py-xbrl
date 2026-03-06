@@ -486,9 +486,9 @@ def parse_xbrl(
         if "contextRef" not in fact_elem.attrib:
             continue
 
-        # check if the fact has a value (some facts are like <us-gaap:Assets ... \>
-        if fact_elem.text is None or len(str(fact_elem.text).strip()) == 0:
-            continue
+        # # check if the fact has a value (some facts are like <us-gaap:Assets ... \>
+        # if fact_elem.text is None or len(str(fact_elem.text).strip()) == 0:
+        #     continue
 
         xml_id: str | None = (
             fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
@@ -514,15 +514,20 @@ def parse_xbrl(
         if "unitRef" in fact_elem.attrib:
             # the fact is a numerical fact
             # get the unit
+            decimals: int = None
             unit: AbstractUnit = unit_dir[fact_elem.attrib["unitRef"].strip()]
-            decimals_text: str = str(fact_elem.attrib["decimals"]).strip()
-            decimals: int = 0 if decimals_text.lower() == "inf" else int(decimals_text)
+            decimals_text: str = str(fact_elem.attrib["decimals"]).strip() if 'decimals' in fact_elem.attrib else None
+            if decimals_text: 
+                decimals: int = 0 if decimals_text.lower() == "inf" else int(decimals_text)
+            
+            numeric_fact_value:int = 0.0 if not fact_elem.text else float(fact_elem.text) 
             fact = NumericFact(
-                concept, context, float(fact_elem.text), unit, decimals, xml_id
+                concept, context, numeric_fact_value, unit, decimals, xml_id
             )
         else:
             # the fact is probably a text fact
-            fact = TextFact(concept, context, fact_elem.text.strip(), xml_id)
+            text_fact_value = fact_elem.text.strip() if fact_elem.text else ''
+            fact = TextFact(concept, context, text_fact_value, xml_id)
         facts.append(fact)
 
     return XbrlInstance(
