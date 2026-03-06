@@ -52,6 +52,7 @@ class NamespaceCacheFallbackTest(unittest.TestCase):
             tax_2 = parser.try_taxonomy_from_namespace(ns + "/")
             self.assertEqual(tax_2.namespace, ns)
             self.assertEqual(parser.global_ns_map[ns], schema_path)
+            self.assertNotIn(ns + "/", parser.global_ns_map)
 
     def test_untrusted_host_is_not_scanned(self):
         # Same shape as above but on a host not present in trusted_hosts.
