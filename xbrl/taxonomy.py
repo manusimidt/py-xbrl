@@ -7,7 +7,7 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 from xbrl import TaxonomyNotFound
 from xbrl.cache import HttpCache
@@ -220,6 +220,12 @@ class TaxonomyParser:
         self.global_ns_map: dict[str, str] = {}
         # Cache for parsed taxonomies with LRU eviction, the key is the schema url
         self.taxonomy_cache: OrderedDict[str, TaxonomySchema] = OrderedDict()
+        # Hosts derived from NS_MAP that are allowed for local-cache namespace fallback.
+        # This keeps fallback behavior scoped to taxonomy domains we already trust.
+        self.trusted_hosts: set[str] = self._build_trusted_hosts_from_ns_map()
+        # Lazy per-host cache index: host -> {normalized_namespace -> local_schema_path}.
+        # We build this only on first lookup for a given host.
+        self._cache_host_ns_index: dict[str, dict[str, str]] = {}
 
         if self.use_local_ns_map:
             self._add_local_ns_map()
@@ -231,7 +237,7 @@ class TaxonomyParser:
         Adds the local NS_MAP to the global namespace map
         """
         for ns, url in NS_MAP.items():
-            self.global_ns_map[ns] = url
+            self.global_ns_map[self._normalize_namespace(ns)] = url
 
     def _add_edgar_taxonomies(self):
         """
@@ -250,7 +256,7 @@ class TaxonomyParser:
                 href_text = href_el.text
                 if namespace_text is None or href_text is None:
                     continue
-                namespace = namespace_text.strip()
+                namespace = self._normalize_namespace(namespace_text)
                 href = href_text.strip()
                 self.global_ns_map[namespace] = href
 
@@ -272,17 +278,133 @@ class TaxonomyParser:
             return self.taxonomy_cache[schema_path]
         return None
 
+    def _normalize_namespace(self, namespace: str) -> str:
+        # Namespace strings can differ only by whitespace/trailing slash across filings.
+        # Normalize once so map lookups are deterministic.
+        return str(namespace).strip().rstrip("/")
+
+    def _build_trusted_hosts_from_ns_map(self) -> set[str]:
+        """
+        Build the trusted host allowlist from both namespace keys and schema URL values
+        present in NS_MAP.
+        """
+        hosts: set[str] = set()
+        for uri in list(NS_MAP.keys()) + list(NS_MAP.values()):
+            if not isinstance(uri, str):
+                continue
+            value = uri.strip()
+            if not is_url(value):
+                continue
+            netloc = urlparse(value).netloc.lower().strip()
+            if netloc:
+                hosts.add(netloc)
+        return hosts
+
+    def _build_namespace_index_for_host(self, host: str) -> dict[str, str]:
+        """
+        Scan all cached XSD files for a host and build a namespace -> schema path map
+        from each file's targetNamespace.
+        """
+        host_lc = host.lower().strip()
+        if host_lc in self._cache_host_ns_index:
+            return self._cache_host_ns_index[host_lc]
+
+        host_index: dict[str, str] = {}
+        host_root = os.path.join(self.cache.cache_dir, host_lc)
+        if os.path.isdir(host_root):
+            for dirpath, dirnames, filenames in os.walk(host_root):
+                dirnames.sort()
+                for filename in sorted(filenames):
+                    if not filename.lower().endswith(".xsd"):
+                        continue
+
+                    schema_path = os.path.join(dirpath, filename)
+                    try:
+                        target_ns = ET.parse(schema_path).getroot().attrib.get(
+                            "targetNamespace"
+                        )
+                    except Exception:
+                        # Ignore malformed/unreadable cached files and continue building index.
+                        continue
+
+                    normalized_ns = self._normalize_namespace(target_ns or "")
+                    if normalized_ns and normalized_ns not in host_index:
+                        # First hit wins for deterministic behavior within a host scan.
+                        host_index[normalized_ns] = schema_path
+
+        self._cache_host_ns_index[host_lc] = host_index
+        return host_index
+
+    def _find_cached_schema_path_for_namespace(self, namespace: str) -> str | None:
+        """
+        Try to locate a locally cached schema file matching the namespace.
+        """
+        ns = self._normalize_namespace(namespace)
+        parsed = urlparse(ns)
+        host = parsed.netloc.lower().strip()
+        if parsed.scheme not in ("http", "https") or not host:
+            return None
+        if host not in self.trusted_hosts:
+            # Do not use local-cache fallback for unknown/untrusted hosts.
+            return None
+
+        return self._build_namespace_index_for_host(host).get(ns)
+
+    def _try_taxonomy_from_local_cache(self, namespace: str) -> TaxonomySchema | None:
+        """
+        Resolve taxonomy by namespace from parser cache and on-disk HTTP cache.
+        """
+        wanted_ns = self._normalize_namespace(namespace)
+
+        for cached_taxonomy in reversed(list(self.taxonomy_cache.values())):
+            if self._normalize_namespace(cached_taxonomy.namespace) == wanted_ns:
+                return cached_taxonomy
+
+        cached_schema_path = self._find_cached_schema_path_for_namespace(wanted_ns)
+        if not cached_schema_path:
+            return None
+
+        try:
+            cached_taxonomy = self.parse_taxonomy(cached_schema_path)
+        except Exception as exc:
+            logger.debug(
+                "Failed loading cached taxonomy for namespace %s from %s: %s",
+                namespace,
+                cached_schema_path,
+                exc,
+            )
+            return None
+
+        if self._normalize_namespace(cached_taxonomy.namespace) != wanted_ns:
+            return None
+
+        # Store local schema path directly: parse_taxonomy accepts local paths,
+        # so this avoids unnecessary URL reconstruction.
+        self.global_ns_map[wanted_ns] = cached_schema_path
+        return cached_taxonomy
+
     def try_taxonomy_from_namespace(self, namespace: str) -> TaxonomySchema:
         """
-        Tries to parse a taxonomy by its namespace using the global namespace map
+        Resolve taxonomy by namespace in this order:
+        1) global namespace map
+        2) local parser/cache fallback
+        3) TaxonomyNotFound
 
         :param namespace: Namespace of the taxonomy
         :return: Parsed TaxonomySchema object or None if not found
         """
-        if namespace in self.global_ns_map:
-            schema_url = self.global_ns_map[namespace]
+        wanted_ns = self._normalize_namespace(namespace)
+
+        schema_url = self.global_ns_map.get(wanted_ns)
+        if schema_url is not None:
             return self.parse_taxonomy(schema_url)
-        raise TaxonomyNotFound(namespace)
+
+        # Fallback resolves namespaces from already-cached schemas on trusted hosts.
+        cached_taxonomy = self._try_taxonomy_from_local_cache(wanted_ns)
+        if cached_taxonomy is not None:
+            return cached_taxonomy
+
+        raise TaxonomyNotFound(wanted_ns)
 
     def parse_taxonomy(
         self, schema_path: str, imported_schema_uris: set = set(), schema_url: str | None = None
