@@ -320,8 +320,10 @@ class TaxonomyParser:
 
                     schema_path = os.path.join(dirpath, filename)
                     try:
-                        target_ns = ET.parse(schema_path).getroot().attrib.get(
-                            "targetNamespace"
+                        target_ns = (
+                            ET.parse(schema_path)
+                            .getroot()
+                            .attrib.get("targetNamespace")
                         )
                     except Exception:
                         # Ignore malformed/unreadable cached files and continue building index.
