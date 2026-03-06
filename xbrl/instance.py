@@ -514,19 +514,25 @@ def parse_xbrl(
         if "unitRef" in fact_elem.attrib:
             # the fact is a numerical fact
             # get the unit
-            decimals: int = None
+            decimals: int | None = None
             unit: AbstractUnit = unit_dir[fact_elem.attrib["unitRef"].strip()]
-            decimals_text: str = str(fact_elem.attrib["decimals"]).strip() if 'decimals' in fact_elem.attrib else None
-            if decimals_text: 
-                decimals: int = 0 if decimals_text.lower() == "inf" else int(decimals_text)
-            
-            numeric_fact_value:int = 0.0 if not fact_elem.text else float(fact_elem.text) 
+            decimals_text: str | None = (
+                str(fact_elem.attrib["decimals"]).strip()
+                if "decimals" in fact_elem.attrib
+                else None
+            )
+            if decimals_text:
+                decimals = 0 if decimals_text.lower() == "inf" else int(decimals_text)
+
+            numeric_fact_value: float = (
+                0.0 if not fact_elem.text else float(fact_elem.text)
+            )
             fact = NumericFact(
                 concept, context, numeric_fact_value, unit, decimals, xml_id
             )
         else:
             # the fact is probably a text fact
-            text_fact_value = fact_elem.text.strip() if fact_elem.text else ''
+            text_fact_value = fact_elem.text.strip() if fact_elem.text else ""
             fact = TextFact(concept, context, text_fact_value, xml_id)
         facts.append(fact)
 
