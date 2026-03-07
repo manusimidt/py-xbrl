@@ -56,6 +56,13 @@ dev = [
 include = ["xbrl*"]
 
 
+[tool.ruff]
+line-length = 120  # Increased from default 88 to allow longer lines
+
+[tool.ruff.format]
+# Keep more compact formatting for simple expressions
+skip-magic-trailing-comma = true
+
 [tool.mypy]
 python_version = "3.10"
 warn_unused_configs = true

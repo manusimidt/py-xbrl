@@ -20,11 +20,7 @@ from xbrl.cache import HttpCache
 from xbrl.helper.uri_helper import is_url, resolve_uri
 from xbrl.helper.xml_parser import get_ns_map, parse_file
 from xbrl.taxonomy import Concept, TaxonomyParser, TaxonomySchema
-from xbrl.transformations import (
-    TransformationException,
-    TransformationNotImplemented,
-    normalize,
-)
+from xbrl.transformations import TransformationException, TransformationNotImplemented, normalize
 
 logger = logging.getLogger(__name__)
 LINK_NS: str = "{http://www.xbrl.org/2003/linkbase}"
@@ -50,9 +46,7 @@ class AbstractMember(abc.ABC):
         return f"Dimension {self.dimension.name}"
 
     def to_dict(self):
-        return {
-            "dimension": self.dimension.to_dict(),
-        }
+        return {"dimension": self.dimension.to_dict()}
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -149,9 +143,7 @@ class TimeFrameContext(AbstractContext):
     </xbrli:context>
     """
 
-    def __init__(
-        self, xml_id: str, entity: str, start_date: date, end_date: date
-    ) -> None:
+    def __init__(self, xml_id: str, entity: str, start_date: date, end_date: date) -> None:
         super().__init__(xml_id, entity)
         self.start_date: date = start_date
         self.end_date: date = end_date
@@ -227,9 +219,7 @@ class AbstractFact(abc.ABC):
     A Fact combines a Value with a Concept and a Context
     """
 
-    def __init__(
-        self, concept: Concept, context: AbstractContext, value: Any, xml_id: str | None
-    ) -> None:
+    def __init__(self, concept: Concept, context: AbstractContext, value: Any, xml_id: str | None) -> None:
         """
         :param concept: concept from the taxonomy, that the fact is referencing
         :param context: context of the fact
@@ -300,9 +290,7 @@ class NumericFact(AbstractFact):
         self.decimals: int | None = decimals
 
     def json(self, **kwargs) -> dict:
-        return super().json(
-            dimensions={"unit": str(self.unit)}, decimals=self.decimals, **kwargs
-        )
+        return super().json(dimensions={"unit": str(self.unit)}, decimals=self.decimals, **kwargs)
 
 
 class TextFact(AbstractFact):
@@ -313,9 +301,7 @@ class TextFact(AbstractFact):
     @warning The content of a Text fact can be huge. Especially for Text Blocks, those can also contain HTML code
     """
 
-    def __init__(
-        self, concept: Concept, context: AbstractContext, value: str, xml_id: str | None
-    ) -> None:
+    def __init__(self, concept: Concept, context: AbstractContext, value: str, xml_id: str | None) -> None:
         super().__init__(concept, context, value, xml_id)
 
 
@@ -345,12 +331,7 @@ class XbrlInstance(abc.ABC):
     """
 
     def __init__(
-        self,
-        url: str,
-        taxonomy: TaxonomySchema,
-        facts: list[AbstractFact],
-        context_map: dict,
-        unit_map: dict,
+        self, url: str, taxonomy: TaxonomySchema, facts: list[AbstractFact], context_map: dict, unit_map: dict
     ) -> None:
         """
         :param taxonomy: taxonomy file that the instance file references (via link:schemaRef)
@@ -366,9 +347,7 @@ class XbrlInstance(abc.ABC):
         file_name: str = self.instance_url.split("/")[-1]
         return f"{file_name} with {len(self.facts)} facts"
 
-    def json(
-        self, file_path: str | None = None, override_fact_ids: bool = True, **kwargs
-    ) -> str | None:
+    def json(self, file_path: str | None = None, override_fact_ids: bool = True, **kwargs) -> str | None:
         """
         Converts the instance document into json format
         :param file_path: if a path is given the function will store the json there
@@ -398,9 +377,7 @@ class XbrlInstance(abc.ABC):
             return json.dumps(json_dict, **kwargs)
 
 
-def parse_xbrl_url(
-    instance_url: str, cache: HttpCache, taxParser: TaxonomyParser | None = None
-) -> XbrlInstance:
+def parse_xbrl_url(instance_url: str, cache: HttpCache, taxParser: TaxonomyParser | None = None) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy. This function will check, if the instance file is already
     in the cache and load it from there based on the instance_url.
@@ -416,10 +393,7 @@ def parse_xbrl_url(
 
 
 def parse_xbrl(
-    instance_path: str,
-    cache: HttpCache,
-    taxParser: TaxonomyParser | None = None,
-    instance_url: str | None = None,
+    instance_path: str, cache: HttpCache, taxParser: TaxonomyParser | None = None, instance_url: str | None = None
 ) -> XbrlInstance:
     """
     Parses a instance file with it's taxonomy
@@ -464,10 +438,7 @@ def parse_xbrl(
 
     # parse contexts and units
     context_dir = _parse_context_elements(
-        root.findall("xbrli:context", NAME_SPACES),
-        get_ns_map(root),
-        taxonomy,
-        taxParser,
+        root.findall("xbrli:context", NAME_SPACES), get_ns_map(root), taxonomy, taxParser
     )
     unit_dir = _parse_unit_elements(root.findall("xbrli:unit", NAME_SPACES))
 
@@ -476,19 +447,13 @@ def parse_xbrl(
     for fact_elem in root:
         # skip contexts and units
         taxonomy_ns, concept_name = fact_elem.tag.split("}")
-        if (
-            concept_name.lower() == "context"
-            or concept_name.lower() == "unit"
-            or concept_name.lower() == "schemaref"
-        ):
+        if concept_name.lower() == "context" or concept_name.lower() == "unit" or concept_name.lower() == "schemaref":
             continue
         # check if the element has the required attributes
         if "contextRef" not in fact_elem.attrib:
             continue
 
-        xml_id: str | None = (
-            fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
-        )
+        xml_id: str | None = fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
 
         # find the taxonomy where the tag is coming from
         taxonomy_ns = taxonomy_ns.replace("{", "")
@@ -515,36 +480,21 @@ def parse_xbrl(
             if "decimals" in fact_elem.attrib:
                 decimals_text: str = str(fact_elem.attrib["decimals"]).strip()
                 if len(decimals_text) > 0:
-                    decimals = (
-                        0 if decimals_text.lower() == "inf" else int(decimals_text)
-                    )
+                    decimals = 0 if decimals_text.lower() == "inf" else int(decimals_text)
 
-            numeric_fact_value: float | None = (
-                None if not fact_elem.text else float(fact_elem.text)
-            )
-            fact = NumericFact(
-                concept, context, numeric_fact_value, unit, decimals, xml_id
-            )
+            numeric_fact_value: float | None = None if not fact_elem.text else float(fact_elem.text)
+            fact = NumericFact(concept, context, numeric_fact_value, unit, decimals, xml_id)
         else:
             # the fact is probably a text fact
             text_fact_value = fact_elem.text.strip() if fact_elem.text else ""
             fact = TextFact(concept, context, text_fact_value, xml_id)
         facts.append(fact)
 
-    return XbrlInstance(
-        instance_url if instance_url else instance_path,
-        taxonomy,
-        facts,
-        context_dir,
-        unit_dir,
-    )
+    return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
 def parse_ixbrl_url(
-    instance_url: str,
-    cache: HttpCache,
-    taxParser: TaxonomyParser | None = None,
-    encoding: str | None = None,
+    instance_url: str, cache: HttpCache, taxParser: TaxonomyParser | None = None, encoding: str | None = None
 ) -> XbrlInstance:
     """
     Parses a inline XBRL (iXBRL) instance file.
@@ -586,9 +536,7 @@ def parse_ixbrl(
     instance_file = open(instance_path, "r", encoding=encoding)
     contents = instance_file.read()
     pattern = r"<[ ]*script.*?\/[ ]*script[ ]*>"
-    contents = re.sub(
-        pattern, "", contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL)
-    )
+    contents = re.sub(pattern, "", contents, flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
 
     root: ET.ElementTree = parse_file(StringIO(contents))
     root_elem = root.getroot()
@@ -626,18 +574,15 @@ def parse_ixbrl(
         raise InstanceParseException("Could not find xbrl resources in file")
     # parse contexts and units
     context_dir = _parse_context_elements(
-        xbrl_resources.findall("xbrli:context", NAME_SPACES),
-        ns_map,
-        taxonomy,
-        taxParser,
+        xbrl_resources.findall("xbrli:context", NAME_SPACES), ns_map, taxonomy, taxParser
     )
     unit_dir = _parse_unit_elements(xbrl_resources.findall("xbrli:unit", NAME_SPACES))
 
     # parse facts
     facts: list[AbstractFact] = []
-    fact_elements: list[ET.Element] = root.findall(
-        ".//ix:nonFraction", ns_map
-    ) + root.findall(".//ix:nonNumeric", ns_map)
+    fact_elements: list[ET.Element] = root.findall(".//ix:nonFraction", ns_map) + root.findall(
+        ".//ix:nonNumeric", ns_map
+    )
     for fact_elem in fact_elements:
         # update the prefix map (sometimes the xmlns is defined at XML-Element level and not at the root element)
         _update_ns_map(ns_map, get_ns_map(fact_elem))
@@ -648,9 +593,7 @@ def parse_ixbrl(
             tax = taxParser.try_taxonomy_from_namespace(ns_map[taxonomy_prefix])
             taxonomy.imports.append(tax)
 
-        xml_id: str | None = (
-            fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
-        )
+        xml_id: str | None = fact_elem.attrib["id"] if "id" in fact_elem.attrib else None
 
         concept: Concept = tax.concepts[tax.name_id_map[concept_name]]
         context: AbstractContext = context_dir[fact_elem.attrib["contextRef"].strip()]
@@ -660,29 +603,15 @@ def parse_ixbrl(
             fact_value = _extract_non_fraction_value(fact_elem)
 
             unit: AbstractUnit = unit_dir[fact_elem.attrib["unitRef"].strip()]
-            decimals_text: str = (
-                str(fact_elem.attrib["decimals"]).strip()
-                if "decimals" in fact_elem.attrib
-                else "0"
-            )
+            decimals_text: str = str(fact_elem.attrib["decimals"]).strip() if "decimals" in fact_elem.attrib else "0"
             decimals: int = 0 if decimals_text.lower() == "inf" else int(decimals_text)
             if fact_value is not None:
-                facts.append(
-                    NumericFact(
-                        concept, context, float(fact_value), unit, decimals, xml_id
-                    )
-                )
+                facts.append(NumericFact(concept, context, float(fact_value), unit, decimals, xml_id))
         elif fact_elem.tag == "{" + ns_map["ix"] + "}nonNumeric":
             fact_value = _extract_non_numeric_value(fact_elem)
             facts.append(TextFact(concept, context, str(fact_value), xml_id))
 
-    return XbrlInstance(
-        instance_url if instance_url else instance_path,
-        taxonomy,
-        facts,
-        context_dir,
-        unit_dir,
-    )
+    return XbrlInstance(instance_url if instance_url else instance_path, taxonomy, facts, context_dir, unit_dir)
 
 
 def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
@@ -712,9 +641,7 @@ def _extract_non_numeric_value(fact_elem: ET.Element) -> str:
             )
             return fact_value
         except TransformationException:
-            logging.warning(
-                f'Could not transform value "{fact_value}" with format {fact_format}'
-            )
+            logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
             return fact_value
     return fact_value
 
@@ -742,12 +669,8 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float | str | None:
         fact_value += _extract_text_value(children)
 
     fact_format = fact_elem.attrib["format"] if "format" in fact_elem.attrib else None
-    value_scale: int = (
-        int(fact_elem.attrib["scale"]) if "scale" in fact_elem.attrib else 0
-    )
-    value_sign: str | None = (
-        fact_elem.attrib["sign"] if "sign" in fact_elem.attrib else None
-    )
+    value_scale: int = int(fact_elem.attrib["scale"]) if "scale" in fact_elem.attrib else 0
+    value_sign: str | None = fact_elem.attrib["sign"] if "sign" in fact_elem.attrib else None
 
     if fact_format:
         # extract transformation registry namespace and transformation rule code
@@ -762,9 +685,7 @@ def _extract_non_fraction_value(fact_elem: ET.Element) -> float | str | None:
             )
             return fact_value
         except TransformationException:
-            logging.warning(
-                f'Could not transform value "{fact_value}" with format {fact_format}'
-            )
+            logging.warning(f'Could not transform value "{fact_value}" with format {fact_format}')
             return fact_value
 
     scaled_value: float = float(fact_value) * pow(10, value_scale)
@@ -787,10 +708,7 @@ def _extract_text_value(element: ET.Element) -> str:
 
 
 def _parse_context_elements(
-    context_elements: list[ET.Element],
-    ns_map: dict,
-    taxonomy: TaxonomySchema,
-    taxParser: TaxonomyParser,
+    context_elements: list[ET.Element], ns_map: dict, taxonomy: TaxonomySchema, taxParser: TaxonomyParser
 ) -> dict:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
@@ -806,26 +724,16 @@ def _parse_context_elements(
         entity_elem = context_elem.find("xbrli:entity/xbrli:identifier", NAME_SPACES)
         entity: str = str(entity_elem.text).strip() if entity_elem is not None else ""
 
-        instant_date: ET.Element | None = context_elem.find(
-            "xbrli:period/xbrli:instant", NAME_SPACES
-        )
-        start_date: ET.Element | None = context_elem.find(
-            "xbrli:period/xbrli:startDate", NAME_SPACES
-        )
-        end_date: ET.Element | None = context_elem.find(
-            "xbrli:period/xbrli:endDate", NAME_SPACES
-        )
-        forever: ET.Element | None = context_elem.find(
-            "xbrli:period/xbrli:forever", NAME_SPACES
-        )
+        instant_date: ET.Element | None = context_elem.find("xbrli:period/xbrli:instant", NAME_SPACES)
+        start_date: ET.Element | None = context_elem.find("xbrli:period/xbrli:startDate", NAME_SPACES)
+        end_date: ET.Element | None = context_elem.find("xbrli:period/xbrli:endDate", NAME_SPACES)
+        forever: ET.Element | None = context_elem.find("xbrli:period/xbrli:forever", NAME_SPACES)
 
         context: AbstractContext
         if instant_date is not None and instant_date.text is not None:
             # the context is a instant context
             context = InstantContext(
-                context_id,
-                entity,
-                datetime.strptime(instant_date.text.strip()[:10], "%Y-%m-%d").date(),
+                context_id, entity, datetime.strptime(instant_date.text.strip()[:10], "%Y-%m-%d").date()
             )
         elif forever is not None:
             context = ForeverContext(context_id, entity)
@@ -848,77 +756,49 @@ def _parse_context_elements(
             )
 
         # check if dimensional information exists on this context and parse it
-        segment: ET.Element | None = context_elem.find(
-            "xbrli:entity/xbrli:segment", NAME_SPACES
-        )
+        segment: ET.Element | None = context_elem.find("xbrli:entity/xbrli:segment", NAME_SPACES)
         if segment is not None:
             dimension_concept: Concept
-            for explicit_member_elem in segment.findall(
-                "xbrldi:explicitMember", NAME_SPACES
-            ):
+            for explicit_member_elem in segment.findall("xbrldi:explicitMember", NAME_SPACES):
                 if explicit_member_elem.text is None:
                     continue
                 _update_ns_map(ns_map, get_ns_map(explicit_member_elem))
-                dimension_prefix, dimension_concept_name = (
-                    explicit_member_elem.attrib["dimension"].strip().split(":")
-                )
-                member_prefix, member_concept_name = (
-                    explicit_member_elem.text.strip().split(":")
-                )
+                dimension_prefix, dimension_concept_name = explicit_member_elem.attrib["dimension"].strip().split(":")
+                member_prefix, member_concept_name = explicit_member_elem.text.strip().split(":")
                 # get the taxonomy where the dimension attribute is defined
                 dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
                 # check if the taxonomy was found
                 if dimension_tax is None:
                     # try to subsequently load the taxonomy
-                    dimension_tax = taxParser.try_taxonomy_from_namespace(
-                        ns_map[dimension_prefix]
-                    )
+                    dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
                     taxonomy.imports.append(dimension_tax)
 
                 # get the taxonomy where the member attribute is defined
                 member_tax = (
-                    dimension_tax
-                    if member_prefix == dimension_prefix
-                    else taxonomy.get_taxonomy(ns_map[member_prefix])
+                    dimension_tax if member_prefix == dimension_prefix else taxonomy.get_taxonomy(ns_map[member_prefix])
                 )
                 # check if the taxonomy was found
                 if member_tax is None:
                     # try to subsequently load the taxonomy
-                    member_tax = taxParser.try_taxonomy_from_namespace(
-                        ns_map[member_prefix]
-                    )
+                    member_tax = taxParser.try_taxonomy_from_namespace(ns_map[member_prefix])
                     taxonomy.imports.append(member_tax)
-                dimension_concept = dimension_tax.concepts[
-                    dimension_tax.name_id_map[dimension_concept_name]
-                ]
-                member_concept: Concept = member_tax.concepts[
-                    member_tax.name_id_map[member_concept_name]
-                ]
+                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
+                member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
 
                 # add the explicit member to the context
-                context.segments.append(
-                    ExplicitMember(dimension_concept, member_concept)
-                )
+                context.segments.append(ExplicitMember(dimension_concept, member_concept))
 
-            for typed_member_element in segment.findall(
-                "xbrldi:typedMember", NAME_SPACES
-            ):
+            for typed_member_element in segment.findall("xbrldi:typedMember", NAME_SPACES):
                 _update_ns_map(ns_map, get_ns_map(typed_member_element))
-                dimension_prefix, dimension_concept_name = (
-                    typed_member_element.attrib["dimension"].strip().split(":")
-                )
+                dimension_prefix, dimension_concept_name = typed_member_element.attrib["dimension"].strip().split(":")
                 # get the taxonomy where the dimension attribute is defined
                 dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
                 # check if the taxonomy was found
                 if dimension_tax is None:
                     # try to subsequently load the taxonomy
-                    dimension_tax = taxParser.try_taxonomy_from_namespace(
-                        ns_map[dimension_prefix]
-                    )
+                    dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
                     taxonomy.imports.append(dimension_tax)
-                dimension_concept = dimension_tax.concepts[
-                    dimension_tax.name_id_map[dimension_concept_name]
-                ]
+                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
                 domain: list[str] = []
                 for child in typed_member_element:
                     if child.text is not None:
@@ -960,14 +840,10 @@ def _parse_unit_elements(unit_elements: list[ET.Element]) -> dict:
             unit_dict[unit_id] = SimpleUnit(unit_id, (simple_unit.text or "").strip())
         elif divide is not None:
             numerator = divide.find("xbrli:unitNumerator/xbrli:measure", NAME_SPACES)
-            denominator = divide.find(
-                "xbrli:unitDenominator/xbrli:measure", NAME_SPACES
-            )
+            denominator = divide.find("xbrli:unitDenominator/xbrli:measure", NAME_SPACES)
             if numerator is not None and denominator is not None:
                 unit_dict[unit_id] = DivideUnit(
-                    unit_id,
-                    (numerator.text or "").strip(),
-                    (denominator.text or "").strip(),
+                    unit_id, (numerator.text or "").strip(), (denominator.text or "").strip()
                 )
     return unit_dict
 
@@ -977,18 +853,11 @@ class XbrlParser:
     XbrlParser to make interaction easier.
     """
 
-    def __init__(
-        self, cache: HttpCache, taxParser: TaxonomyParser | None = None
-    ) -> None:
+    def __init__(self, cache: HttpCache, taxParser: TaxonomyParser | None = None) -> None:
         self.cache = cache
         self.taxParser = taxParser if taxParser is not None else TaxonomyParser(cache)
 
-    def parse_instance(
-        self,
-        uri: str,
-        instance_url: str | None = None,
-        encoding: str | None = None,
-    ) -> XbrlInstance:
+    def parse_instance(self, uri: str, instance_url: str | None = None, encoding: str | None = None) -> XbrlInstance:
         """
         Parses a xbrl instance (either xbrl or ixbrl)
 
