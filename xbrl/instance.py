@@ -784,13 +784,9 @@ def _parse_context_elements(
                     # try to subsequently load the taxonomy
                     member_tax = taxParser.try_taxonomy_from_namespace(ns_map[member_prefix])
                     taxonomy.imports.append(member_tax)
-                dimension_concept = dimension_tax.concepts[
-                    dimension_tax.name_id_map[dimension_concept_name]
-                ]
+                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
                 dimension_concept.namespace = ns_map[dimension_prefix]
-                member_concept: Concept = member_tax.concepts[
-                    member_tax.name_id_map[member_concept_name]
-                ]
+                member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
                 member_concept.namespace = ns_map[member_prefix]
 
                 # add the explicit member to the context
@@ -806,9 +802,7 @@ def _parse_context_elements(
                     # try to subsequently load the taxonomy
                     dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
                     taxonomy.imports.append(dimension_tax)
-                dimension_concept = dimension_tax.concepts[
-                    dimension_tax.name_id_map[dimension_concept_name]
-                ]
+                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
                 dimension_concept.namespace = ns_map[dimension_prefix]
                 domain: list[str] = []
                 for child in typed_member_element:
