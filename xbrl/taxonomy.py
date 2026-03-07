@@ -245,8 +245,12 @@ class TaxonomyParser:
             href_el = loc.find("Href")
 
             if namespace_el is not None and href_el is not None:
-                namespace = namespace_el.text.strip()
-                href = href_el.text.strip()
+                namespace_text = namespace_el.text
+                href_text = href_el.text
+                if namespace_text is None or href_text is None:
+                    continue
+                namespace = namespace_text.strip()
+                href = href_text.strip()
                 self.global_ns_map[namespace] = href
 
     def _add_to_cache(self, schema_path: str, taxonomy: TaxonomySchema):
