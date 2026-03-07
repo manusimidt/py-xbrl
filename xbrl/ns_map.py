@@ -432,6 +432,8 @@ NS_MAP: dict[str, str] = {
     "http://xbrl.sec.gov/cyd/2024": "https://xbrl.sec.gov/cyd/2024/cyd-2024.xsd",
     "http://xbrl.sec.gov/cyd-entire/2024": "https://xbrl.sec.gov/cyd/2024/cyd-entire-2024.xsd",
     "http://xbrl.sec.gov/cyd/2025": "https://xbrl.sec.gov/cyd/2025/cyd-2025.xsd",
+    "http://xbrl.sec.gov/cyd-af/2025": "https://xbrl.sec.gov/cyd/2025/cyd-af-2025.xsd",
+    "http://xbrl.sec.gov/cyd-af-sub/2025": "https://xbrl.sec.gov/cyd/2025/cyd-af-sub-2025.xsd",
     "http://www.xbrl.org/dtr/type/2022-03-31": "https://www.xbrl.org/dtr/type/2022-03-31/types.xsd",
     "http://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01": "https://www.hmrc.gov.uk/schemas/ct/dpl/2021-01-01/dpl-2021.xsd",
     "http://xbrl.sec.gov/ffd/2025": "https://xbrl.sec.gov/ffd/2025/ffd-2025.xsd",

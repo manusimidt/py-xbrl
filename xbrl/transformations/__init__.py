@@ -44,9 +44,7 @@ class RegistryNotSupported(TransformationException):
     """Exception thrown if the transformation registry is not supported"""
 
     def __init__(self, namespace: str):
-        TransformationException.__init__(
-            self, f"The transformation registry {namespace} is currently not supported"
-        )
+        TransformationException.__init__(self, f"The transformation registry {namespace} is currently not supported")
 
 
 class InvalidTransformation(TransformationException):
@@ -65,9 +63,7 @@ class TransformationNotImplemented(TransformationException):
 
 
 def notImplemented(arg: str) -> str:
-    raise TransformationNotImplemented(
-        f"Could not normalize {arg} because the transformation rule is not implemented"
-    )
+    raise TransformationNotImplemented(f"Could not normalize {arg} because the transformation rule is not implemented")
 
 
 # region normalization maps
@@ -272,17 +268,13 @@ def dateYearMonthEN(arg: str) -> str:
 
 def numCommaDecimal(arg: str) -> str:
     # nnn*nnn*nnn,n -> nnnnnnnnn.n
-    arg = re.sub(
-        r"[^\d,]+", "", arg
-    )  # remove all chars that are not a digit and not a comma
+    arg = re.sub(r"[^\d,]+", "", arg)  # remove all chars that are not a digit and not a comma
     return arg.replace(",", ".")
 
 
 def numDotDecimal(arg: str) -> str:
     # nnn*nnn*nnn.n -> nnnnnnnnn.n
-    return re.sub(
-        r"[^\d.]+", "", arg
-    )  # remove all chars that are not a digit and not a dot
+    return re.sub(r"[^\d.]+", "", arg)  # remove all chars that are not a digit and not a dot
 
 
 # endregion ixt mappings
@@ -619,10 +611,4 @@ def normalize(namespace: str, formatCode: str, value: str) -> str:
 
 
 if __name__ == "__main__":
-    print(
-        normalize(
-            "http://www.sec.gov/inlineXBRL/transformation/2015-08-31",
-            "numwordsen",
-            "one million and two",
-        )
-    )
+    print(normalize("http://www.sec.gov/inlineXBRL/transformation/2015-08-31", "numwordsen", "one million and two"))

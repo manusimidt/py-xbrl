@@ -83,6 +83,4 @@ def compare_uri(uri1: str, uri2: str) -> bool:
 
 
 def is_url(candidate: str) -> bool:
-    return candidate.lower().startswith("http://") or candidate.lower().startswith(
-        "https://"
-    )
+    return candidate.lower().startswith("http://") or candidate.lower().startswith("https://")

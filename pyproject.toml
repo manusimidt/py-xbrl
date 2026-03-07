@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-xbrl"
-version = "3.0.0"
+version = "3.0.2"
 description = "Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases)."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
@@ -55,6 +55,13 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["xbrl*"]
 
+
+[tool.ruff]
+line-length = 120  # Increased from default 88 to allow longer lines
+
+[tool.ruff.format]
+# Keep more compact formatting for simple expressions
+skip-magic-trailing-comma = true
 
 [tool.mypy]
 python_version = "3.10"
