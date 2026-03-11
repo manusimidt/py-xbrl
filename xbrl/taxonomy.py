@@ -320,11 +320,7 @@ class TaxonomyParser:
 
                     schema_path = os.path.join(dirpath, filename)
                     try:
-                        target_ns = (
-                            ET.parse(schema_path)
-                            .getroot()
-                            .attrib.get("targetNamespace")
-                        )
+                        target_ns = ET.parse(schema_path).getroot().attrib.get("targetNamespace")
                     except Exception:
                         # Ignore malformed/unreadable cached files and continue building index.
                         continue
@@ -370,10 +366,7 @@ class TaxonomyParser:
             cached_taxonomy = self.parse_taxonomy(cached_schema_path)
         except Exception as exc:
             logger.debug(
-                "Failed loading cached taxonomy for namespace %s from %s: %s",
-                namespace,
-                cached_schema_path,
-                exc,
+                "Failed loading cached taxonomy for namespace %s from %s: %s", namespace, cached_schema_path, exc
             )
             return None
 
