@@ -757,62 +757,85 @@ def _parse_context_elements(
                 f"Context {context_id} has an unknown period type and will be skipped! This can lead to crashes when parsing facts!"
             )
 
-        # check if dimensional information exists on this context and parse it
-        segment: ET.Element | None = context_elem.find("xbrli:entity/xbrli:segment", NAME_SPACES)
-        if segment is not None:
-            dimension_concept: Concept
-            for explicit_member_elem in segment.findall("xbrldi:explicitMember", NAME_SPACES):
-                if explicit_member_elem.text is None:
-                    continue
-                _update_ns_map(ns_map, get_ns_map(explicit_member_elem))
-                dimension_prefix, dimension_concept_name = explicit_member_elem.attrib["dimension"].strip().split(":")
-                member_prefix, member_concept_name = explicit_member_elem.text.strip().split(":")
-                # get the taxonomy where the dimension attribute is defined
-                dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
-                # check if the taxonomy was found
-                if dimension_tax is None:
-                    # try to subsequently load the taxonomy
-                    dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
-                    taxonomy.imports.append(dimension_tax)
-
-                # get the taxonomy where the member attribute is defined
-                member_tax = (
-                    dimension_tax if member_prefix == dimension_prefix else taxonomy.get_taxonomy(ns_map[member_prefix])
-                )
-                # check if the taxonomy was found
-                if member_tax is None:
-                    # try to subsequently load the taxonomy
-                    member_tax = taxParser.try_taxonomy_from_namespace(ns_map[member_prefix])
-                    taxonomy.imports.append(member_tax)
-                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
-                dimension_concept.namespace = ns_map[dimension_prefix]
-                member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
-                member_concept.namespace = ns_map[member_prefix]
-
-                # add the explicit member to the context
-                context.segments.append(ExplicitMember(dimension_concept, member_concept))
-
-            for typed_member_element in segment.findall("xbrldi:typedMember", NAME_SPACES):
-                _update_ns_map(ns_map, get_ns_map(typed_member_element))
-                dimension_prefix, dimension_concept_name = typed_member_element.attrib["dimension"].strip().split(":")
-                # get the taxonomy where the dimension attribute is defined
-                dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
-                # check if the taxonomy was found
-                if dimension_tax is None:
-                    # try to subsequently load the taxonomy
-                    dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
-                    taxonomy.imports.append(dimension_tax)
-                dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
-                dimension_concept.namespace = ns_map[dimension_prefix]
-                domain: list[str] = []
-                for child in typed_member_element:
-                    if child.text is not None:
-                        domain.append(child.text.strip())
-
-                context.segments.append(TypedMember(dimension_concept, domain))
+        # Check if dimensional information exists on this context and parse it.
+        # XBRL 2.1 allows dimensions in either xbrli:segment, a child of
+        # xbrli:entity, or xbrli:scenario, a direct child of the context.
+        # US SEC filings generally use segment; ESEF and other IFRS filings
+        # use scenario.
+        for container_path in ("xbrli:entity/xbrli:segment", "xbrli:scenario"):
+            container: ET.Element | None = context_elem.find(container_path, NAME_SPACES)
+            if container is not None:
+                _parse_dimensions(container, context, ns_map, taxonomy, taxParser)
 
         context_dict[context_id] = context
     return context_dict
+
+
+def _parse_dimensions(
+    container: ET.Element,
+    context: AbstractContext,
+    ns_map: dict,
+    taxonomy: TaxonomySchema,
+    taxParser: TaxonomyParser,
+) -> None:
+    """
+    Parses the explicit and typed members of a dimension container and appends them to the context.
+    :param container: the xbrli:segment or xbrli:scenario element holding the members
+    :param context: the context that the parsed members are added to
+    :param ns_map: the prefix - namespace map of the document
+    :param taxonomy: The taxonomy of the instance file
+    :return:
+    """
+    dimension_concept: Concept
+    for explicit_member_elem in container.findall("xbrldi:explicitMember", NAME_SPACES):
+        if explicit_member_elem.text is None:
+            continue
+        _update_ns_map(ns_map, get_ns_map(explicit_member_elem))
+        dimension_prefix, dimension_concept_name = explicit_member_elem.attrib["dimension"].strip().split(":")
+        member_prefix, member_concept_name = explicit_member_elem.text.strip().split(":")
+        # get the taxonomy where the dimension attribute is defined
+        dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
+        # check if the taxonomy was found
+        if dimension_tax is None:
+            # try to subsequently load the taxonomy
+            dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
+            taxonomy.imports.append(dimension_tax)
+
+        # get the taxonomy where the member attribute is defined
+        member_tax = (
+            dimension_tax if member_prefix == dimension_prefix else taxonomy.get_taxonomy(ns_map[member_prefix])
+        )
+        # check if the taxonomy was found
+        if member_tax is None:
+            # try to subsequently load the taxonomy
+            member_tax = taxParser.try_taxonomy_from_namespace(ns_map[member_prefix])
+            taxonomy.imports.append(member_tax)
+        dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
+        dimension_concept.namespace = ns_map[dimension_prefix]
+        member_concept: Concept = member_tax.concepts[member_tax.name_id_map[member_concept_name]]
+        member_concept.namespace = ns_map[member_prefix]
+
+        # add the explicit member to the context
+        context.segments.append(ExplicitMember(dimension_concept, member_concept))
+
+    for typed_member_element in container.findall("xbrldi:typedMember", NAME_SPACES):
+        _update_ns_map(ns_map, get_ns_map(typed_member_element))
+        dimension_prefix, dimension_concept_name = typed_member_element.attrib["dimension"].strip().split(":")
+        # get the taxonomy where the dimension attribute is defined
+        dimension_tax = taxonomy.get_taxonomy(ns_map[dimension_prefix])
+        # check if the taxonomy was found
+        if dimension_tax is None:
+            # try to subsequently load the taxonomy
+            dimension_tax = taxParser.try_taxonomy_from_namespace(ns_map[dimension_prefix])
+            taxonomy.imports.append(dimension_tax)
+        dimension_concept = dimension_tax.concepts[dimension_tax.name_id_map[dimension_concept_name]]
+        dimension_concept.namespace = ns_map[dimension_prefix]
+        domain: list[str] = []
+        for child in typed_member_element:
+            if child.text is not None:
+                domain.append(child.text.strip())
+
+        context.segments.append(TypedMember(dimension_concept, domain))
 
 
 def _update_ns_map(ns_map: dict, new_ns_map: dict) -> None:
