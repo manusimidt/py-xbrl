@@ -62,14 +62,36 @@ We use GitHub issues to track bugs and errors. If you run into an issue with the
 
 
 ### Your First Code Contribution
-1. Fork the repository
-2. Clone the fork, install necessary packages listed in `requirements.txt`
-3. Implement and test the changes, document it as good as possible
-4. Commit and Push your changes to the forked repo
-5. Create a pull request
-6. Check if the CI/CD pipeline still executes correctly
-7. Ping me with @manusimidt so I can review and approve 
-8. Thanks for your contribution! 😊
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management,
+[ruff](https://docs.astral.sh/ruff/) for linting and formatting, [ty](https://docs.astral.sh/ty/)
+for type checking and [prek](https://prek.j178.dev) to run those tools as git hooks.
+
+1. Fork the repository and clone your fork
+2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then set up the
+   environment. This installs py-xbrl together with the `dev` dependency group
+   (ruff, ty, prek, pytest), pinned via `uv.lock`:
+   ```shell
+   uv sync
+   ```
+3. Install the git hooks, so linting, formatting and type checks run on every commit:
+   ```shell
+   uv run prek install
+   ```
+4. Implement and test the changes, document it as good as possible
+5. Run the same checks the CI pipeline runs:
+   ```shell
+   uv run --frozen ruff check .
+   uv run --frozen ruff format --check .
+   uv run --frozen ty check
+   uv run --frozen pytest tests/
+   ```
+   `uv run --frozen prek run --all-files` runs the lint, format and type checks in one go.
+6. Commit and Push your changes to the forked repo
+7. Create a pull request
+8. Check if the CI/CD pipeline still executes correctly
+9. Ping me with @manusimidt so I can review and approve 
+10. Thanks for your contribution! 😊
 
 
 ### Improving The Documentation
