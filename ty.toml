@@ -1,0 +1,13 @@
+[environment]
+python-version = "3.14" 
+
+[rules] 
+missing-type-argument = "error"
+possibly-unresolved-reference = "warn"
+
+
+[[overrides]] 
+include = ["tests/*.py"]
+
+[overrides.rules]
+possibly-unresolved-reference = "ignore"

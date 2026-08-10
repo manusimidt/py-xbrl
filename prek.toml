@@ -1,0 +1,34 @@
+# Configuration file for `prek`, a git hook framework written in Rust.
+# See https://prek.j178.dev for more information.
+#:schema https://www.schemastore.org/prek.json
+
+# ruff and ty are pinned in the `dev` dependency group (see pyproject.toml /
+# uv.lock), so run them through `uv` instead of a separate hook environment.
+# This keeps the hooks on exactly the versions CI and local dev use.
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "ruff-check"
+name = "ruff check"
+entry = "uv run --frozen ruff check --fix"
+language = "system"
+types = ["python"]
+require_serial = true
+
+[[repos.hooks]]
+id = "ruff-format"
+name = "ruff format"
+entry = "uv run --frozen ruff format"
+language = "system"
+types = ["python"]
+require_serial = true
+
+[[repos.hooks]]
+id = "ty"
+name = "ty check"
+entry = "uv run --frozen ty check"
+language = "system"
+types = ["python"]
+pass_filenames = false
+require_serial = true

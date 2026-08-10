@@ -1,0 +1,14 @@
+line-length = 120  # Increased from default 88 to allow longer lines
+
+
+[lint]
+# Ruff 0.16 expanded its defaults; keep CI on the project's established rule set.
+select = ["E4", "E7", "E9", "F"]
+
+
+
+[format]
+# Keep more compact formatting for simple expressions
+skip-magic-trailing-comma = true
+
+
