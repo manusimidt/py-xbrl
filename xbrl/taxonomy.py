@@ -23,7 +23,7 @@ XDS_NS: str = "{http://www.w3.org/2001/XMLSchema}"
 XBRLI_NS: str = "{http://www.xbrl.org/2003/instance}"
 
 # dictionary containing all common prefixes and the corresponding namespaces.
-NAME_SPACES: dict = {
+NAME_SPACES: dict[str, str] = {
     "xsd": "http://www.w3.org/2001/XMLSchema",
     "link": "http://www.xbrl.org/2003/linkbase",
     "xlink": "http://www.w3.org/1999/xlink",
@@ -138,11 +138,11 @@ class TaxonomySchema:
         self.schema_url = schema_url
         self.namespace = namespace
         # store the concepts in a dictionary with the concept_id as key
-        self.concepts: dict = {}
+        self.concepts: dict[str, Concept] = {}
         # The linkbases reference concepts by their id, the instance file by name.
         # In order to get O(1) in both cases, create a dictionary where the id of a concept can be looked up,
         # based on the name
-        self.name_id_map: dict = {}
+        self.name_id_map: dict[str, str] = {}
 
     def __str__(self) -> str:
         return self.namespace
@@ -459,7 +459,7 @@ class TaxonomyParser:
         raise TaxonomyNotFound(wanted_ns)
 
     def parse_taxonomy(
-        self, schema_path: str, imported_schema_uris: set = set(), schema_url: str | None = None
+        self, schema_path: str, imported_schema_uris: set[str] = set(), schema_url: str | None = None
     ) -> TaxonomySchema:
         """
         Parses a taxonomy schema file.

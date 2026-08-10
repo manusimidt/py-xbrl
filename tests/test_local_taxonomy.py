@@ -5,7 +5,7 @@ This unittest tests the parsing of locally saved taxonomies
 import sys
 import unittest
 from xbrl.cache import HttpCache
-from xbrl.taxonomy import  TaxonomySchema, TaxonomyParser
+from xbrl.taxonomy import TaxonomySchema, TaxonomyParser
 import logging
 
 

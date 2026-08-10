@@ -6,6 +6,7 @@ import os
 import xml.etree.ElementTree as ET
 from abc import ABC
 from enum import Enum
+from typing import Any
 
 from xbrl import LinkbaseNotFoundException, XbrlParseException
 from xbrl.cache import HttpCache
@@ -169,7 +170,7 @@ class DefinitionArc(RelationArc):
     def __str__(self) -> str:
         return f"Linking to {self.to_locator.name} as {self.arcrole.split('/')[-1]}"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Returns a dictionary representation of the arc"""
         return {
             "arcrole": self.arcrole,
@@ -315,7 +316,7 @@ class LabelArc(AbstractArcElement):
     def __str__(self) -> str:
         return f"LabelArc with {len(self.labels)} labels"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary representation of the label arc.
         """
@@ -355,7 +356,7 @@ class Locator:
     def __str__(self) -> str:
         return f"{self.name} with {len(self.children)} children"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary representation of the Locator.
         This method will ignore the parents array and will take the children for building the
@@ -369,7 +370,7 @@ class Locator:
             "children": [arc_element.to_dict() for arc_element in self.children],
         }
 
-    def to_simple_dict(self) -> dict:
+    def to_simple_dict(self) -> dict[str, Any]:
         """
         Does the same as to_dict() but ignores the ArcElements.
         So it basically returns the hierarchy, without the information in which type of relationship
@@ -409,7 +410,7 @@ class ExtendedLink:
         self.elr_id: str | None = elr_id
         self.root_locators: list[Locator] = root_locators
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary representation of the ExtendedLinkElement
         @return:
@@ -420,7 +421,7 @@ class ExtendedLink:
             "root_locators": [loc.to_dict() for loc in self.root_locators],
         }
 
-    def to_simple_dict(self) -> dict:
+    def to_simple_dict(self) -> dict[str, Any]:
         """
         Does the same as to_dict() but ignores the ArcElements.
         So it basically returns the hierarchy, without the information in which type of relationship
@@ -451,13 +452,13 @@ class Linkbase:
         self.type = linkbase_type
         self.linkbase_uri = linkbase_uri
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """
         Converts the Linkbase object with in a dictionary representing the Hierarchy of the locators
         """
         return {"standardExtendedLinkElements": [el.to_dict() for el in self.extended_links]}
 
-    def to_simple_dict(self) -> dict:
+    def to_simple_dict(self) -> dict[str, Any]:
         """
         Does the same as to_dict() but ignores the ArcElements.
         So it basically returns the hierarchy, without the information in which type of relationship
@@ -508,7 +509,7 @@ def parse_linkbase(linkbase_path: str, linkbase_type: LinkbaseType, linkbase_url
     root: ET.Element = ET.parse(linkbase_path).getroot()
     # store the role refs in a dictionary, with the role uri as key.
     # Role Refs are xlink's that connect the extended Links to the ELR defined in the schema
-    role_refs: dict = {}
+    role_refs: dict[str, str] = {}
     for role_ref in root.findall(LINK_NS + "roleRef"):
         role_refs[role_ref.attrib["roleURI"]] = role_ref.attrib[XLINK_NS + "href"]
 

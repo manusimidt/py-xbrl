@@ -24,7 +24,7 @@ class ConnectionManager:
         delay: int = 500,
         retries: int = 5,
         backoff_factor: float = 0.8,
-        headers: dict = {},
+        headers: dict[str, str] = {},
         logs=True,
         verify_https: bool = True,
     ):
@@ -48,7 +48,7 @@ class ConnectionManager:
     def _get_systime_ms(self):
         return int(time.time() * 1000)
 
-    def download(self, url: str, headers: dict):
+    def download(self, url: str, headers: dict[str, str]):
         # make sure last post-delay elapsed, to rate limit API usage
         time.sleep(max(0, self.next_try_systime_ms - self._get_systime_ms()) / 1000)
 
@@ -61,7 +61,7 @@ class ConnectionManager:
 
         return response
 
-    def _create_session(self, status_forcelist: tuple = (500, 502, 503, 504, 403)) -> requests.Session:
+    def _create_session(self, status_forcelist: tuple[int, ...] = (500, 502, 503, 504, 403)) -> requests.Session:
         session = requests.Session()
         retry = Retry(
             total=self._retries,

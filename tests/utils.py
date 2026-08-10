@@ -3,11 +3,11 @@ This module contains helper functions used by the unit test
 """
 
 
-def get_bot_header(env_path: str = "./tests/.env") -> dict or None:
+def get_bot_header(env_path: str = "./tests/.env") -> dict[str, str] | None:
     try:
         f = open(env_path, "r")
-        from_header: str or None = None
-        user_agent_header: str or None = None
+        from_header: str | None = None
+        user_agent_header: str | None = None
         for line in f:
             env_name, env_value = [x.strip() for x in line.strip().split("=")]
             if env_name == "FROM":

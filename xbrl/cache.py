@@ -26,10 +26,10 @@ class HttpCache:
         if not cache_dir.endswith(os.sep):
             cache_dir += os.sep
         self.cache_dir: str = cache_dir
-        self.headers: dict = {}
+        self.headers: dict[str, str] = {}
         self.connection_manager = ConnectionManager(delay, verify_https=verify_https)
 
-    def set_headers(self, headers: dict) -> None:
+    def set_headers(self, headers: dict[str, str]) -> None:
         """
         Sets the header for all following request
 

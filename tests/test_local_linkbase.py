@@ -3,7 +3,8 @@ This unittest tests the parsing of locally saved linkbases
 """
 
 import unittest
-from xbrl.linkbase import parse_linkbase, Linkbase, LinkbaseType
+from typing import cast
+from xbrl.linkbase import parse_linkbase, LabelArc, Linkbase, LinkbaseType, RelationArc
 
 
 class LinkbaseTest(unittest.TestCase):
@@ -16,11 +17,10 @@ class LinkbaseTest(unittest.TestCase):
 
         self.assertEqual(len(linkbase.extended_links), 1)
         self.assertEqual(linkbase.extended_links[0].root_locators[0].name, "loc_Assets")
-        label_arcs = linkbase.extended_links[0].root_locators[0].children
+        # a label linkbase only ever links locators to LabelArcs
+        label_arcs = cast(list[LabelArc], linkbase.extended_links[0].root_locators[0].children)
         self.assertEqual(label_arcs[0].labels[0].text, "Assets, total")
-        self.assertIn(
-            "An asset is a resource with economic value", label_arcs[1].labels[0].text
-        )
+        self.assertIn("An asset is a resource with economic value", label_arcs[1].labels[0].text)
 
     def test_calculation_linkbase(self):
         """
@@ -33,12 +33,10 @@ class LinkbaseTest(unittest.TestCase):
         # test if the exploratory mathematical relationship between assets, non-current assets and current assets
         # was present in the linkbase
         self.assertEqual(assets_locator.concept_id, "example_Assets")
-        self.assertEqual(
-            assets_locator.children[0].to_locator.concept_id, "example_NonCurrentAssets"
-        )
-        self.assertEqual(
-            assets_locator.children[1].to_locator.concept_id, "example_CurrentAssets"
-        )
+        # a calculation linkbase only ever links locators to CalculationArcs
+        calculation_arcs = cast(list[RelationArc], assets_locator.children)
+        self.assertEqual(calculation_arcs[0].to_locator.concept_id, "example_NonCurrentAssets")
+        self.assertEqual(calculation_arcs[1].to_locator.concept_id, "example_CurrentAssets")
 
 
 if __name__ == "__main__":

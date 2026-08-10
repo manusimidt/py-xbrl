@@ -28,7 +28,7 @@ XLINK_NS: str = "{http://www.w3.org/1999/xlink}"
 XDS_NS: str = "{http://www.w3.org/2001/XMLSchema}"
 XBRLI_NS: str = "{http://www.xbrl.org/2003/instance}"
 
-NAME_SPACES: dict = {
+NAME_SPACES: dict[str, str] = {
     "xsd": "http://www.w3.org/2001/XMLSchema",
     "link": "http://www.xbrl.org/2003/linkbase",
     "xlink": "http://www.w3.org/1999/xlink",
@@ -235,7 +235,7 @@ class AbstractFact(abc.ABC):
     def __str__(self) -> str:
         return f"{self.concept.name}: {self.value}"
 
-    def json(self, **kwargs) -> dict:
+    def json(self, **kwargs) -> dict[str, Any]:
         period: str
         if isinstance(self.context, TimeFrameContext):
             start_date = self.context.start_date.strftime("%Y-%m-%dT%H:%M:%S")
@@ -289,7 +289,7 @@ class NumericFact(AbstractFact):
         self.unit: AbstractUnit = unit
         self.decimals: int | None = decimals
 
-    def json(self, **kwargs) -> dict:
+    def json(self, **kwargs) -> dict[str, Any]:
         return super().json(dimensions={"unit": str(self.unit)}, decimals=self.decimals, **kwargs)
 
 
@@ -331,7 +331,12 @@ class XbrlInstance(abc.ABC):
     """
 
     def __init__(
-        self, url: str, taxonomy: TaxonomySchema, facts: list[AbstractFact], context_map: dict, unit_map: dict
+        self,
+        url: str,
+        taxonomy: TaxonomySchema,
+        facts: list[AbstractFact],
+        context_map: dict[str, AbstractContext],
+        unit_map: dict[str, AbstractUnit],
     ) -> None:
         """
         :param taxonomy: taxonomy file that the instance file references (via link:schemaRef)
@@ -340,8 +345,8 @@ class XbrlInstance(abc.ABC):
         self.taxonomy: TaxonomySchema = taxonomy
         self.facts: list[AbstractFact] = facts
         self.instance_url: str = url
-        self.context_map: dict = context_map
-        self.unit_map: dict = unit_map
+        self.context_map: dict[str, AbstractContext] = context_map
+        self.unit_map: dict[str, AbstractUnit] = unit_map
 
     def __str__(self) -> str:
         file_name: str = self.instance_url.split("/")[-1]
@@ -357,7 +362,7 @@ class XbrlInstance(abc.ABC):
 
         https://www.xbrl.org/Specification/xbrl-json/REC-2021-10-13/xbrl-json-REC-2021-10-13.html
         """
-        json_dict: dict = {
+        json_dict: dict[str, Any] = {
             "facts": {},
             "documentInfo": {
                 "documentType": "https://xbrl.org/2021/xbrl-json",
@@ -543,7 +548,7 @@ def parse_ixbrl(
     root_elem = root.getroot()
     if root_elem is None:
         raise InstanceParseException("Could not parse instance file!")
-    ns_map: dict = get_ns_map(root_elem)
+    ns_map: dict[str, str] = get_ns_map(root_elem)
     # get the link to the taxonomy schema and parse it
     schema_ref: ET.Element | None = root.find(f".//{LINK_NS}schemaRef")
     if schema_ref is None:
@@ -710,8 +715,8 @@ def _extract_text_value(element: ET.Element) -> str:
 
 
 def _parse_context_elements(
-    context_elements: list[ET.Element], ns_map: dict, taxonomy: TaxonomySchema, taxParser: TaxonomyParser
-) -> dict:
+    context_elements: list[ET.Element], ns_map: dict[str, str], taxonomy: TaxonomySchema, taxParser: TaxonomyParser
+) -> dict[str, AbstractContext]:
     """
     Parses all context elements from the instance file and stores them into a dictionary with the
     context id as key
@@ -720,7 +725,7 @@ def _parse_context_elements(
     :param taxonomy: The taxonomy of the instance file (needed for parsing dimensional information)
     :return:
     """
-    context_dict = {}
+    context_dict: dict[str, AbstractContext] = {}
     for context_elem in context_elements:
         context_id: str = context_elem.attrib["id"]
         entity_elem = context_elem.find("xbrli:entity/xbrli:identifier", NAME_SPACES)
@@ -756,6 +761,7 @@ def _parse_context_elements(
             logger.warning(
                 f"Context {context_id} has an unknown period type and will be skipped! This can lead to crashes when parsing facts!"
             )
+            continue
 
         # check if dimensional information exists on this context and parse it
         segment: ET.Element | None = context_elem.find("xbrli:entity/xbrli:segment", NAME_SPACES)
@@ -815,7 +821,7 @@ def _parse_context_elements(
     return context_dict
 
 
-def _update_ns_map(ns_map: dict, new_ns_map: dict) -> None:
+def _update_ns_map(ns_map: dict[str, str], new_ns_map: dict[str, str]) -> None:
     """
     Compares the new_ns_map with the ns_map and adds prefix/namespace mappings that are not present in ns_map
     :param ns_map:
@@ -827,7 +833,7 @@ def _update_ns_map(ns_map: dict, new_ns_map: dict) -> None:
             ns_map[prefix] = new_ns_map[prefix]
 
 
-def _parse_unit_elements(unit_elements: list[ET.Element]) -> dict:
+def _parse_unit_elements(unit_elements: list[ET.Element]) -> dict[str, AbstractUnit]:
     """
     Parses all unit elements from the instance file and stores them into a dictionary with the
     unit id as key

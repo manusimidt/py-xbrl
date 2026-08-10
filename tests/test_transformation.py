@@ -305,17 +305,13 @@ class TransformationTest(unittest.TestCase):
                 if expected == "exception":
                     try:
                         testOutput = normalize(namespace, formatCode, testInput)
-                        self.fail(
-                            "Expected Transformation Exception, received " + testOutput
-                        )
+                        self.fail("Expected Transformation Exception, received " + testOutput)
                     except TransformationException:
                         pass
                 else:
                     testOutput = normalize(namespace, formatCode, testInput)
                     self.assertEqual(
-                        expected,
-                        testOutput,
-                        msg=f"Failed at test case {testCase} of registry {namespace}",
+                        expected, testOutput, msg=f"Failed at test case {testCase} of registry {namespace}"
                     )
 
 
