@@ -10,7 +10,6 @@ on:
         type: boolean
         default: true
 
-# Least privilege by default; jobs opt in to what they need.
 permissions: {}
 
 jobs:
