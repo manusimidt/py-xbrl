@@ -1,0 +1,174 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      testpypi_only:
+        description: "Publish to TestPyPI only (no PyPI upload)"
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Verify version consistency
+        run: |
+          PYPROJECT_VERSION=$(uv run --frozen python -c \
+            'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+          DUNDER_VERSION=$(uv run --frozen python -c \
+            'import re, pathlib; print(re.search(r"__version__ = \"(.+?)\"", pathlib.Path("xbrl/__init__.py").read_text()).group(1))')
+
+          echo "pyproject.toml : $PYPROJECT_VERSION"
+          echo "xbrl/__init__  : $DUNDER_VERSION"
+
+          if [ "$PYPROJECT_VERSION" != "$DUNDER_VERSION" ]; then
+            echo "::error::pyproject.toml and xbrl/__init__.py disagree on the version."
+            exit 1
+          fi
+
+          # On a tag build, the tag must match the declared version exactly.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            echo "git tag        : $TAG_VERSION"
+            if [ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match version $PYPROJECT_VERSION."
+              exit 1
+            fi
+          fi
+
+      - name: Build sdist and wheel
+        # Built once here; every later job consumes these exact files, so what
+        # lands on TestPyPI and PyPI is byte-identical.
+        run: uv build
+
+      - name: Check metadata
+        run: uv run --frozen twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke-test:
+    name: Smoke test wheel (${{ matrix.python-version }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install the built wheel into a clean environment
+        run: |
+          uv venv
+          uv pip install dist/*.whl pytest
+
+      - name: Verify the wheel imports and reports the right version
+        run: |
+          cd "${RUNNER_TEMP}"
+          "${GITHUB_WORKSPACE}/.venv/bin/python" -c \
+            'import xbrl; print(xbrl.__file__); print(xbrl.__version__)'
+
+      - name: Run the test suite against the installed package
+        # The tests are staged outside the checkout on purpose: tests/__init__.py
+        # makes pytest prepend the rootdir to sys.path, which would let the local
+        # xbrl/ source shadow the installed wheel. The staging dir has no xbrl/,
+        # so imports resolve to the wheel. Data files are addressed as
+        # ./tests/data/..., so the tests/ name and the working directory matter.
+        run: |
+          mkdir -p "${RUNNER_TEMP}/smoke"
+          cp -r tests "${RUNNER_TEMP}/smoke/tests"
+          cd "${RUNNER_TEMP}/smoke"
+          "${GITHUB_WORKSPACE}/.venv/bin/python" -m pytest tests/
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/py-xbrl
+    permissions:
+      id-token: write # required for Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # TestPyPI often already holds a version from an earlier dry run.
+          skip-existing: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: publish-testpypi
+    # Only real tags publish to PyPI; manual runs stop at TestPyPI.
+    if: github.ref_type == 'tag' && inputs.testpypi_only != true
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/py-xbrl
+    permissions:
+      id-token: write # required for Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Attach artifacts to the GitHub release
+    needs: publish-pypi
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
