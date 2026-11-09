@@ -1,6 +1,6 @@
 [project]
 name = "py-xbrl"
-version = "3.0.3"
+version = "3.0.4"
 description = "Parser for parsing XBRL and iXBRL files (instance documents, taxonomy schemas, taxonomy linkbases)."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
