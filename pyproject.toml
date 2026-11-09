@@ -9,7 +9,7 @@ authors = [{ name = "Manuel Schmidt", email = "hello@schmidt-manuel.de" }]
 urls = { Homepage = "https://github.com/manusimidt/py-xbrl" }
 dependencies = [
     "requests>=2.32.3", # Used for fetching XML / XBRL / html files over HTTP(S)
-    "urllib3>=2.6.3" # Used for HTTP connection retries
+    "urllib3>=2.8.0" # Used for HTTP connection retries
 ]
 keywords = [
     "XBRL",
